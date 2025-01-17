@@ -1,0 +1,35 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<TargetFramework>net462</TargetFramework>
+		<GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+		<Title>DG.XrmPluginCore</Title>
+		<Company>Delegate A/S</Company>
+		<Copyright>2025 Delegate A/S</Copyright>
+		<PackageProjectUrl>https://github.com/delegateas/XrmPluginCore</PackageProjectUrl>
+		<PackageReadmeFile>README.md</PackageReadmeFile>
+		<RepositoryUrl>https://github.com/delegateas/XrmPluginCore</RepositoryUrl>
+		<RepositoryType>git</RepositoryType>
+		<PackageTags>xrm,crm,dataverse,daxif,delegate,xrmmockup</PackageTags>
+		<PackageLicenseFile>LICENSE</PackageLicenseFile>
+		<IncludeSymbols>True</IncludeSymbols>
+		<SymbolPackageFormat>snupkg</SymbolPackageFormat>
+	</PropertyGroup>
+	<ItemGroup>
+	  <None Include="..\LICENSE">
+	    <Pack>True</Pack>
+	    <PackagePath>\</PackagePath>
+	  </None>
+	  <None Include="..\README.md">
+	    <Pack>True</Pack>
+	    <PackagePath>\</PackagePath>
+	  </None>
+	</ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="Microsoft.CrmSdk.CoreAssemblies">
+			<Version>9.0.2.56</Version>
+		</PackageReference>
+	</ItemGroup>
+	<ItemGroup>
+	  <Folder Include="Properties\" />
+	</ItemGroup>
+</Project>
