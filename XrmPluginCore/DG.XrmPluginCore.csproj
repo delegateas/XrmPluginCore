@@ -2,6 +2,7 @@
 	<PropertyGroup>
 		<TargetFrameworks>net462;net6</TargetFrameworks>
 		<GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+		<PackageId>Delegate.XrmPluginCore</PackageId>
 		<Title>Delegate.XrmPluginCore</Title>
 		<Company>Delegate A/S</Company>
 		<Copyright>2025 Delegate A/S</Copyright>

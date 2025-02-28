@@ -3,6 +3,7 @@
 	<PropertyGroup>
 		<TargetFramework>netstandard2.0</TargetFramework>
 		<GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+		<PackageId>Delegate.XrmPluginCore.Abstractions</PackageId>
 		<Title>Delegate.XrmPluginCore.Abstractions</Title>
 		<Company>Delegate A/S</Company>
 		<Copyright>2025 Delegate A/S</Copyright>
