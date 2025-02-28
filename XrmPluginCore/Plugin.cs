@@ -18,28 +18,12 @@ namespace DG.XrmPluginCore
     /// <summary>
     /// Base class for all Plugins.
     /// </summary>    
-    public class Plugin : IPlugin, IPluginRegistrationHolder
+    public class Plugin : PluginBase, IPluginRegistrationHolder
     {
         /// <summary>
         /// Gets the List of events that the plug-in should fire for.
         /// </summary>
         protected Collection<EventRegistration> RegisteredEvents { get; } = new Collection<EventRegistration>();
-
-        /// <summary>
-        /// Gets or sets the name of the child class.
-        /// </summary>
-        /// <value>The name of the child class.</value>
-        protected string ChildClassName { get; }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="Plugin"/> class.
-        /// </summary>
-        /// <param name="childClassName">The <see cref="" cred="Type"/> of the derived class.</param>
-        protected Plugin(Type childClassName)
-        {
-            ChildClassName = childClassName.ToString();
-        }
-
 
         /// <summary>
         /// Executes the plug-in.
@@ -52,7 +36,7 @@ namespace DG.XrmPluginCore
         /// could execute the plug-in at the same time. All per invocation state information 
         /// is stored in the context. This means that you should not use global variables in plug-ins.
         /// </remarks>
-        public void Execute(IServiceProvider serviceProvider)
+        public override void Execute(IServiceProvider serviceProvider)
         {
             if (serviceProvider == null)
             {
@@ -156,10 +140,8 @@ namespace DG.XrmPluginCore
 
         #endregion
 
-
         #region PluginRegistration handling retrieval
         /// <summary>
-        /// Made by Delegate A/S
         /// Get the plugin step configurations.
         /// </summary>
         /// <returns>List of steps</returns>

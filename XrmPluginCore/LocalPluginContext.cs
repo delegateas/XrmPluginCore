@@ -9,7 +9,6 @@ namespace DG.XrmPluginCore
 
         public IOrganizationService OrganizationService { get; }
 
-        // Delegate A/S added:
         public IOrganizationService OrganizationAdminService { get; }
 
         public IPluginExecutionContext PluginExecutionContext { get; }
