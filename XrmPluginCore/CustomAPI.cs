@@ -63,7 +63,7 @@ namespace DG.XrmPluginCore
             {
             }
 
-            internal LocalPluginContext(IServiceProvider serviceProvider)
+            public LocalPluginContext(IServiceProvider serviceProvider)
             {
                 if (serviceProvider == null)
                 {

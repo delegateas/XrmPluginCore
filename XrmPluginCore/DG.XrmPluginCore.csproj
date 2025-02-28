@@ -1,8 +1,8 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
-		<TargetFramework>net462</TargetFramework>
+		<TargetFrameworks>net462;net6</TargetFrameworks>
 		<GeneratePackageOnBuild>True</GeneratePackageOnBuild>
-		<Title>DG.XrmPluginCore</Title>
+		<Title>Delegate.XrmPluginCore</Title>
 		<Company>Delegate A/S</Company>
 		<Copyright>2025 Delegate A/S</Copyright>
 		<PackageProjectUrl>https://github.com/delegateas/XrmPluginCore</PackageProjectUrl>
@@ -24,12 +24,16 @@
 	    <PackagePath>\</PackagePath>
 	  </None>
 	</ItemGroup>
-	<ItemGroup>
-		<PackageReference Include="Microsoft.CrmSdk.CoreAssemblies">
-			<Version>9.0.2.56</Version>
-		</PackageReference>
+	<ItemGroup Condition="'$(TargetFramework)' == 'net462'">
+		<PackageReference Include="Microsoft.CrmSdk.CoreAssemblies" Version="9.0.2.28" />
+	</ItemGroup>
+	<ItemGroup Condition="'$(TargetFramework)' != 'net462'">
+		<PackageReference Include="Microsoft.PowerPlatform.Dataverse.Client" Version="1.0.1" />
 	</ItemGroup>
 	<ItemGroup>
 	  <Folder Include="Properties\" />
+	</ItemGroup>
+	<ItemGroup>
+	  <ProjectReference Include="..\DG.XrmPluginCore.Abstractions\DG.XrmPluginCore.Abstractions.csproj" />
 	</ItemGroup>
 </Project>
