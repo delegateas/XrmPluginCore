@@ -28,7 +28,7 @@
 		</None>
 	</ItemGroup>
 	<Target Name="InjectPackageReleaseNotesFromFile" BeforeTargets="GenerateNuspec" Condition="Exists('CHANGELOG.md')">
-		<Exec Command="powershell -NoProfile -ExecutionPolicy RemoteSigned -File &quot;$(ProjectDir)..\XrmPluginCore\SetVersion.ps1&quot;" />
+		<Exec Command="powershell -NoProfile -ExecutionPolicy RemoteSigned -File &quot;$(ProjectDir)..\DG.XrmPluginCore\SetVersion.ps1&quot;" />
 		<PropertyGroup>
 			<PackageReleaseNotes>$([System.IO.File]::ReadAllText("$(ProjectDir)CHANGELOG.md"))</PackageReleaseNotes>
 			<PackageVersion>$([System.IO.File]::ReadAllText("$(ProjectDir)VERSION"))</PackageVersion>
