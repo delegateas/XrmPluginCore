@@ -9,6 +9,7 @@
 		<Copyright>2025 Delegate A/S</Copyright>
 		<PackageProjectUrl>https://github.com/delegateas/XrmPluginCore</PackageProjectUrl>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
+		<PackageReleaseNotes>(Package release notes are in CHANGELOG.md)</PackageReleaseNotes>
 		<RepositoryUrl>https://github.com/delegateas/XrmPluginCore</RepositoryUrl>
 		<RepositoryType>git</RepositoryType>
 		<PackageTags>xrm,crm,dataverse,daxif,delegate,xrmmockup</PackageTags>
@@ -26,5 +27,12 @@
 			<PackagePath>\</PackagePath>
 		</None>
 	</ItemGroup>
-
+	<Target Name="InjectPackageReleaseNotesFromFile" BeforeTargets="GenerateNuspec" Condition="Exists('CHANGELOG.md')">
+		<Exec Command="powershell -NoProfile -ExecutionPolicy RemoteSigned -File &quot;$(ProjectDir)..\XrmPluginCore\SetVersion.ps1&quot;" />
+		<PropertyGroup>
+			<PackageReleaseNotes>$([System.IO.File]::ReadAllText("$(ProjectDir)CHANGELOG.md"))</PackageReleaseNotes>
+			<PackageVersion>$([System.IO.File]::ReadAllText("$(ProjectDir)VERSION"))</PackageVersion>
+			<Version>$([System.IO.File]::ReadAllText("$(ProjectDir)VERSION"))</Version>
+		</PropertyGroup>
+	</Target>
 </Project>
