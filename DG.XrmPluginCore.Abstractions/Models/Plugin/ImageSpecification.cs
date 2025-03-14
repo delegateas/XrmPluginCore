@@ -1,6 +1,6 @@
 ﻿using DG.XrmPluginCore.Abstractions.Enums;
 
-namespace DG.XrmPluginCore.Abstractions.Models
+namespace DG.XrmPluginCore.Abstractions.Models.Plugin
 {
     public class ImageSpecification
     {

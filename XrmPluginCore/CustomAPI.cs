@@ -4,10 +4,9 @@ namespace DG.XrmPluginCore
     using System.Globalization;
     using System.ServiceModel;
     using Microsoft.Xrm.Sdk;
-
-    using DG.XrmPluginCore.Abstractions.Models;
     using DG.XrmPluginCore.CustomApis;
     using DG.XrmPluginCore.Abstractions;
+    using DG.XrmPluginCore.Abstractions.Models.CustomApi;
 
     /// <summary>
     /// Base class for all CustomAPIs.
@@ -16,7 +15,7 @@ namespace DG.XrmPluginCore
     {
         protected Action<LocalPluginContext> RegisteredEvent { get; private set; }
 
-        private ICustomAPIConfig CustomAPIConfig { get; set; }
+        private CustomApiConfigBuilder CustomAPIConfig { get; set; }
 
         /// <summary>
         /// Executes the plug-in.
@@ -85,38 +84,19 @@ namespace DG.XrmPluginCore
         /// Get the CustomAPI configurations.
         /// </summary>
         /// <returns>API</returns>
-        public CustomApiRegistration GetCustomAPIRegistration()
+        public Registration GetCustomAPIRegistration()
         {
-            var className = ChildClassName;
-            var config = CustomAPIConfig;
-
-            return new CustomApiRegistration
+            return new Registration
             {
-                CustomApiConfig = new CustomApiConfig(
-                    config.Name,
-                    config.IsFunction,
-                    config.EnabledForWorkflow,
-                    config.AllowedCustomProcessingStepType,
-                    config.BindingType,
-                    config.BoundEntityLogicalName
-                ),
-                ExtendedCustomApiConfig = new ExtendedCustomApiConfig(
-                    className,
-                    "",
-                    "",
-                    config.IsCustomizable,
-                    config.IsPrivate,
-                    config.ExecutePrivilegeName,
-                    config.Description
-                ),
-                RequestParameters = config.GetRequestParameters(),
-                ResponseParameters = config.GetResponseProperties()
+                Config = CustomAPIConfig.Build(),
+                RequestParameters = CustomAPIConfig.GetRequestParameters(),
+                ResponseParameters = CustomAPIConfig.GetResponseProperties()
             };
         }
 
-        protected CustomAPIConfig RegisterCustomAPI(string name, Action<LocalPluginContext> action)
+        protected CustomApiConfigBuilder RegisterCustomAPI(string name, Action<LocalPluginContext> action)
         {
-            var apiConfig = new CustomAPIConfig(name);
+            var apiConfig = new CustomApiConfigBuilder(name);
 
             if (CustomAPIConfig != null || RegisteredEvent != null)
             {

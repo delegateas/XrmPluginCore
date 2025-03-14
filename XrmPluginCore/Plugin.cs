@@ -10,8 +10,8 @@ using Microsoft.Xrm.Sdk;
 using DG.XrmPluginCore.Plugins;
 using DG.XrmPluginCore.Extensions;
 using DG.XrmPluginCore.Abstractions;
-using DG.XrmPluginCore.Abstractions.Models;
 using DG.XrmPluginCore.Abstractions.Enums;
+using DG.XrmPluginCore.Abstractions.Models.Plugin;
 
 namespace DG.XrmPluginCore
 {
@@ -112,8 +112,7 @@ namespace DG.XrmPluginCore
                 collection = context.PluginExecutionContext.PostEntityImages;
             }
 
-            Entity entity;
-            if (collection != null && collection.TryGetValue(name, out entity))
+            if (collection != null && collection.TryGetValue(name, out var entity))
             {
                 return entity.ToEntity<T>();
             }
@@ -145,7 +144,7 @@ namespace DG.XrmPluginCore
         /// Get the plugin step configurations.
         /// </summary>
         /// <returns>List of steps</returns>
-        public IEnumerable<PluginRegistration> PluginRegistrations()
+        public IEnumerable<Registration> Registrations()
         {
             var className = ChildClassName;
             foreach (var registration in RegisteredEvents)
@@ -153,13 +152,12 @@ namespace DG.XrmPluginCore
                 var config = registration.StepConfig;
 
                 yield return
-                    new PluginRegistration(
+                    new Registration(
                         new StepConfig(
                             className,
                             config.ExecutionStage,
                             config.EventOperation,
-                            config.EntityLogicalName),
-                        new ExtendedStepConfig(
+                            config.EntityLogicalName,
                             config.Deployment,
                             config.ExecutionMode,
                             config.Name,

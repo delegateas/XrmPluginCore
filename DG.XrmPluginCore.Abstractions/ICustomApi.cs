@@ -1,9 +1,9 @@
-﻿using DG.XrmPluginCore.Abstractions.Models;
+﻿using DG.XrmPluginCore.Abstractions.Models.CustomApi;
 
 namespace DG.XrmPluginCore.Abstractions
 {
     public interface ICustomApi
     {
-        CustomApiRegistration GetCustomAPIRegistration();
+        Registration GetCustomAPIRegistration();
     }
 }

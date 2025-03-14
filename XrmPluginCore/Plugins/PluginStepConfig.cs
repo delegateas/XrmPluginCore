@@ -1,5 +1,5 @@
 ﻿using DG.XrmPluginCore.Abstractions.Enums;
-using DG.XrmPluginCore.Abstractions.Models;
+using DG.XrmPluginCore.Abstractions.Models.Plugin;
 using DG.XrmPluginCore.Extensions;
 using Microsoft.Xrm.Sdk;
 using System;
