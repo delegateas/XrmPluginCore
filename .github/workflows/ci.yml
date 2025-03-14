@@ -1,0 +1,31 @@
+name: Check PR
+
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+
+jobs:
+  run-ci:
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 🚚 Get latest code
+        uses: actions/checkout@v4
+
+      - name: 🛠️ Setup .NET
+        uses: actions/setup-dotnet@v3
+        with:
+            dotnet-version: 6.0.x
+
+      - name: 📦 Install dependencies
+        run: dotnet restore
+
+      - name: 🔨 Build solution
+        run: dotnet build --configuration Release --no-restore
+
+      # - name: 🧪 Run tests
+      #   run: dotnet test --no-restore --verbosity normal
