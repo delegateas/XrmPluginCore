@@ -16,6 +16,7 @@
 		<PackageLicenseFile>LICENSE</PackageLicenseFile>
 		<IncludeSymbols>True</IncludeSymbols>
 		<SymbolPackageFormat>snupkg</SymbolPackageFormat>
+		<Version>$([System.IO.File]::ReadAllText("DG.XrmPluginCore.Abstractions/VERSION"))</Version>
 	</PropertyGroup>
 	<ItemGroup>
 		<None Include="..\LICENSE">
@@ -27,12 +28,11 @@
 			<PackagePath>\</PackagePath>
 		</None>
 	</ItemGroup>
-	<Target Name="InjectPackageReleaseNotesFromFile" BeforeTargets="GenerateNuspec" Condition="Exists('CHANGELOG.md')">
+	<Target Name="UpdateVersion" BeforeTargets="BeforeBuild">
 		<Exec Command="pwsh -NoProfile -ExecutionPolicy RemoteSigned -File &quot;$(ProjectDir)..\DG.XrmPluginCore\SetVersion.ps1&quot;" />
 		<PropertyGroup>
-			<PackageReleaseNotes>$([System.IO.File]::ReadAllText("$(ProjectDir)CHANGELOG.md"))</PackageReleaseNotes>
-			<PackageVersion>$([System.IO.File]::ReadAllText("$(ProjectDir)VERSION"))</PackageVersion>
-			<Version>$([System.IO.File]::ReadAllText("$(ProjectDir)VERSION"))</Version>
+			<PackageReleaseNotes>$([System.IO.File]::ReadAllText("CHANGELOG.md"))</PackageReleaseNotes>
+			<PackageVersion>$([System.IO.File]::ReadAllText("VERSION"))</PackageVersion>
 		</PropertyGroup>
 	</Target>
 </Project>

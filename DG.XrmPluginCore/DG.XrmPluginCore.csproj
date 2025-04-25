@@ -15,6 +15,7 @@
 		<PackageLicenseFile>LICENSE</PackageLicenseFile>
 		<IncludeSymbols>True</IncludeSymbols>
 		<SymbolPackageFormat>snupkg</SymbolPackageFormat>
+		<Version>$([System.IO.File]::ReadAllText("DG.XrmPluginCore/VERSION"))</Version>
 	</PropertyGroup>
 	<ItemGroup>
 	  <None Include="..\LICENSE">
@@ -27,10 +28,10 @@
 	  </None>
 	</ItemGroup>
 	<ItemGroup Condition="'$(TargetFramework)' == 'net462'">
-		<PackageReference Include="Microsoft.CrmSdk.CoreAssemblies" Version="9.0.2.*" />
+		<PackageReference Include="Microsoft.CrmSdk.CoreAssemblies" Version="9.0.2.1" />
 	</ItemGroup>
 	<ItemGroup Condition="'$(TargetFramework)' != 'net462'">
-		<PackageReference Include="Microsoft.PowerPlatform.Dataverse.Client" Version="1.0.*" />
+		<PackageReference Include="Microsoft.PowerPlatform.Dataverse.Client" Version="1.0.1" />
 	</ItemGroup>
 	<ItemGroup>
 	  <Folder Include="Properties\" />
@@ -41,9 +42,8 @@
 	<Target Name="InjectPackageReleaseNotesFromFile" BeforeTargets="GenerateNuspec" Condition="Exists('CHANGELOG.md')">
 		<Exec Command="pwsh -NoProfile -ExecutionPolicy RemoteSigned -File &quot;$(ProjectDir)SetVersion.ps1&quot;" />
 		<PropertyGroup>
-			<PackageReleaseNotes>$([System.IO.File]::ReadAllText("$(ProjectDir)CHANGELOG.md"))</PackageReleaseNotes>
-			<PackageVersion>$([System.IO.File]::ReadAllText("$(ProjectDir)VERSION"))</PackageVersion>
-			<Version>$([System.IO.File]::ReadAllText("$(ProjectDir)VERSION"))</Version>
+			<PackageReleaseNotes>$([System.IO.File]::ReadAllText("CHANGELOG.md"))</PackageReleaseNotes>
+			<PackageVersion>$([System.IO.File]::ReadAllText("VERSION"))</PackageVersion>
 		</PropertyGroup>
 	</Target>
 </Project>

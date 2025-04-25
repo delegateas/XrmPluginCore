@@ -17,7 +17,7 @@ namespace DG.XrmPluginCore
 {
     /// <summary>
     /// Base class for all Plugins.
-    /// </summary>    
+    /// </summary>
     public class Plugin : PluginBase, IPluginRegistrationHolder
     {
         /// <summary>

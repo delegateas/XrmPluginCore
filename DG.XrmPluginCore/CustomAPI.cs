@@ -1,16 +1,16 @@
+using System;
+using System.Globalization;
+using System.ServiceModel;
+using Microsoft.Xrm.Sdk;
+using DG.XrmPluginCore.CustomApis;
+using DG.XrmPluginCore.Abstractions;
+using DG.XrmPluginCore.Abstractions.Models.CustomApi;
+
 namespace DG.XrmPluginCore
 {
-    using System;
-    using System.Globalization;
-    using System.ServiceModel;
-    using Microsoft.Xrm.Sdk;
-    using DG.XrmPluginCore.CustomApis;
-    using DG.XrmPluginCore.Abstractions;
-    using DG.XrmPluginCore.Abstractions.Models.CustomApi;
-
     /// <summary>
     /// Base class for all CustomAPIs.
-    /// </summary>    
+    /// </summary>
     public class CustomAPI : PluginBase, ICustomApi
     {
         protected Action<LocalPluginContext> RegisteredEvent { get; private set; }
@@ -77,8 +77,6 @@ namespace DG.XrmPluginCore
             }
         }
 
-        #region CustomAPI retrieval
-
         /// <summary>
         /// Made by Delegate A/S
         /// Get the CustomAPI configurations.
@@ -107,6 +105,5 @@ namespace DG.XrmPluginCore
             RegisteredEvent = action;
             return apiConfig;
         }
-        #endregion
     }
 }
