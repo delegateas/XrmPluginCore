@@ -1,31 +1,37 @@
 name: Check PR
 
 on:
-  pull_request:
-  push:
-    branches:
-      - main
+ pull_request:
+ push:
+   branches:
+     - main
 
 jobs:
-  run-ci:
-    env:
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    runs-on: ubuntu-latest
+ run-ci:
+   env:
+     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+   runs-on: ubuntu-latest
 
-    steps:
-      - name: 🚚 Get latest code
-        uses: actions/checkout@v4
+   steps:
+     - name: 🚚 Get latest code
+       uses: actions/checkout@v4
 
-      - name: 🛠️ Setup .NET
-        uses: actions/setup-dotnet@v3
-        with:
-            dotnet-version: 8.x
+     - name: 🛠️ Setup .NET
+       uses: actions/setup-dotnet@v4
+       with:
+           dotnet-version: 8.x
 
-      - name: 📦 Install dependencies
-        run: dotnet restore
+     - name: 📦 Install dependencies
+       run: dotnet restore
 
-      - name: 🔨 Build solution
-        run: dotnet build --configuration Release --no-restore
+     - name: 🔨 Build solution
+       run: dotnet build --configuration Release --no-restore
 
-      # - name: 🧪 Run tests
-      #   run: dotnet test --no-restore --verbosity normal
+     - name: 📦 Pack
+       run: dotnet pack --configuration Release --no-build --output ./nupkg
+
+     - name: 📤 Upload artifacts
+       uses: actions/upload-artifact@v4
+       with:
+         name: packages
+         path: ./nupkg

@@ -10,10 +10,10 @@ jobs:
 
     steps:
     - name: 🚚 Checkout code
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
 
     - name: 🛠️ Setup .NET
-      uses: actions/setup-dotnet@v1
+      uses: actions/setup-dotnet@v4
       with:
         dotnet-version: 8.x
 
@@ -25,6 +25,12 @@ jobs:
 
     - name: 📦 Pack
       run: dotnet pack --configuration Release --no-build --output ./nupkg
+
+    - name: 📤 Upload artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: packages
+        path: ./nupkg
 
     - name: 🚀 Publish to NuGet
       env:
