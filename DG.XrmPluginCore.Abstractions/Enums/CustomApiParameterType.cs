@@ -1,4 +1,4 @@
-﻿namespace DG.XrmPluginCore
+﻿namespace DG.XrmPluginCore.Enums
 {
     public enum CustomApiParameterType
     {

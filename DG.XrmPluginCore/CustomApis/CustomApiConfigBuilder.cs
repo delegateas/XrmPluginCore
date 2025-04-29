@@ -1,9 +1,9 @@
 ﻿using DG.XrmPluginCore.Enums;
 using Microsoft.Xrm.Sdk;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System;
-using DG.XrmPluginCore.Models.CustomApi;
+using DG.XrmPluginCore.Interfaces.CustomApi;
+using System.Linq;
 
 namespace DG.XrmPluginCore.CustomApis
 {
@@ -12,11 +12,11 @@ namespace DG.XrmPluginCore.CustomApis
         private readonly Collection<RequestParameter> RequestParameters = new Collection<RequestParameter>();
         private readonly Collection<ResponseProperty> ResponseProperties = new Collection<ResponseProperty>();
 
-        private Config Config { get; }
+        private CustomApiConfig Config { get; }
 
         public CustomApiConfigBuilder(string name)
         {
-            Config = new Config()
+            Config = new CustomApiConfig()
             {
                 Name = name,
                 DisplayName = name,
@@ -36,9 +36,9 @@ namespace DG.XrmPluginCore.CustomApis
             };
         }
 
-        public Config Build()
+        public CustomApiConfig Build()
         {
-            return new Config
+            return new CustomApiConfig
             {
                 UniqueName = Config.UniqueName,
                 Name = Config.Name,
@@ -54,7 +54,9 @@ namespace DG.XrmPluginCore.CustomApis
                 IsCustomizable = Config.IsCustomizable,
                 IsPrivate = Config.IsPrivate,
                 ExecutePrivilegeName = Config.ExecutePrivilegeName,
-                Description = Config.Description
+                Description = Config.Description,
+                RequestParameters = RequestParameters.Select(r => new RequestParameter(r)),
+                ResponseParameters = ResponseProperties.Select(r => new ResponseProperty(r))
             };
         }
 
@@ -141,38 +143,6 @@ namespace DG.XrmPluginCore.CustomApis
 
             ResponseProperties.Add(respProperty);
             return this;
-        }
-
-        public IEnumerable<RequestParameter> GetRequestParameters()
-        {
-            foreach (var requestParameter in RequestParameters)
-            {
-                yield return new RequestParameter(
-                    requestParameter.Name,
-                    requestParameter.UniqueName,
-                    requestParameter.DisplayName,
-                    requestParameter.Description,
-                    requestParameter.IsCustomizable,
-                    requestParameter.LogicalEntityName,
-                    requestParameter.Type,
-                    requestParameter.IsOptional
-                );
-            }
-        }
-
-        public IEnumerable<ResponseProperty> GetResponseProperties()
-        {
-            foreach (var responseProperty in ResponseProperties)
-            {
-                yield return new ResponseProperty(
-                    responseProperty.Name,
-                    responseProperty.UniqueName,
-                    responseProperty.DisplayName,
-                    responseProperty.Description,
-                    responseProperty.IsCustomizable,
-                    responseProperty.LogicalEntityName,
-                    responseProperty.Type);
-            }
         }
     }
 }

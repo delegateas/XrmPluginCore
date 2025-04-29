@@ -3,19 +3,16 @@ using System.Globalization;
 using System.ServiceModel;
 using Microsoft.Xrm.Sdk;
 using DG.XrmPluginCore.CustomApis;
-using DG.XrmPluginCore.Abstractions;
-using DG.XrmPluginCore.Models.CustomApi;
+using DG.XrmPluginCore.Interfaces.CustomApi;
 
 namespace DG.XrmPluginCore
 {
     /// <summary>
     /// Base class for all CustomAPIs.
     /// </summary>
-    public class CustomAPI : PluginBase, ICustomApi
+    public class CustomAPI : PluginBase, ICustomApiDefinition
     {
         protected Action<LocalPluginContext> RegisteredEvent { get; private set; }
-
-        private CustomApiConfigBuilder CustomAPIConfig { get; set; }
 
         /// <summary>
         /// Executes the plug-in.
@@ -43,26 +40,25 @@ namespace DG.XrmPluginCore
 
             try
             {
-                // Iterate over all of the expected registered events to ensure that the CustomAPI
-                // has been invoked by an expected event
-                // For any given plug-in event at an instance in time, we would expect at most 1 result to match.
-                Action<LocalPluginContext> action = RegisteredEvent;
-
-                if (action != null)
+                if (RegisteredEvent == null)
                 {
                     localcontext.Trace(string.Format(
                         CultureInfo.InvariantCulture,
-                        "{0} is firing for Entity: {1}, Message: {2}\n",
-                        ChildClassName,
+                        "No registered event found for Entity: {0}, Message: {2} in {2}",
                         localcontext.PluginExecutionContext.PrimaryEntityName,
-                        localcontext.PluginExecutionContext.MessageName));
-
-                    action.Invoke(localcontext);
-
-                    // now exit - if the derived plug-in has incorrectly registered overlapping event registrations,
-                    // guard against multiple executions.
+                        localcontext.PluginExecutionContext.MessageName,
+                        ChildClassName));
                     return;
                 }
+
+                localcontext.Trace(string.Format(
+                    CultureInfo.InvariantCulture,
+                    "{0} is firing for Entity: {1}, Message: {2}\n",
+                    ChildClassName,
+                    localcontext.PluginExecutionContext.PrimaryEntityName,
+                    localcontext.PluginExecutionContext.MessageName));
+
+                RegisteredEvent.Invoke(localcontext);
             }
             catch (FaultException<OrganizationServiceFault> e)
             {
@@ -77,33 +73,30 @@ namespace DG.XrmPluginCore
             }
         }
 
-        /// <summary>
-        /// Made by Delegate A/S
-        /// Get the CustomAPI configurations.
-        /// </summary>
-        /// <returns>API</returns>
-        public Registration GetRegistration()
-        {
-            return new Registration
-            {
-                Config = CustomAPIConfig.Build(),
-                RequestParameters = CustomAPIConfig.GetRequestParameters(),
-                ResponseParameters = CustomAPIConfig.GetResponseProperties()
-            };
-        }
+        private CustomApiConfigBuilder ConfigBuilder { get; set; }
 
+        /// <summary>
+        /// Get the CustomAPI configuration.
+        /// </summary>
+        public ICustomApiConfig GetRegistration() => ConfigBuilder.Build();
+
+        /// <summary>
+        /// Register a CustomAPI with the given name and action.<br/>
+        /// 
+        /// Returns the config builder for specifying additional settings
+        /// </summary>
+        /// <exception cref="InvalidOperationException">If called multiple times in the same class</exception>
         protected CustomApiConfigBuilder RegisterCustomAPI(string name, Action<LocalPluginContext> action)
         {
-            var apiConfig = new CustomApiConfigBuilder(name);
-
-            if (CustomAPIConfig != null || RegisteredEvent != null)
+            if (ConfigBuilder != null || RegisteredEvent != null)
             {
-                throw new InvalidOperationException("The CustomAPI class does not support multiple registrations");
+                throw new InvalidOperationException($"The {nameof(CustomAPI)} class does not support multiple registrations");
             }
 
-            CustomAPIConfig = apiConfig;
+            ConfigBuilder = new CustomApiConfigBuilder(name);
             RegisteredEvent = action;
-            return apiConfig;
+
+            return ConfigBuilder;
         }
     }
 }

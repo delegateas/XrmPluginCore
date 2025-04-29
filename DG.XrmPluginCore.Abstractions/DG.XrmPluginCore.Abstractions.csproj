@@ -17,6 +17,7 @@
 		<IncludeSymbols>True</IncludeSymbols>
 		<SymbolPackageFormat>snupkg</SymbolPackageFormat>
 		<Version>$([System.IO.File]::ReadAllText("DG.XrmPluginCore.Abstractions/VERSION"))</Version>
+		<RootNamespace>DG.XrmPluginCore</RootNamespace>
 	</PropertyGroup>
 	<ItemGroup>
 		<None Include="..\LICENSE">

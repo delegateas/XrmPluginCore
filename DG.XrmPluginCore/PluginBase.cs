@@ -6,7 +6,7 @@ namespace DG.XrmPluginCore
     public abstract class PluginBase : IPlugin
     {
         /// <summary>
-        /// Gets or sets the name of the child class.
+        /// Gets the name of the child class.
         /// </summary>
         /// <value>The name of the child class.</value>
         protected string ChildClassName { get; }

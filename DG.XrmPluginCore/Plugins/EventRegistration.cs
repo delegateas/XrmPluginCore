@@ -1,16 +1,17 @@
-﻿using System;
+﻿using DG.XrmPluginCore.Interfaces.Plugin;
+using System;
 
 namespace DG.XrmPluginCore.Plugins
 {
     public class EventRegistration
     {
-        public EventRegistration(IPluginStepConfig stepConfig, Action<LocalPluginContext> action)
+        public EventRegistration(IPluginStepConfigBuilder pluginStepConfig, Action<LocalPluginContext> action)
         {
-            StepConfig = stepConfig;
+            ConfigBuilder = pluginStepConfig;
             Action = action;
         }
 
-        public IPluginStepConfig StepConfig { get; set; }
+        public IPluginStepConfigBuilder ConfigBuilder { get; set; }
         public Action<LocalPluginContext> Action { get; set; }
     }
 }
