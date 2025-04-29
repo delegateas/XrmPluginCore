@@ -60,7 +60,7 @@ namespace DG.XrmPluginCore
                 {
                     localcontext.Trace(string.Format(
                         CultureInfo.InvariantCulture,
-                        "No registered event found for Entity: {0}, Message: {2} in {3}",
+                        "No registered event found for Entity: {0}, Message: {1} in {2}",
                         localcontext.PluginExecutionContext.PrimaryEntityName,
                         localcontext.PluginExecutionContext.MessageName,
                         ChildClassName

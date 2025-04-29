@@ -1,3 +1,6 @@
+### 0.0.4 - 29 April 2025
+* Fix: String formatting had invalid indexes
+
 ### 0.0.3 - 29 April 2025
 * Clean-up and move concrete classes to XrmPluginCore from XrmPluginCore.Abstractions
 
