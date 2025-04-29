@@ -1,3 +1,6 @@
+### 0.0.4 - 29 April 2025
+* Add AsyncAutoDelete field, and documentation of properties on the config interfaces
+
 ### 0.0.3 - 29 April 2025
 * Remove concrete classes and cleanup namespaces. XrmPluginCore.Abstractions now only contains interfaces and enums
 

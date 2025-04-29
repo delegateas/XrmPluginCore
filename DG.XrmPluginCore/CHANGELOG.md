@@ -1,3 +1,6 @@
+### 0.0.5 - 29 April 2025
+* Add AsyncAutoDelete field to PluginConfig
+
 ### 0.0.4 - 29 April 2025
 * Fix: String formatting had invalid indexes
 
