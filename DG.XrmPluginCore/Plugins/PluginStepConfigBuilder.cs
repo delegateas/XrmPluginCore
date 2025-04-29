@@ -25,6 +25,7 @@ namespace DG.XrmPluginCore.Plugins
         public ExecutionMode ExecutionMode { get; private set; }
         public int ExecutionOrder { get; private set; }
         public Guid? ImpersonatingUserId { get; private set; }
+        public bool AsyncAutoDelete { get; private set; }
 
         public string FilteredAttributes
         {
@@ -67,6 +68,7 @@ namespace DG.XrmPluginCore.Plugins
                 Deployment = Deployment,
                 ImpersonatingUserId = ImpersonatingUserId,
                 FilteredAttributes = FilteredAttributes,
+                AsyncAutoDelete = AsyncAutoDelete,
                 ImageSpecifications = Images.Select(image => new ImageSpecification(image)),
             };
 
@@ -75,6 +77,12 @@ namespace DG.XrmPluginCore.Plugins
             return (int)ExecutionStage == pluginExecutionContext.Stage &&
                 EventOperation.ToString() == pluginExecutionContext.MessageName &&
                 (string.IsNullOrWhiteSpace(EntityLogicalName) || EntityLogicalName == pluginExecutionContext.PrimaryEntityName);
+        }
+
+        public PluginStepConfigBuilder<T> SetAsyncAutoDelete(bool asyncAutoDelete)
+        {
+            AsyncAutoDelete = asyncAutoDelete;
+            return this;
         }
 
         public PluginStepConfigBuilder<T> SetDeployment(Deployment deployment)

@@ -37,6 +37,6 @@ namespace DG.XrmPluginCore.Interfaces.CustomApi
 
         public IEnumerable<IRequestParameter> RequestParameters { get; internal set; }
 
-        public IEnumerable<IResponseProperty> ResponseParameters { get; internal set; }
+        public IEnumerable<IResponseProperty> ResponseProperties { get; internal set; }
     }
 }

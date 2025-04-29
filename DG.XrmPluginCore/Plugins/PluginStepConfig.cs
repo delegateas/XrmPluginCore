@@ -9,6 +9,8 @@ namespace DG.XrmPluginCore.Plugins
 {
     public class PluginStepConfig : IPluginStepConfig
     {
+        public bool AsyncAutoDelete { get; internal set; }
+
         public string EntityLogicalName { get; internal set; }
 
         public string Name { get; internal set; }
@@ -45,6 +47,7 @@ namespace DG.XrmPluginCore.Plugins
             Deployment = pluginStepConfig.Deployment;
             FilteredAttributes = pluginStepConfig.FilteredAttributes;
             ImpersonatingUserId = pluginStepConfig.ImpersonatingUserId;
+            AsyncAutoDelete = pluginStepConfig.AsyncAutoDelete;
             ImageSpecifications = pluginStepConfig.ImageSpecifications.Select(i => new ImageSpecification(i));
         }
     }

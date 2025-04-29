@@ -56,7 +56,7 @@ namespace DG.XrmPluginCore.CustomApis
                 ExecutePrivilegeName = Config.ExecutePrivilegeName,
                 Description = Config.Description,
                 RequestParameters = RequestParameters.Select(r => new RequestParameter(r)),
-                ResponseParameters = ResponseProperties.Select(r => new ResponseProperty(r))
+                ResponseProperties = ResponseProperties.Select(r => new ResponseProperty(r))
             };
         }
 
