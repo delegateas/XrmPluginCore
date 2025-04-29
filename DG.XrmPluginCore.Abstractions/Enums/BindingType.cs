@@ -1,4 +1,4 @@
-﻿namespace DG.XrmPluginCore.Abstractions.Enums
+﻿namespace DG.XrmPluginCore.Enums
 {
     public enum BindingType
     {

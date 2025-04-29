@@ -1,4 +1,4 @@
-﻿namespace DG.XrmPluginCore.Abstractions.Models.CustomApi
+﻿namespace DG.XrmPluginCore.Models.CustomApi
 {
     public abstract class Parameter
     {

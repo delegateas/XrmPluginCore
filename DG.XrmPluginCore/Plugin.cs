@@ -10,8 +10,8 @@ using Microsoft.Xrm.Sdk;
 using DG.XrmPluginCore.Plugins;
 using DG.XrmPluginCore.Extensions;
 using DG.XrmPluginCore.Abstractions;
-using DG.XrmPluginCore.Abstractions.Enums;
-using DG.XrmPluginCore.Abstractions.Models.Plugin;
+using DG.XrmPluginCore.Enums;
+using DG.XrmPluginCore.Models.Plugin;
 
 namespace DG.XrmPluginCore
 {
@@ -144,7 +144,7 @@ namespace DG.XrmPluginCore
         /// Get the plugin step configurations.
         /// </summary>
         /// <returns>List of steps</returns>
-        public IEnumerable<Registration> Registrations()
+        public IEnumerable<Registration> GetRegistrations()
         {
             var className = ChildClassName;
             foreach (var registration in RegisteredEvents)

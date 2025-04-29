@@ -1,6 +1,6 @@
-﻿using DG.XrmPluginCore.Abstractions.Enums;
+﻿using DG.XrmPluginCore.Enums;
 
-namespace DG.XrmPluginCore.Abstractions.Models.CustomApi
+namespace DG.XrmPluginCore.Models.CustomApi
 {
     public class Config
     {

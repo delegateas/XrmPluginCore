@@ -1,4 +1,4 @@
-﻿using DG.XrmPluginCore.Abstractions.Enums;
+﻿using DG.XrmPluginCore.Enums;
 using System;
 using System.Linq.Expressions;
 

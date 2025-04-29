@@ -1,7 +1,7 @@
-﻿using DG.XrmPluginCore.Abstractions.Enums;
+﻿using DG.XrmPluginCore.Enums;
 using System;
 
-namespace DG.XrmPluginCore.Abstractions.Models.Plugin
+namespace DG.XrmPluginCore.Models.Plugin
 {
     public class StepConfig
     {

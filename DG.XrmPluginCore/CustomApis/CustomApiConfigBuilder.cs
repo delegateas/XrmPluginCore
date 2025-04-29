@@ -1,9 +1,9 @@
-﻿using DG.XrmPluginCore.Abstractions.Enums;
+﻿using DG.XrmPluginCore.Enums;
 using Microsoft.Xrm.Sdk;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System;
-using DG.XrmPluginCore.Abstractions.Models.CustomApi;
+using DG.XrmPluginCore.Models.CustomApi;
 
 namespace DG.XrmPluginCore.CustomApis
 {

@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace DG.XrmPluginCore.Abstractions.Models.CustomApi
+namespace DG.XrmPluginCore.Models.CustomApi
 {
     public class Registration
     {

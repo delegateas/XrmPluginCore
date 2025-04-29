@@ -4,7 +4,7 @@ using System.ServiceModel;
 using Microsoft.Xrm.Sdk;
 using DG.XrmPluginCore.CustomApis;
 using DG.XrmPluginCore.Abstractions;
-using DG.XrmPluginCore.Abstractions.Models.CustomApi;
+using DG.XrmPluginCore.Models.CustomApi;
 
 namespace DG.XrmPluginCore
 {
@@ -82,7 +82,7 @@ namespace DG.XrmPluginCore
         /// Get the CustomAPI configurations.
         /// </summary>
         /// <returns>API</returns>
-        public Registration GetCustomAPIRegistration()
+        public Registration GetRegistration()
         {
             return new Registration
             {

@@ -22,7 +22,7 @@ namespace DG.Some.Namespace {
     using System;
     using DG.XrmFramework.BusinessDomain.ServiceContext;
     using DG.XrmPluginCore;
-    using DG.XrmPluginCore.Abstractions.Enums;
+    using DG.XrmPluginCore.Enums;
 
     public class AccountChainPostPlugin : Plugin {
 

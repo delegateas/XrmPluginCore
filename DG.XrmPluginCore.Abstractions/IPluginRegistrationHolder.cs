@@ -1,4 +1,4 @@
-﻿using DG.XrmPluginCore.Abstractions.Models.Plugin;
+﻿using DG.XrmPluginCore.Models.Plugin;
 using System.Collections.Generic;
 
 namespace DG.XrmPluginCore.Abstractions
@@ -8,6 +8,6 @@ namespace DG.XrmPluginCore.Abstractions
         /// <summary>
         /// Get an enumerable of all plugin registrations in the assembly.
         /// </summary>
-        IEnumerable<Registration> Registrations();
+        IEnumerable<Registration> GetRegistrations();
     }
 }

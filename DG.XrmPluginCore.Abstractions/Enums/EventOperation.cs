@@ -1,4 +1,4 @@
-﻿namespace DG.XrmPluginCore.Abstractions.Enums
+﻿namespace DG.XrmPluginCore.Enums
 {
     // EventOperation based on CRM 2016
     public enum EventOperation
