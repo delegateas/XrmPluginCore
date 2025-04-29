@@ -1,3 +1,6 @@
+### 0.0.3 - 29 April 2025
+* Clean-up and move concrete classes to XrmPluginCore from XrmPluginCore.Abstractions
+
 ### 0.0.2 - 25 April 2025
 * Fixes to project file so version and dependencies are picked up correctly
 
