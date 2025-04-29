@@ -1,5 +1,5 @@
-# XrmPluginCore ![XrmPluginCore NuGet Version](https://img.shields.io/nuget/v/Delegate.XrmPluginCore?label=XrmPluginCore%20NuGet) ![XrmPluginCore.Abstractions NuGet Version](https://img.shields.io/nuget/v/Delegate.XrmPluginCore.Abstractions?label=Abstractions%20NuGet)
-
+# XrmPluginCore
+![XrmPluginCore NuGet Version](https://img.shields.io/nuget/v/Delegate.XrmPluginCore?label=XrmPluginCore%20NuGet) ![XrmPluginCore.Abstractions NuGet Version](https://img.shields.io/nuget/v/Delegate.XrmPluginCore.Abstractions?label=Abstractions%20NuGet)
 
 XrmPluginCore provides base functionality for developing plugins and custom APIs in Dynamics 365. It includes context wrappers and registration utilities to streamline the development process.
 

@@ -8,6 +8,7 @@
 		<Company>Delegate A/S</Company>
 		<Copyright>2025 Delegate A/S</Copyright>
 		<PackageProjectUrl>https://github.com/delegateas/XrmPluginCore</PackageProjectUrl>
+		<Description>Abstractions and shared Enums for the DG.XrmPluginCore package</Description>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<PackageReleaseNotes>(Package release notes are in CHANGELOG.md)</PackageReleaseNotes>
 		<RepositoryUrl>https://github.com/delegateas/XrmPluginCore</RepositoryUrl>

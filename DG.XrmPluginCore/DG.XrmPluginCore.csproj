@@ -6,6 +6,7 @@
 		<Title>Delegate.XrmPluginCore</Title>
 		<Company>Delegate A/S</Company>
 		<Copyright>2025 Delegate A/S</Copyright>
+		<Description>XrmPluginCore provides base functionality for developing plugins and custom APIs in Dynamics 365. It includes context wrappers and registration utilities to streamline the development process.</Description>
 		<PackageProjectUrl>https://github.com/delegateas/XrmPluginCore</PackageProjectUrl>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<PackageReleaseNotes>(Package release notes are in CHANGELOG.md)</PackageReleaseNotes>
