@@ -3,7 +3,7 @@ using System;
 
 namespace DG.XrmPluginCore
 {
-    public abstract class PluginBase : IPlugin
+    public abstract class AbstractPlugin : IPlugin
     {
         /// <summary>
         /// Gets the name of the child class.
@@ -12,9 +12,9 @@ namespace DG.XrmPluginCore
         protected string ChildClassName { get; }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="PluginBase"/> class.
+        /// Initializes a new instance of the <see cref="AbstractPlugin"/> class.
         /// </summary>
-        protected PluginBase()
+        protected AbstractPlugin()
         {
             ChildClassName = GetType().ToString();
         }

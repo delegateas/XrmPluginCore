@@ -16,7 +16,7 @@ namespace DG.XrmPluginCore
     /// <summary>
     /// Base class for all Plugins.
     /// </summary>
-    public class Plugin : PluginBase, IPluginDefinition
+    public abstract class Plugin : AbstractPlugin, IPluginDefinition
     {
         /// <summary>
         /// Gets the List of events that the plug-in should fire for.

@@ -1,3 +1,6 @@
+### 0.0.6 - 1 May 2025
+* Fix: Mark base classes (CustomApi and Plugin) as abstract
+
 ### 0.0.5 - 29 April 2025
 * Add AsyncAutoDelete field to PluginConfig
 

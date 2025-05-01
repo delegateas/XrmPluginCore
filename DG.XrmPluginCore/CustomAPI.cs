@@ -10,7 +10,7 @@ namespace DG.XrmPluginCore
     /// <summary>
     /// Base class for all CustomAPIs.
     /// </summary>
-    public class CustomAPI : PluginBase, ICustomApiDefinition
+    public abstract class CustomAPI : AbstractPlugin, ICustomApiDefinition
     {
         protected Action<LocalPluginContext> RegisteredEvent { get; private set; }
 
