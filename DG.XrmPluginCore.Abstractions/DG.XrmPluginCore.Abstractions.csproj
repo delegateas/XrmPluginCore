@@ -19,6 +19,9 @@
 		<SymbolPackageFormat>snupkg</SymbolPackageFormat>
 		<Version>$([System.IO.File]::ReadAllText("DG.XrmPluginCore.Abstractions/VERSION"))</Version>
 		<RootNamespace>DG.XrmPluginCore</RootNamespace>
+		<SignAssembly>True</SignAssembly>
+		<AssemblyOriginatorKeyFile>../resources/delegate.snk</AssemblyOriginatorKeyFile>
+		<PackageIcon>delegate.png</PackageIcon>
 	</PropertyGroup>
 	<ItemGroup>
 		<None Include="..\LICENSE">
@@ -28,6 +31,10 @@
 		<None Include="..\README.md">
 			<Pack>True</Pack>
 			<PackagePath>\</PackagePath>
+		</None>
+		<None Include="..\resources\delegate.png">
+		  <Pack>True</Pack>
+		  <PackagePath>\</PackagePath>
 		</None>
 	</ItemGroup>
 	<Target Name="UpdateVersion" BeforeTargets="BeforeBuild">

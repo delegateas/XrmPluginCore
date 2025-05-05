@@ -1,3 +1,7 @@
+### 0.0.7 - 5 May 2025
+* Add icon to package
+* Sign the assembly
+
 ### 0.0.6 - 1 May 2025
 * Fix: Mark base classes (CustomApi and Plugin) as abstract
 

@@ -1,3 +1,7 @@
+### 0.0.5 - 5 May 2025
+* Add icon to package
+* Sign the assembly
+
 ### 0.0.4 - 29 April 2025
 * Add AsyncAutoDelete field, and documentation of properties on the config interfaces
 
