@@ -1,4 +1,5 @@
 ﻿using DG.XrmPluginCore.Enums;
+using System;
 using System.Collections.Generic;
 
 namespace DG.XrmPluginCore.Interfaces.CustomApi
@@ -21,11 +22,9 @@ namespace DG.XrmPluginCore.Interfaces.CustomApi
 
         public string BoundEntityLogicalName { get; internal set; }
 
-        public string PluginType { get; internal set; }
+        public Guid? OwnerId { get; internal set; }
 
-        public string OwnerId { get; internal set; }
-
-        public string OwnerType { get; internal set; }
+        public OwnerType? OwnerType { get; internal set; }
 
         public bool IsCustomizable { get; internal set; }
 

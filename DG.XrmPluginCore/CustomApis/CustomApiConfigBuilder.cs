@@ -26,13 +26,12 @@ namespace DG.XrmPluginCore.CustomApis
                 AllowedCustomProcessingStepType = 0, // None
                 BindingType = 0, // Global
                 BoundEntityLogicalName = "",
-                PluginType = null,
                 IsCustomizable = false,
                 IsPrivate = false,
                 ExecutePrivilegeName = null, // TODO
                 Description = $"CustomAPI Definition for {name}",
-                OwnerId = "", // TODO
-                OwnerType = "" // TODO
+                OwnerId = null,
+                OwnerType = null
             };
         }
 
@@ -48,7 +47,6 @@ namespace DG.XrmPluginCore.CustomApis
                 AllowedCustomProcessingStepType = Config.AllowedCustomProcessingStepType,
                 BindingType = Config.BindingType,
                 BoundEntityLogicalName = Config.BoundEntityLogicalName,
-                PluginType = Config.PluginType,
                 OwnerId = Config.OwnerId,
                 OwnerType = Config.OwnerType,
                 IsCustomizable = Config.IsCustomizable,
@@ -99,6 +97,14 @@ namespace DG.XrmPluginCore.CustomApis
         public CustomApiConfigBuilder SetDescription(string description)
         {
             Config.Description = description;
+            return this;
+        }
+
+        public CustomApiConfigBuilder SetOwner(Guid? ownerId, OwnerType? ownerType)
+        {
+            Config.OwnerId = ownerId;
+            Config.OwnerType = ownerType;
+
             return this;
         }
 

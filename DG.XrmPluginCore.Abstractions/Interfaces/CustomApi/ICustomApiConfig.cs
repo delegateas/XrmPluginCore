@@ -1,4 +1,5 @@
 ﻿using DG.XrmPluginCore.Enums;
+using System;
 using System.Collections.Generic;
 
 namespace DG.XrmPluginCore.Interfaces.CustomApi
@@ -30,7 +31,9 @@ namespace DG.XrmPluginCore.Interfaces.CustomApi
         /// </summary>
         string DisplayName { get; }
 
-
+        /// <summary>
+        /// Indicates if the custom API is enabled as a workflow action
+        /// </summary>
         bool EnabledForWorkflow { get; }
 
         /// <summary>
@@ -61,17 +64,12 @@ namespace DG.XrmPluginCore.Interfaces.CustomApi
         /// <summary>
         /// Owner Id
         /// </summary>
-        string OwnerId { get; }
+        Guid? OwnerId { get; }
 
         /// <summary>
         /// Owner Id Type
         /// </summary>
-        string OwnerType { get; }
-
-        /// <summary>
-        /// ID of the plugin type that implements the custom API
-        /// </summary>
-        string PluginType { get; }
+        OwnerType? OwnerType { get; }
 
         /// <summary>
         /// Unique name for the custom API

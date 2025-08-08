@@ -1,3 +1,6 @@
+### 0.0.8 - 16 May 2025
+* Modifications to CustomAPI definitions to align better with data
+
 ### 0.0.7 - 5 May 2025
 * Add icon to package
 * Sign the assembly
