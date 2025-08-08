@@ -1,6 +1,6 @@
 # Sets the <Version> property in the given .csproj file to the latest version found in CHANGELOG.md (keepachangelog format)
 param(
-    [string]$ChangelogPath
+    [string]$ChangelogPath,
     [string]$CsprojPath
 )
 
