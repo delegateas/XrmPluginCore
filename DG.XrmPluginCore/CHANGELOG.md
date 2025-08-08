@@ -1,4 +1,4 @@
-### 1.0.0-preview.1 - 08 August 2025
+### 1.0.0-rc1 - 08 August 2025
 * Modifications to CustomAPI definitions to align better with data
 
 ### 0.0.7 - 5 May 2025
