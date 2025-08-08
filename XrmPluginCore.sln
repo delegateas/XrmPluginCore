@@ -7,10 +7,15 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DG.XrmPluginCore", "DG.XrmP
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DG.XrmPluginCore.Abstractions", "DG.XrmPluginCore.Abstractions\DG.XrmPluginCore.Abstractions.csproj", "{15A9DF46-DA3A-4A12-AEEC-9E6669587903}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Github Workflows", "Github Workflows", "{316853AF-2C17-45D8-BA0B-7E14AD98DF50}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Files", "Solution Files", "{316853AF-2C17-45D8-BA0B-7E14AD98DF50}"
 	ProjectSection(SolutionItems) = preProject
 		.github\workflows\ci.yml = .github\workflows\ci.yml
 		.github\workflows\release.yml = .github\workflows\release.yml
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Scripts", "Scripts", "{02EA681E-C7D8-13C7-8484-4AC65E1B71E8}"
+	ProjectSection(SolutionItems) = preProject
+		scripts\Set-VersionFromChangelog.ps1 = scripts\Set-VersionFromChangelog.ps1
 	EndProjectSection
 EndProject
 Global
@@ -30,5 +35,11 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{02EA681E-C7D8-13C7-8484-4AC65E1B71E8} = {316853AF-2C17-45D8-BA0B-7E14AD98DF50}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {523159B7-5A41-4B86-B84C-8DAD681EA6C1}
 	EndGlobalSection
 EndGlobal

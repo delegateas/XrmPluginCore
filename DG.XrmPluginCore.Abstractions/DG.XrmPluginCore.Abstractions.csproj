@@ -10,14 +10,12 @@
 		<PackageProjectUrl>https://github.com/delegateas/XrmPluginCore</PackageProjectUrl>
 		<Description>Abstractions and shared Enums for the DG.XrmPluginCore package</Description>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
-		<PackageReleaseNotes>(Package release notes are in CHANGELOG.md)</PackageReleaseNotes>
 		<RepositoryUrl>https://github.com/delegateas/XrmPluginCore</RepositoryUrl>
 		<RepositoryType>git</RepositoryType>
 		<PackageTags>xrm,crm,dataverse,daxif,delegate,xrmmockup</PackageTags>
 		<PackageLicenseFile>LICENSE</PackageLicenseFile>
 		<IncludeSymbols>True</IncludeSymbols>
 		<SymbolPackageFormat>snupkg</SymbolPackageFormat>
-		<Version>$([System.IO.File]::ReadAllText("DG.XrmPluginCore.Abstractions/VERSION"))</Version>
 		<RootNamespace>DG.XrmPluginCore</RootNamespace>
 		<SignAssembly>True</SignAssembly>
 		<AssemblyOriginatorKeyFile>../resources/delegate.snk</AssemblyOriginatorKeyFile>
@@ -37,11 +35,4 @@
 		  <PackagePath>\</PackagePath>
 		</None>
 	</ItemGroup>
-	<Target Name="UpdateVersion" BeforeTargets="BeforeBuild">
-		<Exec Command="pwsh -NoProfile -ExecutionPolicy RemoteSigned -File &quot;$(ProjectDir)..\DG.XrmPluginCore\SetVersion.ps1&quot;" />
-		<PropertyGroup>
-			<PackageReleaseNotes>$([System.IO.File]::ReadAllText("CHANGELOG.md"))</PackageReleaseNotes>
-			<PackageVersion>$([System.IO.File]::ReadAllText("VERSION"))</PackageVersion>
-		</PropertyGroup>
-	</Target>
 </Project>

@@ -9,14 +9,12 @@
 		<Description>XrmPluginCore provides base functionality for developing plugins and custom APIs in Dynamics 365. It includes context wrappers and registration utilities to streamline the development process.</Description>
 		<PackageProjectUrl>https://github.com/delegateas/XrmPluginCore</PackageProjectUrl>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
-		<PackageReleaseNotes>(Package release notes are in CHANGELOG.md)</PackageReleaseNotes>
 		<RepositoryUrl>https://github.com/delegateas/XrmPluginCore</RepositoryUrl>
 		<RepositoryType>git</RepositoryType>
 		<PackageTags>xrm,crm,dataverse,daxif,delegate,xrmmockup</PackageTags>
 		<PackageLicenseFile>LICENSE</PackageLicenseFile>
 		<IncludeSymbols>True</IncludeSymbols>
 		<SymbolPackageFormat>snupkg</SymbolPackageFormat>
-		<Version>$([System.IO.File]::ReadAllText("DG.XrmPluginCore/VERSION"))</Version>
 		<PackageIcon>delegate.png</PackageIcon>
 		<SignAssembly>True</SignAssembly>
 		<AssemblyOriginatorKeyFile>../resources/delegate.snk</AssemblyOriginatorKeyFile>
@@ -47,11 +45,4 @@
 	<ItemGroup>
 	  <ProjectReference Include="..\DG.XrmPluginCore.Abstractions\DG.XrmPluginCore.Abstractions.csproj" />
 	</ItemGroup>
-	<Target Name="InjectPackageReleaseNotesFromFile" BeforeTargets="GenerateNuspec" Condition="Exists('CHANGELOG.md')">
-		<Exec Command="pwsh -NoProfile -ExecutionPolicy RemoteSigned -File &quot;$(ProjectDir)SetVersion.ps1&quot;" />
-		<PropertyGroup>
-			<PackageReleaseNotes>$([System.IO.File]::ReadAllText("CHANGELOG.md"))</PackageReleaseNotes>
-			<PackageVersion>$([System.IO.File]::ReadAllText("VERSION"))</PackageVersion>
-		</PropertyGroup>
-	</Target>
 </Project>
