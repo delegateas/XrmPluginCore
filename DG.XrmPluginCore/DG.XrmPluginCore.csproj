@@ -18,6 +18,7 @@
 		<PackageIcon>delegate.png</PackageIcon>
 		<SignAssembly>True</SignAssembly>
 		<AssemblyOriginatorKeyFile>../resources/delegate.snk</AssemblyOriginatorKeyFile>
+		<Version>1.0.0-local</Version>
 	</PropertyGroup>
 	<ItemGroup>
 	  <None Include="..\LICENSE">
