@@ -24,6 +24,16 @@ namespace DG.XrmPluginCore
         protected Collection<EventRegistration> RegisteredEvents { get; } = new Collection<EventRegistration>();
 
         /// <summary>
+        /// Called to allow derived classes to modify the service provider before it is used to construct the local plugin context.
+        /// </summary>
+        /// <param name="serviceProvider">The IServiceProvider as provided by Dataverse</param>
+        /// <returns>The IServiceProvider after any modifications</returns>
+        protected virtual IServiceProvider OnBeforeConstructLocalPluginContext(IServiceProvider serviceProvider)
+        {
+            return serviceProvider;
+        }
+
+        /// <summary>
         /// Executes the plug-in.
         /// </summary>
         /// <param name="serviceProvider">The service provider.</param>
@@ -41,8 +51,11 @@ namespace DG.XrmPluginCore
                 throw new ArgumentNullException(nameof(serviceProvider));
             }
 
+            // Allow derived classes to modify the service provider before constructing the local plugin context.
+            serviceProvider = OnBeforeConstructLocalPluginContext(serviceProvider);
+
             // Construct the Local plug-in context.
-            LocalPluginContext localcontext = new LocalPluginContext(serviceProvider);
+            var localcontext = new LocalPluginContext(serviceProvider);
 
             localcontext.Trace(string.Format(CultureInfo.InvariantCulture, "Entered {0}.Execute()", ChildClassName));
 
