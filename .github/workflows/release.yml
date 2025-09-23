@@ -4,6 +4,12 @@ on:
   release:
     types: [released]
   workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Perform a dry run (skip actual NuGet publish)'
+        required: false
+        default: true
+        type: boolean
 
 jobs:
   build:
@@ -44,7 +50,32 @@ jobs:
         path: ./nupkg
 
     - name: 🚀 Publish to NuGet
-      env:
-        NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
       shell: pwsh
-      run: dotnet nuget push ./nupkg/*.nupkg --api-key "$NUGET_API_KEY" --source "https://api.nuget.org/v3/index.json" --skip-duplicate
+      run: |
+        Write-Host "Looking for nupkg files..."
+        $nupkgFiles = Get-ChildItem -Path "./nupkg/*.nupkg" -File
+          
+        if ($nupkgFiles.Count -eq 0) {
+            Write-Host "No nupkg files found in nupkg"
+            exit 1
+        }
+          
+        Write-Host "Found $($nupkgFiles.Count) nupkg file(s):"
+        foreach ($file in $nupkgFiles) {
+            Write-Host "  Full path: $($file.FullName)"
+            Write-Host "  Size: $([math]::Round($file.Length / 1KB, 2)) KB"
+        }
+          
+        # For automatic triggers (push tags), always publish
+        # For manual triggers, only publish if dry_run is explicitly set to false
+        $isDryRun = "${{ github.event_name }}" -eq "workflow_dispatch" -and "${{ github.event.inputs.dry_run }}" -ne "false"
+          
+        if ($isDryRun) {
+            Write-Host "Dry run mode - skipping NuGet publish"
+        } else {
+            Write-Host "Publishing to NuGet..."
+            foreach ($file in $nupkgFiles) {
+                Write-Host "Publishing: $($file.FullName)"
+                dotnet nuget push "$($file.FullName)" --api-key ${{ secrets.NUGET_API_KEY }} --source "https://api.nuget.org/v3/index.json" --skip-duplicate
+            }
+        }
