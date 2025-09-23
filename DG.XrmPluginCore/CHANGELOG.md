@@ -1,5 +1,7 @@
 ### v1.0.0-preview.2 - 23 September 2025
 * Update from .NET6 to .NET8 build target
+* Add ability to overload the IServiceProvider before it is used to create the LocalPluginContext
+* Add unit testing
 
 ### v1.0.0-preview.1 - 08 August 2025
 * Modifications to CustomAPI definitions to align better with data
