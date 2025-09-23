@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
-		<TargetFrameworks>net462;net6</TargetFrameworks>
+		<TargetFrameworks>net462;net8</TargetFrameworks>
 		<GeneratePackageOnBuild>True</GeneratePackageOnBuild>
 		<PackageId>Delegate.XrmPluginCore</PackageId>
 		<Title>Delegate.XrmPluginCore</Title>
@@ -11,7 +11,7 @@
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<RepositoryUrl>https://github.com/delegateas/XrmPluginCore</RepositoryUrl>
 		<RepositoryType>git</RepositoryType>
-		<PackageTags>xrm,crm,dataverse,daxif,delegate,xrmmockup</PackageTags>
+		<PackageTags>xrm,crm,dataverse,daxif,delegate,xrmmockup,xrmsync</PackageTags>
 		<PackageLicenseFile>LICENSE</PackageLicenseFile>
 		<IncludeSymbols>True</IncludeSymbols>
 		<SymbolPackageFormat>snupkg</SymbolPackageFormat>

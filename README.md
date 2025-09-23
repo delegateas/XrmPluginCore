@@ -7,7 +7,7 @@ XrmPluginCore provides base functionality for developing plugins and custom APIs
 
 - **Context Wrappers**: Simplify access to plugin execution context.
 - **Registration Utilities**: Easily register plugins and custom APIs.
-- **Compatibility**: Supports .NET Standard 2.0, .NET Framework 4.6.2, and .NET 6.
+- **Compatibility**: Supports .NET Standard 2.0, .NET Framework 4.6.2, and .NET 8.
 
 ## Usage
 
