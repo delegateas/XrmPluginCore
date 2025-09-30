@@ -95,7 +95,27 @@ namespace DG.Some.Namespace {
 
 ### Registering a Plugin
 
-Use DAXIF to automatically register relevant plugin steps and images.
+Use [XrmSync](https://github.com/delegateas/XrmSync) to automatically register relevant plugin steps and images.
+
+#### Including dependent assemblies
+
+XrmPluginCore and XrmSync does not currently support [Dependent Assemblies](https://learn.microsoft.com/en-us/power-apps/developer/data-platform/build-and-package). If your plugin depends on other assemblies, you can use ILRepack or a similar tool to merge the assemblies into a single DLL before deploying.
+
+To ensure XrmPluginCore, and it's dependencies are included, you can use the following settings for ILRepack:
+```xml
+<Target Name="ILRepack" AfterTargets="Build">
+  <ItemGroup>
+    <InputAssemblies Include="$(TargetPath)" />
+    <InputAssemblies Include="$(TargetDir)Microsoft.Bcl.AsyncInterfaces.dll" />
+    <InputAssemblies Include="$(TargetDir)Microsoft.Extensions.DependencyInjection.Abstractions.dll" />
+    <InputAssemblies Include="$(TargetDir)Microsoft.Extensions.DependencyInjection.dll" />
+    <InputAssemblies Include="$(TargetDir)Microsoft.Extensions.Logging.Abstractions.dll" />
+    <InputAssemblies Include="$(TargetDir)DG.XrmPluginCore.Abstractions.dll" />
+    <InputAssemblies Include="$(TargetDir)DG.XrmPluginCore.dll" />
+  </ItemGroup>
+  <Exec Command="$(PkgILRepack)\tools\ILRepack.exe /parallel /keyfile:[yourkey].snk /lib:$(TargetDir) /out:$(TargetDir)ILMerged.$(TargetFileName) @(InputAssemblies -> '%(Identity)', ' ')" />
+</Target>
+```
 
 ## Contributing
 
