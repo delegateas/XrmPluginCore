@@ -1,3 +1,6 @@
+### v1.0.0-preview.2 - 29 September 2025
+* Add: Support for XrmBedrock style plugins by wrapping the LocalPluginContext in IServiceProvider
+
 ### v1.0.0-preview.2 - 23 September 2025
 * Update from .NET6 to .NET8 build target
 * Add ability to overload the IServiceProvider before it is used to create the LocalPluginContext

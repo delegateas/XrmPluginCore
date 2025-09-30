@@ -107,10 +107,10 @@ namespace DG.XrmPluginCore.Tests.Integration
 
         public IntegrationTestPlugin()
         {
-            RegisterPluginStep<IntegrationAccount>(EventOperation.Update, ExecutionStage.PreOperation, Execute);
+            RegisterPluginStep<IntegrationAccount>(EventOperation.Update, ExecutionStage.PreOperation, ExecutePlugin);
         }
 
-        private void Execute(LocalPluginContext context)
+        private void ExecutePlugin(LocalPluginContext context)
         {
             try
             {
@@ -170,10 +170,10 @@ namespace DG.XrmPluginCore.Tests.Integration
 
         public MultipleImagesPlugin()
         {
-            RegisterPluginStep<IntegrationAccount>(EventOperation.Update, ExecutionStage.PostOperation, Execute);
+            RegisterPluginStep<IntegrationAccount>(EventOperation.Update, ExecutionStage.PostOperation, ExecutePlugin);
         }
 
-        private void Execute(LocalPluginContext context)
+        private void ExecutePlugin(LocalPluginContext context)
         {
             try
             {

@@ -1,4 +1,5 @@
 using Microsoft.Xrm.Sdk;
+using Microsoft.Xrm.Sdk.PluginTelemetry;
 using NSubstitute;
 using System;
 
@@ -12,6 +13,7 @@ namespace DG.XrmPluginCore.Tests.Helpers
         public IOrganizationServiceFactory OrganizationServiceFactory { get; private set; }
         public IOrganizationService OrganizationService { get; private set; }
         public IOrganizationService OrganizationAdminService { get; private set; }
+        public ILogger PluginTelemetryLogger { get; private set; }
 
         public MockServiceProvider()
         {
@@ -26,6 +28,7 @@ namespace DG.XrmPluginCore.Tests.Helpers
             OrganizationServiceFactory = Substitute.For<IOrganizationServiceFactory>();
             OrganizationService = Substitute.For<IOrganizationService>();
             OrganizationAdminService = Substitute.For<IOrganizationService>();
+            PluginTelemetryLogger = Substitute.For<ILogger>();
 
             // Setup default values
             PluginExecutionContext.UserId.Returns(Guid.NewGuid());
@@ -39,6 +42,7 @@ namespace DG.XrmPluginCore.Tests.Helpers
             ServiceProvider.GetService(typeof(IPluginExecutionContext)).Returns(PluginExecutionContext);
             ServiceProvider.GetService(typeof(ITracingService)).Returns(TracingService);
             ServiceProvider.GetService(typeof(IOrganizationServiceFactory)).Returns(OrganizationServiceFactory);
+            ServiceProvider.GetService(typeof(ILogger)).Returns(PluginTelemetryLogger);
 
             // Setup organization service factory
             OrganizationServiceFactory.CreateOrganizationService(Arg.Any<Guid?>()).Returns(callInfo =>

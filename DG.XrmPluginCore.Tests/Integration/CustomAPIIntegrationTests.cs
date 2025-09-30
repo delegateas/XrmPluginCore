@@ -100,7 +100,7 @@ namespace DG.XrmPluginCore.Tests.Integration
 
         public IntegrationTestCustomAPI()
         {
-            RegisterCustomAPI("integration_test_api", Execute)
+            RegisterCustomAPI("integration_test_api", ExecuteAPI)
                 .SetDescription("Integration test custom API")
                 .MakeFunction()
                 .EnableForWorkFlow()
@@ -108,7 +108,7 @@ namespace DG.XrmPluginCore.Tests.Integration
                 .AddResponseProperty("OutputParameter", CustomApiParameterType.String, "Output Parameter", "Test output parameter");
         }
 
-        private void Execute(LocalPluginContext context)
+        private void ExecuteAPI(LocalPluginContext context)
         {
             try
             {
@@ -139,11 +139,11 @@ namespace DG.XrmPluginCore.Tests.Integration
     {
         public BoundCustomAPI()
         {
-            RegisterCustomAPI("bound_test_api", Execute)
+            RegisterCustomAPI("bound_test_api", ExecuteAPI)
                 .Bind<CustomAPIAccount>(BindingType.Entity);
         }
 
-        private void Execute(LocalPluginContext context)
+        private void ExecuteAPI(LocalPluginContext context)
         {
             // Implementation
         }
@@ -153,11 +153,11 @@ namespace DG.XrmPluginCore.Tests.Integration
     {
         public PrivateCustomAPI()
         {
-            RegisterCustomAPI("private_test_api", Execute)
+            RegisterCustomAPI("private_test_api", ExecuteAPI)
                 .MakePrivate();
         }
 
-        private void Execute(LocalPluginContext context)
+        private void ExecuteAPI(LocalPluginContext context)
         {
             // Implementation
         }

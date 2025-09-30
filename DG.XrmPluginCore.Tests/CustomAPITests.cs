@@ -2,6 +2,7 @@ using DG.XrmPluginCore.Enums;
 using DG.XrmPluginCore.Tests.Helpers;
 using DG.XrmPluginCore.Tests.TestCustomApis;
 using FluentAssertions;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Xrm.Sdk;
 using NSubstitute;
 using System;
@@ -24,7 +25,7 @@ namespace DG.XrmPluginCore.Tests
         }
 
         [Fact]
-        public void Execute_ValidRegistration_ShouldExecuteAction()
+        public void Execute_ValidRegistration_ShouldExecuteActionWithLocalPluginContext()
         {
             // Arrange
             var customApi = new TestCustomAPI();
@@ -36,6 +37,21 @@ namespace DG.XrmPluginCore.Tests
             // Assert
             customApi.ExecutedAction.Should().BeTrue();
             customApi.LastContext.Should().NotBeNull();
+        }
+
+        [Fact]
+        public void Execute_ValidRegistration_ShouldExecuteActionWithServiceProvider()
+        {
+            // Arrange
+            var customApi = new TestCustomAPIServiceProvider();
+            var mockProvider = new MockServiceProvider();
+
+            // Act
+            customApi.Execute(mockProvider.ServiceProvider);
+
+            // Assert
+            customApi.ExecutedAction.Should().BeTrue();
+            customApi.LastProvider.Should().NotBeNull();
         }
 
         [Fact]
@@ -65,8 +81,9 @@ namespace DG.XrmPluginCore.Tests
                 .Returns(x => { throw faultException; });
 
             // Act & Assert
-            var exception = Assert.Throws<FaultException<OrganizationServiceFault>>(() => customApi.Execute(mockProvider.ServiceProvider));
-            exception.Should().Be(faultException);
+            var exception = Assert.Throws<InvalidPluginExecutionException>(() => customApi.Execute(mockProvider.ServiceProvider));
+            exception.Status.Should().Be(OperationStatus.Failed);
+            exception.Message.Should().Be(faultException.Message);
         }
 
         [Fact]
@@ -157,24 +174,16 @@ namespace DG.XrmPluginCore.Tests
                 Arg.Is<string>(s => s.Contains("Exiting") && s.Contains("Execute")),
                 Arg.Any<Guid>(),
                 Arg.Any<Guid>());
-        }
 
-        [Fact]
-        public void Execute_ShouldTraceStage()
-        {
-            // Arrange
-            var customApi = new TestCustomAPI();
-            var mockProvider = new MockServiceProvider();
-            var stage = 30;
-            mockProvider.PluginExecutionContext.Stage.Returns(stage);
-
-            // Act
-            customApi.Execute(mockProvider.ServiceProvider);
-
-            // Assert
-            mockProvider.TracingService.Received().Trace(
+            mockProvider.PluginTelemetryLogger.Received().LogInformation(
                 "{0}, Correlation Id: {1}, Initiating User: {2}",
-                stage.ToString(),
+                Arg.Is<string>(s => s.Contains("Entered") && s.Contains("Execute")),
+                Arg.Any<Guid>(),
+                Arg.Any<Guid>());
+
+            mockProvider.PluginTelemetryLogger.Received().LogInformation(
+                "{0}, Correlation Id: {1}, Initiating User: {2}",
+                Arg.Is<string>(s => s.Contains("Exiting") && s.Contains("Execute")),
                 Arg.Any<Guid>(),
                 Arg.Any<Guid>());
         }
@@ -210,25 +219,20 @@ namespace DG.XrmPluginCore.Tests
 
         public TestServiceProviderModificationCustomAPI()
         {
-            RegisterCustomAPI("test_modification_api", Execute);
+            RegisterCustomAPI("test_modification_api", ExecuteApi);
         }
 
-        protected override IServiceProvider OnBeforeConstructLocalPluginContext(IServiceProvider serviceProvider)
+        protected override IServiceCollection OnBeforeBuildServiceProvider(IServiceCollection serviceProvider)
         {
-            // Create a wrapper that marks when it's used
-            var wrapper = Substitute.For<IServiceProvider>();
-            wrapper.GetService(Arg.Any<Type>()).Returns(callInfo =>
-            {
-                ModifiedServiceProviderUsed = true;
-                return serviceProvider.GetService(callInfo.Arg<Type>());
-            });
-
-            return wrapper;
+            // Inject an object we can then get
+            return serviceProvider.AddScoped(_ => "Modified");
         }
 
-        private void Execute(LocalPluginContext context)
+        private void ExecuteApi(IServiceProvider context)
         {
             // Action implementation
+            var stringValue = context.GetService<string>();
+            ModifiedServiceProviderUsed = stringValue == "Modified";
         }
     }
 }

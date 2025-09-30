@@ -1,9 +1,7 @@
-using System;
-using System.Globalization;
-using System.ServiceModel;
-using Microsoft.Xrm.Sdk;
 using DG.XrmPluginCore.CustomApis;
 using DG.XrmPluginCore.Interfaces.CustomApi;
+using Microsoft.Xrm.Sdk;
+using System;
 
 namespace DG.XrmPluginCore
 {
@@ -12,81 +10,11 @@ namespace DG.XrmPluginCore
     /// </summary>
     public abstract class CustomAPI : AbstractPlugin, ICustomApiDefinition
     {
-        protected Action<LocalPluginContext> RegisteredEvent { get; private set; }
-
-        /// <summary>
-        /// Called to allow derived classes to modify the service provider before it is used to construct the local plugin context.
-        /// </summary>
-        /// <param name="serviceProvider">The IServiceProvider as provided by Dataverse</param>
-        /// <returns>The IServiceProvider after any modifications</returns>
-        protected virtual IServiceProvider OnBeforeConstructLocalPluginContext(IServiceProvider serviceProvider)
-        {
-            return serviceProvider;
-        }
-
-        /// <summary>
-        /// Executes the plug-in.
-        /// </summary>
-        /// <param name="serviceProvider">The service provider.</param>
-        /// <remarks>
-        /// For improved performance, Microsoft Dynamics CRM caches plug-in instances. 
-        /// The plug-in's Execute method should be written to be stateless as the constructor 
-        /// is not called for every invocation of the plug-in. Also, multiple system threads 
-        /// could execute the plug-in at the same time. All per invocation state information 
-        /// is stored in the context. This means that you should not use global variables in plug-ins.
-        /// </remarks>
-        public override void Execute(IServiceProvider serviceProvider)
-        {
-            if (serviceProvider == null)
-            {
-                throw new ArgumentNullException("serviceProvider");
-            }
-
-            // Allow derived classes to modify the service provider before constructing the local plugin context.
-            serviceProvider = OnBeforeConstructLocalPluginContext(serviceProvider);
-
-            // Construct the Local plug-in context.
-            LocalPluginContext localcontext = new LocalPluginContext(serviceProvider);
-
-            localcontext.Trace(string.Format(CultureInfo.InvariantCulture, "Entered {0}.Execute()", ChildClassName));
-            localcontext.Trace(localcontext.PluginExecutionContext.Stage.ToString());
-
-            try
-            {
-                if (RegisteredEvent == null)
-                {
-                    localcontext.Trace(string.Format(
-                        CultureInfo.InvariantCulture,
-                        "No registered event found for Entity: {0}, Message: {1} in {2}",
-                        localcontext.PluginExecutionContext.PrimaryEntityName,
-                        localcontext.PluginExecutionContext.MessageName,
-                        ChildClassName));
-                    return;
-                }
-
-                localcontext.Trace(string.Format(
-                    CultureInfo.InvariantCulture,
-                    "{0} is firing for Entity: {1}, Message: {2}\n",
-                    ChildClassName,
-                    localcontext.PluginExecutionContext.PrimaryEntityName,
-                    localcontext.PluginExecutionContext.MessageName));
-
-                RegisteredEvent.Invoke(localcontext);
-            }
-            catch (FaultException<OrganizationServiceFault> e)
-            {
-                localcontext.Trace(string.Format(CultureInfo.InvariantCulture, "Exception: {0}", e.ToString()));
-
-                // Handle the exception.
-                throw;
-            }
-            finally
-            {
-                localcontext.Trace(string.Format(CultureInfo.InvariantCulture, "Exiting {0}.Execute()", ChildClassName));
-            }
-        }
+        protected Action<IServiceProvider> RegisteredEvent { get; private set; }
 
         private CustomApiConfigBuilder ConfigBuilder { get; set; }
+
+        protected override Action<IServiceProvider> GetAction(IPluginExecutionContext context) => RegisteredEvent;
 
         /// <summary>
         /// Get the CustomAPI configuration.
@@ -100,6 +28,17 @@ namespace DG.XrmPluginCore
         /// </summary>
         /// <exception cref="InvalidOperationException">If called multiple times in the same class</exception>
         protected CustomApiConfigBuilder RegisterCustomAPI(string name, Action<LocalPluginContext> action)
+        {
+            return RegisterCustomAPI(name, sp => action(new LocalPluginContext(sp)));
+        }
+
+        /// <summary>
+        /// Register a CustomAPI with the given name and action.<br/>
+        /// 
+        /// Returns the config builder for specifying additional settings
+        /// </summary>
+        /// <exception cref="InvalidOperationException">If called multiple times in the same class</exception>
+        protected CustomApiConfigBuilder RegisterCustomAPI(string name, Action<IServiceProvider> action)
         {
             if (ConfigBuilder != null || RegisteredEvent != null)
             {

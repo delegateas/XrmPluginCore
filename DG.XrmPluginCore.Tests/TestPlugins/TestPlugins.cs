@@ -8,16 +8,24 @@ namespace DG.XrmPluginCore.Tests.TestPlugins
     {
         public bool ExecutedAction { get; private set; }
         public LocalPluginContext LastContext { get; private set; }
+        public IServiceProvider LastProvider { get; private set; }
 
         public TestAccountPlugin()
         {
-            RegisterPluginStep<TestAccount>(EventOperation.Create, ExecutionStage.PreOperation, Execute);
+            RegisterPluginStep<TestAccount>(EventOperation.Create, ExecutionStage.PreOperation, ExecuteCtx);
+            RegisterPluginStep<TestAccount>(EventOperation.Create, ExecutionStage.PostOperation, ExecuteSP);
         }
 
-        private void Execute(LocalPluginContext context)
+        private void ExecuteCtx(LocalPluginContext context)
         {
             ExecutedAction = true;
             LastContext = context;
+        }
+
+        private void ExecuteSP(IServiceProvider context)
+        {
+            ExecutedAction = true;
+            LastProvider = context;
         }
     }
 

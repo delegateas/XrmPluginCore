@@ -44,6 +44,9 @@
 	  <Folder Include="Properties\" />
 	</ItemGroup>
 	<ItemGroup>
+	  <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.9" />
+	</ItemGroup>
+	<ItemGroup>
 	  <ProjectReference Include="..\DG.XrmPluginCore.Abstractions\DG.XrmPluginCore.Abstractions.csproj" />
 	</ItemGroup>
 </Project>

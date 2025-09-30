@@ -2,6 +2,7 @@ using DG.XrmPluginCore.Enums;
 using DG.XrmPluginCore.Tests.Helpers;
 using DG.XrmPluginCore.Tests.TestPlugins;
 using FluentAssertions;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Xrm.Sdk;
 using NSubstitute;
 using System;
@@ -40,7 +41,29 @@ namespace DG.XrmPluginCore.Tests
 
             // Assert
             plugin.ExecutedAction.Should().BeTrue();
+            plugin.LastProvider.Should().BeNull();
             plugin.LastContext.Should().NotBeNull();
+        }
+
+        [Fact]
+        public void Execute_MatchingRegistration_ShouldExecuteAction_ServiceProvider()
+        {
+            // Arrange
+            var plugin = new TestAccountPlugin();
+            var mockProvider = new MockServiceProvider();
+
+            // Setup context for account create
+            mockProvider.SetupPrimaryEntityName("account");
+            mockProvider.SetupMessageName("Create");
+            mockProvider.SetupStage(40); // Pre-operation
+
+            // Act
+            plugin.Execute(mockProvider.ServiceProvider);
+
+            // Assert
+            plugin.ExecutedAction.Should().BeTrue();
+            plugin.LastProvider.Should().NotBeNull();
+            plugin.LastContext.Should().BeNull();
         }
 
         [Fact]
@@ -88,10 +111,10 @@ namespace DG.XrmPluginCore.Tests
             var plugin = new TestAccountPlugin();
             var mockProvider = new MockServiceProvider();
             
-            // Setup context for account create in post-operation
+            // Setup context for account create in pre-validation
             mockProvider.SetupPrimaryEntityName("account");
             mockProvider.SetupMessageName("Create");
-            mockProvider.SetupStage(40); // Post-operation
+            mockProvider.SetupStage(10); // Pre-validation
 
             // Act
             plugin.Execute(mockProvider.ServiceProvider);
@@ -184,8 +207,9 @@ namespace DG.XrmPluginCore.Tests
                 .Returns(x => { throw faultException; });
 
             // Act & Assert
-            var exception = Assert.Throws<FaultException<OrganizationServiceFault>>(() => plugin.Execute(mockProvider.ServiceProvider));
-            exception.Should().Be(faultException);
+            var exception = Assert.Throws<InvalidPluginExecutionException>(() => plugin.Execute(mockProvider.ServiceProvider));
+            exception.Status.Should().Be(OperationStatus.Failed);
+            exception.Message.Should().Be(faultException.Message);
         }
 
         [Fact]
@@ -341,25 +365,20 @@ namespace DG.XrmPluginCore.Tests
 
         public TestServiceProviderModificationPlugin()
         {
-            RegisterPluginStep<TestAccount>(EventOperation.Create, ExecutionStage.PreOperation, Execute);
+            RegisterPluginStep<TestAccount>(EventOperation.Create, ExecutionStage.PreOperation, ExecutePlugin);
         }
 
-        protected override IServiceProvider OnBeforeConstructLocalPluginContext(IServiceProvider serviceProvider)
+        protected override IServiceCollection OnBeforeBuildServiceProvider(IServiceCollection serviceProvider)
         {
-            // Create a wrapper that marks when it's used
-            var wrapper = Substitute.For<IServiceProvider>();
-            wrapper.GetService(Arg.Any<Type>()).Returns(callInfo =>
-            {
-                ModifiedServiceProviderUsed = true;
-                return serviceProvider.GetService(callInfo.Arg<Type>());
-            });
-
-            return wrapper;
+            // Inject an object we can then get
+            return serviceProvider.AddScoped(_ => "Modified");
         }
 
-        private void Execute(LocalPluginContext context)
+        private void ExecutePlugin(IServiceProvider context)
         {
             // Action implementation
+            var stringValue = context.GetService<string>();
+            ModifiedServiceProviderUsed = stringValue == "Modified";
         }
     }
 

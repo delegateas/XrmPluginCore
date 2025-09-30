@@ -7,9 +7,7 @@ using Microsoft.Xrm.Sdk;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Globalization;
 using System.Linq;
-using System.ServiceModel;
 
 namespace DG.XrmPluginCore
 {
@@ -21,88 +19,17 @@ namespace DG.XrmPluginCore
         /// <summary>
         /// Gets the List of events that the plug-in should fire for.
         /// </summary>
-        protected Collection<EventRegistration> RegisteredEvents { get; } = new Collection<EventRegistration>();
+        private Collection<EventRegistration> RegisteredEvents { get; } = new Collection<EventRegistration>();
 
-        /// <summary>
-        /// Called to allow derived classes to modify the service provider before it is used to construct the local plugin context.
-        /// </summary>
-        /// <param name="serviceProvider">The IServiceProvider as provided by Dataverse</param>
-        /// <returns>The IServiceProvider after any modifications</returns>
-        protected virtual IServiceProvider OnBeforeConstructLocalPluginContext(IServiceProvider serviceProvider)
+        protected override Action<IServiceProvider> GetAction(IPluginExecutionContext context)
         {
-            return serviceProvider;
-        }
-
-        /// <summary>
-        /// Executes the plug-in.
-        /// </summary>
-        /// <param name="serviceProvider">The service provider.</param>
-        /// <remarks>
-        /// For improved performance, Microsoft Dynamics CRM caches plug-in instances. 
-        /// The plug-in's Execute method should be written to be stateless as the constructor 
-        /// is not called for every invocation of the plug-in. Also, multiple system threads 
-        /// could execute the plug-in at the same time. All per invocation state information 
-        /// is stored in the context. This means that you should not use global variables in plug-ins.
-        /// </remarks>
-        public override void Execute(IServiceProvider serviceProvider)
-        {
-            if (serviceProvider == null)
-            {
-                throw new ArgumentNullException(nameof(serviceProvider));
-            }
-
-            // Allow derived classes to modify the service provider before constructing the local plugin context.
-            serviceProvider = OnBeforeConstructLocalPluginContext(serviceProvider);
-
-            // Construct the Local plug-in context.
-            var localcontext = new LocalPluginContext(serviceProvider);
-
-            localcontext.Trace(string.Format(CultureInfo.InvariantCulture, "Entered {0}.Execute()", ChildClassName));
-
-            try
-            {
-                // Iterate over all of the expected registered events to ensure that the plugin
-                // has been invoked by an expected event
-                // For any given plug-in event at an instance in time, we would expect at most 1 result to match.
-                var entityAction =
-                    RegisteredEvents
-                    .FirstOrDefault(a => a.ConfigBuilder?.Matches(localcontext.PluginExecutionContext) == true)?
-                    .Action;
-
-                if (entityAction == null)
-                {
-                    localcontext.Trace(string.Format(
-                        CultureInfo.InvariantCulture,
-                        "No registered event found for Entity: {0}, Message: {1} in {2}",
-                        localcontext.PluginExecutionContext.PrimaryEntityName,
-                        localcontext.PluginExecutionContext.MessageName,
-                        ChildClassName
-                    ));
-
-                    return;
-                }
-
-                localcontext.Trace(string.Format(
-                    CultureInfo.InvariantCulture,
-                    "{0} is firing for Entity: {1}, Message: {2}",
-                    ChildClassName,
-                    localcontext.PluginExecutionContext.PrimaryEntityName,
-                    localcontext.PluginExecutionContext.MessageName
-                    ));
-
-                entityAction.Invoke(localcontext);
-            }
-            catch (FaultException<OrganizationServiceFault> e)
-            {
-                localcontext.Trace(string.Format(CultureInfo.InvariantCulture, "Exception: {0}", e.ToString()));
-
-                // Handle the exception.
-                throw;
-            }
-            finally
-            {
-                localcontext.Trace(string.Format(CultureInfo.InvariantCulture, "Exiting {0}.Execute()", ChildClassName));
-            }
+            // Iterate over all of the expected registered events to ensure that the plugin
+            // has been invoked by an expected event
+            // For any given plug-in event at an instance in time, we would expect at most 1 result to match.
+            return
+                RegisteredEvents
+                .FirstOrDefault(a => a.ConfigBuilder?.Matches(context) == true)?
+                .Action;
         }
 
         /// <summary>
@@ -129,6 +56,15 @@ namespace DG.XrmPluginCore
             return builder;
         }
 
+        protected PluginStepConfigBuilder<T> RegisterPluginStep<T>(
+            EventOperation eventOperation, ExecutionStage executionStage, Action<IServiceProvider> action)
+            where T : Entity
+        {
+            var builder = new PluginStepConfigBuilder<T>(eventOperation, executionStage);
+            RegisteredEvents.Add(new EventRegistration(builder, action));
+            return builder;
+        }
+
         #region Additional helper methods
 
         protected static bool MatchesEventOperation(LocalPluginContext context, params EventOperation[] operations)
@@ -147,6 +83,11 @@ namespace DG.XrmPluginCore
             var context = localPluginContext.PluginExecutionContext;
             var trace = localPluginContext.TracingService;
 
+            return GetEntity<T>(context, trace);
+        }
+
+        protected static T GetEntity<T>(IPluginExecutionContext context, ITracingService trace) where T : Entity
+        {
             var logicalName = (Activator.CreateInstance<T>()).LogicalName;
 
             if (!context.InputParameters.Contains("Target"))
@@ -155,23 +96,23 @@ namespace DG.XrmPluginCore
                 return null;
             }
 
-            if (!(context.InputParameters["Target"] is Entity))
+            var target = context.InputParameters["Target"];
+
+            if (target is Entity entity)
             {
-                var typeName = context.InputParameters["Target"].GetType().Name;
-                trace.Trace("'Target' is not an Entity. It's of type: {0}", typeName);
-                return null;
+                if (logicalName != entity.LogicalName)
+                {
+                    trace.Trace("'Entity' is not of specified type: {0} vs. {1}",
+                        entity.LogicalName, logicalName);
+                    return null;
+                }
+
+                return entity.ToEntity<T>();
             }
 
-            var entity = (Entity)context.InputParameters["Target"];
-
-            if (logicalName != entity.LogicalName)
-            {
-                trace.Trace("'Entity' is not of specified type: {0} vs. {1}",
-                    entity.LogicalName, logicalName);
-                return null;
-            }
-
-            return entity.ToEntity<T>();
+            var typeName = target.GetType().Name;
+            trace.Trace("'Target' is not an Entity. It's of type: {0}", typeName);
+            return null;
         }
 
         protected static T GetImage<T>(LocalPluginContext context, ImageType imageType, string name) where T : Entity

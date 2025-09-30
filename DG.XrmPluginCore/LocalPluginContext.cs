@@ -1,4 +1,5 @@
-﻿using Microsoft.Xrm.Sdk;
+﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Xrm.Sdk;
 using System;
 
 namespace DG.XrmPluginCore
@@ -23,13 +24,13 @@ namespace DG.XrmPluginCore
             }
 
             // Obtain the execution context service from the service provider.
-            PluginExecutionContext = (IPluginExecutionContext)serviceProvider.GetService(typeof(IPluginExecutionContext));
+            PluginExecutionContext = serviceProvider.GetService<IPluginExecutionContext>();
 
             // Obtain the tracing service from the service provider.
-            TracingService = (ITracingService)serviceProvider.GetService(typeof(ITracingService));
+            TracingService = serviceProvider.GetService<ITracingService>();
 
             // Obtain the Organization Service factory service from the service provider
-            IOrganizationServiceFactory factory = (IOrganizationServiceFactory)serviceProvider.GetService(typeof(IOrganizationServiceFactory));
+            var factory = serviceProvider.GetService<IOrganizationServiceFactory>();
 
             // Use the factory to generate the Organization Service.
             OrganizationService = factory.CreateOrganizationService(PluginExecutionContext.UserId);

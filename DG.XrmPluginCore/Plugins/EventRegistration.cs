@@ -1,5 +1,4 @@
-﻿using DG.XrmPluginCore.Interfaces.Plugin;
-using System;
+﻿using System;
 
 namespace DG.XrmPluginCore.Plugins
 {
@@ -8,10 +7,17 @@ namespace DG.XrmPluginCore.Plugins
         public EventRegistration(IPluginStepConfigBuilder pluginStepConfig, Action<LocalPluginContext> action)
         {
             ConfigBuilder = pluginStepConfig;
+            Action = serviceProvider => action(new LocalPluginContext(serviceProvider));
+        }
+
+        public EventRegistration(IPluginStepConfigBuilder pluginStepConfig, Action<IServiceProvider> action)
+        {
+            ConfigBuilder = pluginStepConfig;
             Action = action;
         }
 
         public IPluginStepConfigBuilder ConfigBuilder { get; set; }
-        public Action<LocalPluginContext> Action { get; set; }
+        
+        public Action<IServiceProvider> Action { get; set; }
     }
 }
