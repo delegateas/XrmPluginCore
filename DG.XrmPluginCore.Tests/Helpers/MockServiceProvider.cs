@@ -1,3 +1,4 @@
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Xrm.Sdk;
 using Microsoft.Xrm.Sdk.PluginTelemetry;
 using NSubstitute;
@@ -22,7 +23,6 @@ namespace DG.XrmPluginCore.Tests.Helpers
 
         private void SetupMocks()
         {
-            ServiceProvider = Substitute.For<IServiceProvider>();
             PluginExecutionContext = Substitute.For<IPluginExecutionContext>();
             TracingService = Substitute.For<ITracingService>();
             OrganizationServiceFactory = Substitute.For<IOrganizationServiceFactory>();
@@ -38,18 +38,20 @@ namespace DG.XrmPluginCore.Tests.Helpers
             PluginExecutionContext.PrimaryEntityName.Returns("account");
             PluginExecutionContext.Stage.Returns(20); // Pre-operation
 
-            // Setup service provider to return mocked services
-            ServiceProvider.GetService(typeof(IPluginExecutionContext)).Returns(PluginExecutionContext);
-            ServiceProvider.GetService(typeof(ITracingService)).Returns(TracingService);
-            ServiceProvider.GetService(typeof(IOrganizationServiceFactory)).Returns(OrganizationServiceFactory);
-            ServiceProvider.GetService(typeof(ILogger)).Returns(PluginTelemetryLogger);
-
             // Setup organization service factory
             OrganizationServiceFactory.CreateOrganizationService(Arg.Any<Guid?>()).Returns(callInfo =>
             {
                 var userId = callInfo.Arg<Guid?>();
                 return userId.HasValue ? OrganizationService : OrganizationAdminService;
             });
+
+            // Setup service provider to return mocked services
+            var serviceCollection = new ServiceCollection();
+            serviceCollection.AddScoped(_ => PluginExecutionContext);
+            serviceCollection.AddScoped(_ => TracingService);
+            serviceCollection.AddScoped(_ => PluginTelemetryLogger);
+            serviceCollection.AddScoped(_ => OrganizationServiceFactory);
+            ServiceProvider = serviceCollection.BuildServiceProvider();
         }
 
         public void SetupInputParameters(ParameterCollection inputParameters)

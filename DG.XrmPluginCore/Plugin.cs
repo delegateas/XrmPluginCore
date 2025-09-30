@@ -3,6 +3,7 @@ using DG.XrmPluginCore.Enums;
 using DG.XrmPluginCore.Extensions;
 using DG.XrmPluginCore.Interfaces.Plugin;
 using DG.XrmPluginCore.Plugins;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Xrm.Sdk;
 using System;
 using System.Collections.Generic;
@@ -42,6 +43,12 @@ namespace DG.XrmPluginCore
         protected PluginStepConfigBuilder<MessageEntity> RegisterPluginStep(
             string pluginMessage, EventOperation eventOperation, ExecutionStage executionStage, Action<LocalPluginContext> action)
         {
+            return RegisterStep(pluginMessage, eventOperation, executionStage, sp => action(new LocalPluginContext(sp)));
+        }
+
+        protected PluginStepConfigBuilder<MessageEntity> RegisterStep(
+            string pluginMessage, EventOperation eventOperation, ExecutionStage executionStage, Action<IServiceProvider> action)
+        {
             var builder = new PluginStepConfigBuilder<MessageEntity>(pluginMessage, eventOperation, executionStage);
             RegisteredEvents.Add(new EventRegistration(builder, action));
             return builder;
@@ -51,12 +58,17 @@ namespace DG.XrmPluginCore
             EventOperation eventOperation, ExecutionStage executionStage, Action<LocalPluginContext> action)
             where T : Entity
         {
-            var builder = new PluginStepConfigBuilder<T>(eventOperation, executionStage);
-            RegisteredEvents.Add(new EventRegistration(builder, action));
-            return builder;
+            return RegisterStep<T>(eventOperation, executionStage, sp => action(new LocalPluginContext(sp)));
         }
 
-        protected PluginStepConfigBuilder<T> RegisterPluginStep<T>(
+        protected PluginStepConfigBuilder<T> RegisterStep<T, TService>(
+            EventOperation eventOperation, ExecutionStage executionStage, Action<TService> action)
+            where T : Entity
+        {
+            return RegisterStep<T>(eventOperation, executionStage, sp => action(sp.GetRequiredService<TService>()));
+        }
+
+        protected PluginStepConfigBuilder<T> RegisterStep<T>(
             EventOperation eventOperation, ExecutionStage executionStage, Action<IServiceProvider> action)
             where T : Entity
         {

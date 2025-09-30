@@ -29,7 +29,7 @@ namespace DG.XrmPluginCore
         /// <exception cref="InvalidOperationException">If called multiple times in the same class</exception>
         protected CustomApiConfigBuilder RegisterCustomAPI(string name, Action<LocalPluginContext> action)
         {
-            return RegisterCustomAPI(name, sp => action(new LocalPluginContext(sp)));
+            return RegisterAPI(name, sp => action(new LocalPluginContext(sp)));
         }
 
         /// <summary>
@@ -38,7 +38,7 @@ namespace DG.XrmPluginCore
         /// Returns the config builder for specifying additional settings
         /// </summary>
         /// <exception cref="InvalidOperationException">If called multiple times in the same class</exception>
-        protected CustomApiConfigBuilder RegisterCustomAPI(string name, Action<IServiceProvider> action)
+        protected CustomApiConfigBuilder RegisterAPI(string name, Action<IServiceProvider> action)
         {
             if (ConfigBuilder != null || RegisteredEvent != null)
             {

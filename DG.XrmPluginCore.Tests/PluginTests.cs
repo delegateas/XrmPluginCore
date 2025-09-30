@@ -1,6 +1,7 @@
 using DG.XrmPluginCore.Enums;
 using DG.XrmPluginCore.Tests.Helpers;
 using DG.XrmPluginCore.Tests.TestPlugins;
+using DG.XrmPluginCore.Tests.TestPlugins.Bedrock;
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Xrm.Sdk;
@@ -55,7 +56,7 @@ namespace DG.XrmPluginCore.Tests
             // Setup context for account create
             mockProvider.SetupPrimaryEntityName("account");
             mockProvider.SetupMessageName("Create");
-            mockProvider.SetupStage(40); // Pre-operation
+            mockProvider.SetupStage(40); // Post-operation
 
             // Act
             plugin.Execute(mockProvider.ServiceProvider);
@@ -64,6 +65,29 @@ namespace DG.XrmPluginCore.Tests
             plugin.ExecutedAction.Should().BeTrue();
             plugin.LastProvider.Should().NotBeNull();
             plugin.LastContext.Should().BeNull();
+        }
+
+        [Fact]
+        public void Execute_MatchingRegistration_ShouldExecuteAction_ServiceProvider_DI()
+        {
+            // Arrange
+            var plugin = new SamplePlugin();
+            var mockProvider = new MockServiceProvider();
+
+            // Setup context for account create
+            mockProvider.SetupPrimaryEntityName("account");
+            mockProvider.SetupMessageName("Create");
+            mockProvider.SetupStage((int)ExecutionStage.PreOperation);
+
+            // Act
+            plugin.Execute(mockProvider.ServiceProvider);
+
+            // Assert
+            var sampleService = plugin.SampleService as SampleService;
+            sampleService.Should().NotBeNull();
+            sampleService.HandleCreateCalled.Should().BeTrue();
+            sampleService.PluginContext.Should().Be(mockProvider.PluginExecutionContext);
+            sampleService.OrganizationService.Should().Be(mockProvider.OrganizationService);
         }
 
         [Fact]
@@ -365,7 +389,7 @@ namespace DG.XrmPluginCore.Tests
 
         public TestServiceProviderModificationPlugin()
         {
-            RegisterPluginStep<TestAccount>(EventOperation.Create, ExecutionStage.PreOperation, ExecutePlugin);
+            RegisterStep<TestAccount>(EventOperation.Create, ExecutionStage.PreOperation, ExecutePlugin);
         }
 
         protected override IServiceCollection OnBeforeBuildServiceProvider(IServiceCollection serviceProvider)

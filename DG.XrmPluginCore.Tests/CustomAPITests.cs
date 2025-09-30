@@ -219,7 +219,7 @@ namespace DG.XrmPluginCore.Tests
 
         public TestServiceProviderModificationCustomAPI()
         {
-            RegisterCustomAPI("test_modification_api", ExecuteApi);
+            RegisterAPI("test_modification_api", ExecuteApi);
         }
 
         protected override IServiceCollection OnBeforeBuildServiceProvider(IServiceCollection serviceProvider)

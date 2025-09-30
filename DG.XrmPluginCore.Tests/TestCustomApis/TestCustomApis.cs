@@ -28,7 +28,7 @@ namespace DG.XrmPluginCore.Tests.TestCustomApis
 
         public TestCustomAPIServiceProvider()
         {
-            RegisterCustomAPI("test_custom_api", ExecuteAPI);
+            RegisterAPI("test_custom_api", ExecuteAPI);
         }
 
         private void ExecuteAPI(IServiceProvider context)

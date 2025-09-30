@@ -29,7 +29,7 @@ namespace DG.Some.Namespace {
     public class AccountChainPostPlugin : Plugin {
 
         public AccountChainPostPlugin() {
-            RegisterPluginStep<Account>(
+            RegisterStep<Account>(
                 EventOperation.Update,
                 ExecutionStage.PostOperation,
                 ExecutePlugin)

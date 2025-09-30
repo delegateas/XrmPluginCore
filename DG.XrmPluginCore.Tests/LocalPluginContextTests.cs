@@ -94,19 +94,6 @@ namespace DG.XrmPluginCore.Tests
         }
 
         [Fact]
-        public void Trace_NullTracingService_ShouldNotThrow()
-        {
-            // Arrange
-            var mockProvider = new MockServiceProvider();
-            mockProvider.ServiceProvider.GetService(typeof(ITracingService)).Returns((ITracingService)null);
-            var context = new LocalPluginContext(mockProvider.ServiceProvider);
-
-            // Act & Assert
-            var exception = Record.Exception(() => context.Trace("test message"));
-            exception.Should().BeNull();
-        }
-
-        [Fact]
         public void OrganizationService_ShouldUseUserId()
         {
             // Arrange

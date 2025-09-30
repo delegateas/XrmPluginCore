@@ -13,7 +13,7 @@ namespace DG.XrmPluginCore.Tests.TestPlugins
         public TestAccountPlugin()
         {
             RegisterPluginStep<TestAccount>(EventOperation.Create, ExecutionStage.PreOperation, ExecuteCtx);
-            RegisterPluginStep<TestAccount>(EventOperation.Create, ExecutionStage.PostOperation, ExecuteSP);
+            RegisterStep<TestAccount>(EventOperation.Create, ExecutionStage.PostOperation, ExecuteSP);
         }
 
         private void ExecuteCtx(LocalPluginContext context)
