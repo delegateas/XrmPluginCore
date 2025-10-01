@@ -11,7 +11,7 @@
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <RepositoryUrl>https://github.com/delegateas/XrmPluginCore</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
-    <PackageTags>xrm,crm,dataverse,daxif,delegate,context&amp;contextand,xrmmockup,xrmsync</PackageTags>
+    <PackageTags>xrm,crm,dataverse,daxif,delegate,context&amp;,contextand,xrmmockup,xrmsync</PackageTags>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <IncludeSymbols>True</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
