@@ -136,15 +136,21 @@ namespace DG.XrmPluginCore
             // Get services of the ServiceProvider
             var tracingService = serviceProvider.GetService<ITracingService>() ?? throw new Exception("Unable to get Tracing service");
             var telemetryService = serviceProvider.GetService<ILogger>();
-            var pluginContext = serviceProvider.GetService<IPluginExecutionContext>() ?? throw new Exception("Unable to get Plugin Execution Context");
-            var organizationServiceFactory = serviceProvider.GetService<IOrganizationServiceFactory>() ?? throw new Exception("Unable to get service factory");
 
             var extendedTracingService = new ExtendedTracingService(tracingService, telemetryService);
 
             // Create a new service collection and add the relevant services
             IServiceCollection services = new ServiceCollection();
-            services.AddScoped(_ => pluginContext);
-            services.AddScoped(_ => organizationServiceFactory);
+
+            services.AddScoped(_ => serviceProvider.GetService<IPluginExecutionContext>());
+            services.AddScoped(_ => serviceProvider.GetService<IPluginExecutionContext2>());
+            services.AddScoped(_ => serviceProvider.GetService<IPluginExecutionContext3>());
+            services.AddScoped(_ => serviceProvider.GetService<IPluginExecutionContext4>());
+            services.AddScoped(_ => serviceProvider.GetService<IPluginExecutionContext5>());
+            services.AddScoped(_ => serviceProvider.GetService<IPluginExecutionContext6>());
+            services.AddScoped(_ => serviceProvider.GetService<IPluginExecutionContext7>());
+
+            services.AddScoped(_ => serviceProvider.GetService<IOrganizationServiceFactory>());
             services.AddScoped(_ => telemetryService);
             services.AddScoped<ITracingService>(_ => extendedTracingService);
             services.AddScoped<IExtendedTracingService>(_ => extendedTracingService);

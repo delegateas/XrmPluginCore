@@ -90,63 +90,14 @@ namespace DG.XrmPluginCore
             return operations.Any(o => o == operation);
         }
 
-        protected static T GetEntity<T>(LocalPluginContext localPluginContext) where T : Entity
+        protected static T GetEntity<T>(LocalPluginContext context) where T : Entity
         {
-            var context = localPluginContext.PluginExecutionContext;
-            var trace = localPluginContext.TracingService;
-
-            return GetEntity<T>(context, trace);
-        }
-
-        protected static T GetEntity<T>(IPluginExecutionContext context, ITracingService trace) where T : Entity
-        {
-            var logicalName = (Activator.CreateInstance<T>()).LogicalName;
-
-            if (!context.InputParameters.Contains("Target"))
-            {
-                trace.Trace("Context does not contain 'Target'");
-                return null;
-            }
-
-            var target = context.InputParameters["Target"];
-
-            if (target is Entity entity)
-            {
-                if (logicalName != entity.LogicalName)
-                {
-                    trace.Trace("'Entity' is not of specified type: {0} vs. {1}",
-                        entity.LogicalName, logicalName);
-                    return null;
-                }
-
-                return entity.ToEntity<T>();
-            }
-
-            var typeName = target.GetType().Name;
-            trace.Trace("'Target' is not an Entity. It's of type: {0}", typeName);
-            return null;
+            return context.PluginExecutionContext.GetEntity<T>(context.TracingService);
         }
 
         protected static T GetImage<T>(LocalPluginContext context, ImageType imageType, string name) where T : Entity
         {
-            EntityImageCollection collection = null;
-            if (imageType == ImageType.PreImage)
-            {
-                collection = context.PluginExecutionContext.PreEntityImages;
-            }
-            else if (imageType == ImageType.PostImage)
-            {
-                collection = context.PluginExecutionContext.PostEntityImages;
-            }
-
-            if (collection != null && collection.TryGetValue(name, out var entity))
-            {
-                return entity.ToEntity<T>();
-            }
-            else
-            {
-                return null;
-            }
+            return context.PluginExecutionContext.GetImage<T>(imageType, name);
         }
 
         protected static T GetImage<T>(LocalPluginContext context, ImageType imageType) where T : Entity
