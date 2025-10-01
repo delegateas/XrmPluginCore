@@ -1,5 +1,5 @@
 # XrmPluginCore
-![XrmPluginCore NuGet Version](https://img.shields.io/nuget/v/Delegate.XrmPluginCore?label=XrmPluginCore%20NuGet) ![XrmPluginCore.Abstractions NuGet Version](https://img.shields.io/nuget/v/Delegate.XrmPluginCore.Abstractions?label=Abstractions%20NuGet)
+![XrmPluginCore NuGet Version](https://img.shields.io/nuget/v/XrmPluginCore?label=XrmPluginCore%20NuGet) ![XrmPluginCore.Abstractions NuGet Version](https://img.shields.io/nuget/v/XrmPluginCore.Abstractions?label=Abstractions%20NuGet)
 
 XrmPluginCore provides base functionality for developing plugins and custom APIs in Dynamics 365. It includes context wrappers and registration utilities to streamline the development process.
 
@@ -20,11 +20,11 @@ XrmPluginCore provides base functionality for developing plugins and custom APIs
 #### Using the IServiceProvider wrapper
 
 ```csharp
-namespace DG.Some.Namespace {
+namespace Some.Namespace {
     using System;
-    using DG.XrmFramework.BusinessDomain.ServiceContext;
-    using DG.XrmPluginCore;
-    using DG.XrmPluginCore.Enums;
+    using XrmFramework.BusinessDomain.ServiceContext;
+    using XrmPluginCore;
+    using XrmPluginCore.Enums;
 
     public class AccountChainPostPlugin : Plugin {
 
@@ -58,11 +58,11 @@ namespace DG.Some.Namespace {
 #### Using the LocalPluginContext wrapper
 
 ```csharp
-namespace DG.Some.Namespace {
+namespace Some.Namespace {
     using System;
-    using DG.XrmFramework.BusinessDomain.ServiceContext;
-    using DG.XrmPluginCore;
-    using DG.XrmPluginCore.Enums;
+    using XrmFramework.BusinessDomain.ServiceContext;
+    using XrmPluginCore;
+    using XrmPluginCore.Enums;
 
     public class AccountChainPostPlugin : Plugin {
 
@@ -110,8 +110,8 @@ To ensure XrmPluginCore, and it's dependencies are included, you can use the fol
     <InputAssemblies Include="$(TargetDir)Microsoft.Extensions.DependencyInjection.Abstractions.dll" />
     <InputAssemblies Include="$(TargetDir)Microsoft.Extensions.DependencyInjection.dll" />
     <InputAssemblies Include="$(TargetDir)Microsoft.Extensions.Logging.Abstractions.dll" />
-    <InputAssemblies Include="$(TargetDir)DG.XrmPluginCore.Abstractions.dll" />
-    <InputAssemblies Include="$(TargetDir)DG.XrmPluginCore.dll" />
+    <InputAssemblies Include="$(TargetDir)XrmPluginCore.Abstractions.dll" />
+    <InputAssemblies Include="$(TargetDir)XrmPluginCore.dll" />
   </ItemGroup>
   <Exec Command="$(PkgILRepack)\tools\ILRepack.exe /parallel /keyfile:[yourkey].snk /lib:$(TargetDir) /out:$(TargetDir)ILMerged.$(TargetFileName) @(InputAssemblies -> '%(Identity)', ' ')" />
 </Target>

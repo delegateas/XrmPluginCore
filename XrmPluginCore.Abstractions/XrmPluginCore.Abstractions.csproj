@@ -1,0 +1,38 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+    <PackageId>XrmPluginCore.Abstractions</PackageId>
+    <Title>XrmPluginCore.Abstractions</Title>
+    <Company>Context&amp; A/S</Company>
+    <Copyright>2025 Context&amp; A/S</Copyright>
+    <PackageProjectUrl>https://github.com/delegateas/XrmPluginCore</PackageProjectUrl>
+    <Description>Abstractions and shared Enums for the XrmPluginCore package</Description>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <RepositoryUrl>https://github.com/delegateas/XrmPluginCore</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageTags>xrm,crm,dataverse,daxif,delegate,context&amp;,contextand,xrmmockup</PackageTags>
+    <PackageLicenseFile>LICENSE</PackageLicenseFile>
+    <IncludeSymbols>True</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <RootNamespace>XrmPluginCore</RootNamespace>
+    <SignAssembly>True</SignAssembly>
+    <AssemblyOriginatorKeyFile>../resources/delegate.snk</AssemblyOriginatorKeyFile>
+    <PackageIcon>delegate.png</PackageIcon>
+    <Version>1.0.0-local</Version>
+  </PropertyGroup>
+  <ItemGroup>
+    <None Include="..\LICENSE">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+    <None Include="..\README.md">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+    <None Include="..\resources\delegate.png">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+  </ItemGroup>
+</Project>

@@ -3,9 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.12.35527.113
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DG.XrmPluginCore", "DG.XrmPluginCore\DG.XrmPluginCore.csproj", "{40D9E4DE-A933-412C-866E-C5B5B91EC59C}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "XrmPluginCore", "XrmPluginCore\XrmPluginCore.csproj", "{40D9E4DE-A933-412C-866E-C5B5B91EC59C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DG.XrmPluginCore.Abstractions", "DG.XrmPluginCore.Abstractions\DG.XrmPluginCore.Abstractions.csproj", "{15A9DF46-DA3A-4A12-AEEC-9E6669587903}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "XrmPluginCore.Abstractions", "XrmPluginCore.Abstractions\XrmPluginCore.Abstractions.csproj", "{15A9DF46-DA3A-4A12-AEEC-9E6669587903}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Files", "Solution Files", "{316853AF-2C17-45D8-BA0B-7E14AD98DF50}"
 	ProjectSection(SolutionItems) = preProject
@@ -19,7 +19,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Scripts", "Scripts", "{02EA
 		scripts\Set-VersionFromChangelog.ps1 = scripts\Set-VersionFromChangelog.ps1
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DG.XrmPluginCore.Tests", "DG.XrmPluginCore.Tests\DG.XrmPluginCore.Tests.csproj", "{7F25A8FD-41B4-46CB-B9E7-0D18FD50E6E4}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "XrmPluginCore.Tests", "XrmPluginCore.Tests\XrmPluginCore.Tests.csproj", "{7F25A8FD-41B4-46CB-B9E7-0D18FD50E6E4}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
