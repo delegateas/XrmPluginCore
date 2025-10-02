@@ -2,13 +2,11 @@ using XrmPluginCore.Enums;
 using XrmPluginCore.Tests.Helpers;
 using XrmPluginCore.Tests.TestCustomApis;
 using FluentAssertions;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Xrm.Sdk;
 using NSubstitute;
 using System;
 using System.Linq;
 using System.ServiceModel;
-using XrmPluginCore;
 using Xunit;
 
 namespace XrmPluginCore.Tests
@@ -141,7 +139,7 @@ namespace XrmPluginCore.Tests
         }
 
         [Fact]
-        public void OnBeforeConstructLocalPluginContext_ShouldAllowModification()
+        public void OnBeforeBuildServiceProvider_ShouldAllowModification()
         {
             // Arrange
             var customApi = new TestServiceProviderModificationCustomAPI();
@@ -210,30 +208,6 @@ namespace XrmPluginCore.Tests
                 Arg.Is<string>(s => s.Contains(entityName) && s.Contains(messageName) && s.Contains("is firing for")),
                 Arg.Any<Guid>(),
                 Arg.Any<Guid>());
-        }
-    }
-
-    // Helper custom API for testing service provider modification
-    public class TestServiceProviderModificationCustomAPI : CustomAPI
-    {
-        public bool ModifiedServiceProviderUsed { get; private set; }
-
-        public TestServiceProviderModificationCustomAPI()
-        {
-            RegisterAPI("test_modification_api", ExecuteApi);
-        }
-
-        protected override IServiceCollection OnBeforeBuildServiceProvider(IServiceCollection serviceProvider)
-        {
-            // Inject an object we can then get
-            return serviceProvider.AddScoped(_ => "Modified");
-        }
-
-        private void ExecuteApi(IServiceProvider context)
-        {
-            // Action implementation
-            var stringValue = context.GetService<string>();
-            ModifiedServiceProviderUsed = stringValue == "Modified";
         }
     }
 }

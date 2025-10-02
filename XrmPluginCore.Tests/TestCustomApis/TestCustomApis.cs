@@ -1,11 +1,10 @@
-using XrmPluginCore.Enums;
-using Microsoft.Xrm.Sdk;
+using Microsoft.Extensions.DependencyInjection;
 using System;
-using XrmPluginCore;
+using XrmPluginCore.Enums;
 
 namespace XrmPluginCore.Tests.TestCustomApis
 {
-    public class TestCustomAPI : CustomAPI
+    public class TestCustomAPI : Plugin
     {
         public bool ExecutedAction { get; private set; }
         public LocalPluginContext LastContext { get; private set; }
@@ -22,7 +21,7 @@ namespace XrmPluginCore.Tests.TestCustomApis
         }
     }
 
-    public class TestCustomAPIServiceProvider : CustomAPI
+    public class TestCustomAPIServiceProvider : Plugin
     {
         public bool ExecutedAction { get; private set; }
         public IServiceProvider LastProvider { get; private set; }
@@ -39,7 +38,7 @@ namespace XrmPluginCore.Tests.TestCustomApis
         }
     }
 
-    public class TestCustomAPIWithConfig : CustomAPI
+    public class TestCustomAPIWithConfig : Plugin
     {
         public bool ExecutedAction { get; private set; }
 
@@ -60,14 +59,14 @@ namespace XrmPluginCore.Tests.TestCustomApis
         }
     }
 
-    public class TestNoRegistrationCustomAPI : CustomAPI
+    public class TestNoRegistrationCustomAPI : Plugin
     {
         public bool ExecutedAction { get; private set; }
 
         // No registrations added
     }
 
-    public class TestMultipleRegistrationCustomAPI : CustomAPI
+    public class TestMultipleRegistrationCustomAPI : Plugin
     {
         public TestMultipleRegistrationCustomAPI()
         {
@@ -86,6 +85,30 @@ namespace XrmPluginCore.Tests.TestCustomApis
 
         private void Execute2(LocalPluginContext context)
         {
+        }
+    }
+
+    // Helper custom API for testing service provider modification
+    public class TestServiceProviderModificationCustomAPI : Plugin
+    {
+        public bool ModifiedServiceProviderUsed { get; private set; }
+
+        public TestServiceProviderModificationCustomAPI()
+        {
+            RegisterAPI("test_modification_api", ExecuteApi);
+        }
+
+        protected override IServiceCollection OnBeforeBuildServiceProvider(IServiceCollection serviceProvider)
+        {
+            // Inject an object we can then get
+            return serviceProvider.AddScoped(_ => "Modified");
+        }
+
+        private void ExecuteApi(IServiceProvider context)
+        {
+            // Action implementation
+            var stringValue = context.GetService<string>();
+            ModifiedServiceProviderUsed = stringValue == "Modified";
         }
     }
 }

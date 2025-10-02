@@ -6,6 +6,7 @@ using System;
 using System.Linq;
 using XrmPluginCore;
 using Xunit;
+using XrmPluginCore.Extensions;
 
 namespace XrmPluginCore.Tests.Integration
 {
@@ -118,7 +119,7 @@ namespace XrmPluginCore.Tests.Integration
                 // Get target entity - This will throw NotSupportedException due to ToEntity<T> limitation
                 try
                 {
-                    TargetEntity = GetEntity<IntegrationAccount>(context);
+                    TargetEntity = context.GetEntity<IntegrationAccount>();
                 }
                 catch (NotSupportedException)
                 {
@@ -129,7 +130,7 @@ namespace XrmPluginCore.Tests.Integration
                 // Get pre-image - This will throw NotSupportedException due to ToEntity<T> limitation
                 try
                 {
-                    PreImageEntity = GetPreImage<IntegrationAccount>(context);
+                    PreImageEntity = context.GetPreImage<IntegrationAccount>();
                 }
                 catch (NotSupportedException)
                 {
@@ -149,17 +150,6 @@ namespace XrmPluginCore.Tests.Integration
                 context.Trace($"Error in plugin execution: {ex.Message}");
                 throw;
             }
-        }
-
-        // Helper methods to access protected members for testing
-        public T TestGetEntity<T>(LocalPluginContext context) where T : Entity
-        {
-            return GetEntity<T>(context);
-        }
-
-        public T TestGetPreImage<T>(LocalPluginContext context, string name = "PreImage") where T : Entity
-        {
-            return GetPreImage<T>(context, name);
         }
     }
 
@@ -184,7 +174,7 @@ namespace XrmPluginCore.Tests.Integration
 
                 try
                 {
-                    preImage = GetPreImage<IntegrationAccount>(context);
+                    preImage = context.GetPreImage<IntegrationAccount>();
                 }
                 catch (NotSupportedException)
                 {
@@ -195,7 +185,7 @@ namespace XrmPluginCore.Tests.Integration
 
                 try
                 {
-                    postImage = GetPostImage<IntegrationAccount>(context);
+                    postImage = context.GetPostImage<IntegrationAccount>();
                 }
                 catch (NotSupportedException)
                 {
@@ -221,17 +211,6 @@ namespace XrmPluginCore.Tests.Integration
                 context.Trace($"Error in plugin execution: {ex.Message}");
                 throw;
             }
-        }
-
-        // Helper methods to access protected members for testing
-        public T TestGetPreImage<T>(LocalPluginContext context, string name = "PreImage") where T : Entity
-        {
-            return GetPreImage<T>(context, name);
-        }
-
-        public T TestGetPostImage<T>(LocalPluginContext context, string name = "PostImage") where T : Entity
-        {
-            return GetPostImage<T>(context, name);
         }
     }
 

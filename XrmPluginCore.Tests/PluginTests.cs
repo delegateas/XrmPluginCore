@@ -11,6 +11,7 @@ using System.ServiceModel;
 using XrmPluginCore;
 using XrmPluginCore.Tests.TestPlugins.Bedrock;
 using Xunit;
+using XrmPluginCore.Extensions;
 
 namespace XrmPluginCore.Tests
 {
@@ -256,7 +257,6 @@ namespace XrmPluginCore.Tests
         public void GetEntity_ValidTarget_ShouldReturnEntity()
         {
             // Arrange
-            var plugin = new TestPluginHelpers();
             var mockProvider = new MockServiceProvider();
             var context = new LocalPluginContext(mockProvider.ServiceProvider);
             var account = new Entity("account") { Id = Guid.NewGuid() };
@@ -265,21 +265,20 @@ namespace XrmPluginCore.Tests
             mockProvider.SetupInputParameters(inputParameters);
 
             // Act & Assert - The GetEntity method should throw because ToEntity<T> requires EntityLogicalNameAttribute
-            Assert.Throws<NotSupportedException>(() => plugin.TestGetEntity<TestAccount>(context));
+            Assert.Throws<NotSupportedException>(() => context.GetEntity<TestAccount>());
         }
 
         [Fact]
         public void GetEntity_NoTarget_ShouldReturnNull()
         {
             // Arrange
-            var plugin = new TestPluginHelpers();
             var mockProvider = new MockServiceProvider();
             var context = new LocalPluginContext(mockProvider.ServiceProvider);
             var inputParameters = new ParameterCollection();
             mockProvider.SetupInputParameters(inputParameters);
 
             // Act
-            var result = plugin.TestGetEntity<TestAccount>(context);
+            var result = context.GetEntity<TestAccount>();
 
             // Assert
             result.Should().BeNull();
@@ -289,7 +288,6 @@ namespace XrmPluginCore.Tests
         public void GetEntity_WrongEntityType_ShouldReturnNull()
         {
             // Arrange
-            var plugin = new TestPluginHelpers();
             var mockProvider = new MockServiceProvider();
             var context = new LocalPluginContext(mockProvider.ServiceProvider);
             var contact = new Entity("contact") { Id = Guid.NewGuid() };
@@ -298,7 +296,7 @@ namespace XrmPluginCore.Tests
             mockProvider.SetupInputParameters(inputParameters);
 
             // Act
-            var result = plugin.TestGetEntity<TestAccount>(context);
+            var result = context.GetEntity<TestAccount>();
 
             // Assert
             result.Should().BeNull();
@@ -308,7 +306,6 @@ namespace XrmPluginCore.Tests
         public void GetPreImage_ValidImage_ShouldReturnEntity()
         {
             // Arrange
-            var plugin = new TestPluginHelpers();
             var mockProvider = new MockServiceProvider();
             var context = new LocalPluginContext(mockProvider.ServiceProvider);
             var account = new Entity("account") { Id = Guid.NewGuid() };
@@ -317,14 +314,13 @@ namespace XrmPluginCore.Tests
             mockProvider.SetupPreEntityImages(preImages);
 
             // Act & Assert - Throws exception due to ToEntity<T> limitation in test framework
-            Assert.Throws<NotSupportedException>(() => plugin.TestGetPreImage<TestAccount>(context));
+            Assert.Throws<NotSupportedException>(() => context.GetPreImage<TestAccount>());
         }
 
         [Fact]
         public void GetPostImage_ValidImage_ShouldReturnEntity()
         {
             // Arrange
-            var plugin = new TestPluginHelpers();
             var mockProvider = new MockServiceProvider();
             var context = new LocalPluginContext(mockProvider.ServiceProvider);
             var account = new Entity("account") { Id = Guid.NewGuid() };
@@ -333,43 +329,11 @@ namespace XrmPluginCore.Tests
             mockProvider.SetupPostEntityImages(postImages);
 
             // Act & Assert - Throws exception due to ToEntity<T> limitation in test framework
-            Assert.Throws<NotSupportedException>(() => plugin.TestGetPostImage<TestAccount>(context));
+            Assert.Throws<NotSupportedException>(() => context.GetPostImage<TestAccount>());
         }
 
         [Fact]
-        public void MatchesEventOperation_MatchingOperation_ShouldReturnTrue()
-        {
-            // Arrange
-            var plugin = new TestPluginHelpers();
-            var mockProvider = new MockServiceProvider();
-            var context = new LocalPluginContext(mockProvider.ServiceProvider);
-            mockProvider.SetupMessageName("Create");
-
-            // Act
-            var result = plugin.TestMatchesEventOperation(context, EventOperation.Create);
-
-            // Assert
-            result.Should().BeTrue();
-        }
-
-        [Fact]
-        public void MatchesEventOperation_NonMatchingOperation_ShouldReturnFalse()
-        {
-            // Arrange
-            var plugin = new TestPluginHelpers();
-            var mockProvider = new MockServiceProvider();
-            var context = new LocalPluginContext(mockProvider.ServiceProvider);
-            mockProvider.SetupMessageName("Create");
-
-            // Act
-            var result = plugin.TestMatchesEventOperation(context, EventOperation.Update);
-
-            // Assert
-            result.Should().BeFalse();
-        }
-
-        [Fact]
-        public void OnBeforeConstructLocalPluginContext_ShouldAllowModification()
+        public void OnBeforeBuildServiceProvider_ShouldAllowModification()
         {
             // Arrange
             var plugin = new TestServiceProviderModificationPlugin();
@@ -404,30 +368,6 @@ namespace XrmPluginCore.Tests
             // Action implementation
             var stringValue = context.GetService<string>();
             ModifiedServiceProviderUsed = stringValue == "Modified";
-        }
-    }
-
-    // Helper plugin to expose protected methods for testing
-    public class TestPluginHelpers : Plugin
-    {
-        public T TestGetEntity<T>(LocalPluginContext context) where T : Entity
-        {
-            return GetEntity<T>(context);
-        }
-
-        public T TestGetPreImage<T>(LocalPluginContext context, string name = "PreImage") where T : Entity
-        {
-            return GetPreImage<T>(context, name);
-        }
-
-        public T TestGetPostImage<T>(LocalPluginContext context, string name = "PostImage") where T : Entity
-        {
-            return GetPostImage<T>(context, name);
-        }
-
-        public bool TestMatchesEventOperation(LocalPluginContext context, params EventOperation[] operations)
-        {
-            return MatchesEventOperation(context, operations);
         }
     }
 

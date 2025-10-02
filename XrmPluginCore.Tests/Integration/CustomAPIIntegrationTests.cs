@@ -94,7 +94,7 @@ namespace XrmPluginCore.Tests.Integration
         }
     }
 
-    public class IntegrationTestCustomAPI : CustomAPI
+    public class IntegrationTestCustomAPI : Plugin
     {
         public bool ExecutedCorrectly { get; private set; }
         public string ReceivedInputValue { get; private set; }
@@ -136,7 +136,7 @@ namespace XrmPluginCore.Tests.Integration
         }
     }
 
-    public class BoundCustomAPI : CustomAPI
+    public class BoundCustomAPI : Plugin
     {
         public BoundCustomAPI()
         {
@@ -150,7 +150,7 @@ namespace XrmPluginCore.Tests.Integration
         }
     }
 
-    public class PrivateCustomAPI : CustomAPI
+    public class PrivateCustomAPI : Plugin
     {
         public PrivateCustomAPI()
         {

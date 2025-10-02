@@ -3,6 +3,7 @@ using Microsoft.Xrm.Sdk;
 using Microsoft.Xrm.Sdk.PluginTelemetry;
 using NSubstitute;
 using System;
+using XrmPluginCore.Enums;
 
 namespace XrmPluginCore.Tests.Helpers
 {
@@ -36,7 +37,7 @@ namespace XrmPluginCore.Tests.Helpers
             PluginExecutionContext.InitiatingUserId.Returns(Guid.NewGuid());
             PluginExecutionContext.MessageName.Returns("Create");
             PluginExecutionContext.PrimaryEntityName.Returns("account");
-            PluginExecutionContext.Stage.Returns(20); // Pre-operation
+            PluginExecutionContext.Stage.Returns((int)ExecutionStage.PreOperation); // Pre-operation
 
             // Setup organization service factory
             OrganizationServiceFactory.CreateOrganizationService(Arg.Any<Guid?>()).Returns(callInfo =>

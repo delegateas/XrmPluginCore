@@ -2,9 +2,9 @@
 
 namespace XrmPluginCore.Plugins
 {
-    public class EventRegistration
+    internal class PluginStepRegistration
     {
-        public EventRegistration(IPluginStepConfigBuilder pluginStepConfig, Action<IServiceProvider> action)
+        public PluginStepRegistration(IPluginStepConfigBuilder pluginStepConfig, Action<IServiceProvider> action)
         {
             ConfigBuilder = pluginStepConfig;
             Action = action;
