@@ -1,3 +1,6 @@
+### v1.0.1-preview.1 - 2 October 2025
+* Refactor: Merge CustomAPI into Plugin base class for simplicity
+
 ### v1.0.0 - 30 September 2025
 * Add: Support for XrmBedrock style plugins by wrapping the LocalPluginContext in IServiceProvider
 * Add: IPluginExecutionContext extension methods to simplify getting the target and image data

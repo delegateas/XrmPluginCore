@@ -5,9 +5,9 @@ using System;
 
 namespace XrmPluginCore.Extensions
 {
-    internal static class ServiceProviderExtensions
+    public static class ServiceProviderExtensions
     {
-        public static ServiceProvider BuildServiceProvider(this IServiceProvider serviceProvider, Func<IServiceCollection, IServiceCollection> onBeforeBuild)
+        public static ExtendedServiceProvider BuildServiceProvider(this IServiceProvider serviceProvider, Func<IServiceCollection, IServiceCollection> onBeforeBuild)
         {
             // Get services of the ServiceProvider
             var tracingService = serviceProvider.GetService<ITracingService>() ?? throw new Exception("Unable to get Tracing service");
@@ -35,7 +35,8 @@ namespace XrmPluginCore.Extensions
             services = onBeforeBuild(services);
 
             // Build the service provider
-            return services.BuildServiceProvider();
+            var localServiceProvider = services.BuildServiceProvider();
+            return new ExtendedServiceProvider(localServiceProvider);
         }
 
         public static void Trace(this IServiceProvider serviceProvider, string message)

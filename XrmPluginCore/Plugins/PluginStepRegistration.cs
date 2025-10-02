@@ -4,7 +4,7 @@ namespace XrmPluginCore.Plugins
 {
     internal class PluginStepRegistration
     {
-        public PluginStepRegistration(IPluginStepConfigBuilder pluginStepConfig, Action<IServiceProvider> action)
+        public PluginStepRegistration(IPluginStepConfigBuilder pluginStepConfig, Action<IExtendedServiceProvider> action)
         {
             ConfigBuilder = pluginStepConfig;
             Action = action;
@@ -12,6 +12,6 @@ namespace XrmPluginCore.Plugins
 
         public IPluginStepConfigBuilder ConfigBuilder { get; set; }
         
-        public Action<IServiceProvider> Action { get; set; }
+        public Action<IExtendedServiceProvider> Action { get; set; }
     }
 }

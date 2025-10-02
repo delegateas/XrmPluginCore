@@ -1,7 +1,6 @@
 using XrmPluginCore.Enums;
 using Microsoft.Xrm.Sdk;
 using System;
-using XrmPluginCore;
 
 namespace XrmPluginCore.Tests.TestPlugins
 {

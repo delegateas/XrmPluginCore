@@ -14,9 +14,9 @@ namespace XrmPluginCore
 
         public IPluginExecutionContext PluginExecutionContext { get; }
 
-        public ITracingService TracingService { get; }
+        public IExtendedTracingService TracingService { get; }
 
-        public LocalPluginContext(IServiceProvider serviceProvider)
+        public LocalPluginContext(IExtendedServiceProvider serviceProvider)
         {
             if (serviceProvider == null)
             {
@@ -27,7 +27,7 @@ namespace XrmPluginCore
             PluginExecutionContext = serviceProvider.GetService<IPluginExecutionContext>();
 
             // Obtain the tracing service from the service provider.
-            TracingService = serviceProvider.GetService<ITracingService>();
+            TracingService = serviceProvider.GetService<IExtendedTracingService>();
 
             // Obtain the Organization Service factory service from the service provider
             var factory = serviceProvider.GetService<IOrganizationServiceFactory>();
@@ -41,23 +41,7 @@ namespace XrmPluginCore
 
         public void Trace(string message)
         {
-            if (string.IsNullOrWhiteSpace(message) || TracingService == null)
-            {
-                return;
-            }
-
-            if (PluginExecutionContext == null)
-            {
-                TracingService.Trace(message);
-            }
-            else
-            {
-                TracingService.Trace(
-                    "{0}, Correlation Id: {1}, Initiating User: {2}",
-                    message,
-                    PluginExecutionContext.CorrelationId,
-                    PluginExecutionContext.InitiatingUserId);
-            }
+            TracingService?.Trace(message, PluginExecutionContext);
         }
     }
 }

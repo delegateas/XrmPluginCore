@@ -1,9 +1,10 @@
+using XrmPluginCore.Extensions;
 using XrmPluginCore.Tests.Helpers;
 using FluentAssertions;
-using Microsoft.Xrm.Sdk;
 using NSubstitute;
 using System;
 using Xunit;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace XrmPluginCore.Tests
 {
@@ -14,13 +15,16 @@ namespace XrmPluginCore.Tests
         {
             // Arrange
             var mockProvider = new MockServiceProvider();
+            var serviceProvider = mockProvider.ServiceProvider.BuildServiceProvider(services => services);
+            var tracingService = serviceProvider.GetService<IExtendedTracingService>();
 
             // Act
-            var context = new LocalPluginContext(mockProvider.ServiceProvider);
+            var context = new LocalPluginContext(serviceProvider);
 
             // Assert
             context.PluginExecutionContext.Should().Be(mockProvider.PluginExecutionContext);
-            context.TracingService.Should().Be(mockProvider.TracingService);
+            tracingService.Should().NotBeNull();
+            context.TracingService.Should().Be(tracingService);
             context.OrganizationService.Should().Be(mockProvider.OrganizationService);
             context.OrganizationAdminService.Should().Be(mockProvider.OrganizationAdminService);
         }
@@ -37,7 +41,8 @@ namespace XrmPluginCore.Tests
         {
             // Arrange
             var mockProvider = new MockServiceProvider();
-            var context = new LocalPluginContext(mockProvider.ServiceProvider);
+            var serviceProvider = mockProvider.ServiceProvider.BuildServiceProvider(services => services);
+            var context = new LocalPluginContext(serviceProvider);
             var testMessage = "Test trace message";
 
             // Act
@@ -56,7 +61,8 @@ namespace XrmPluginCore.Tests
         {
             // Arrange
             var mockProvider = new MockServiceProvider();
-            var context = new LocalPluginContext(mockProvider.ServiceProvider);
+            var serviceProvider = mockProvider.ServiceProvider.BuildServiceProvider(services => services);
+            var context = new LocalPluginContext(serviceProvider);
 
             // Act
             context.Trace(null);
@@ -70,7 +76,8 @@ namespace XrmPluginCore.Tests
         {
             // Arrange
             var mockProvider = new MockServiceProvider();
-            var context = new LocalPluginContext(mockProvider.ServiceProvider);
+            var serviceProvider = mockProvider.ServiceProvider.BuildServiceProvider(services => services);
+            var context = new LocalPluginContext(serviceProvider);
 
             // Act
             context.Trace("");
@@ -84,7 +91,8 @@ namespace XrmPluginCore.Tests
         {
             // Arrange
             var mockProvider = new MockServiceProvider();
-            var context = new LocalPluginContext(mockProvider.ServiceProvider);
+            var serviceProvider = mockProvider.ServiceProvider.BuildServiceProvider(services => services);
+            var context = new LocalPluginContext(serviceProvider);
 
             // Act
             context.Trace("   ");
@@ -100,9 +108,10 @@ namespace XrmPluginCore.Tests
             var mockProvider = new MockServiceProvider();
             var userId = Guid.NewGuid();
             mockProvider.PluginExecutionContext.UserId.Returns(userId);
+            var serviceProvider = mockProvider.ServiceProvider.BuildServiceProvider(services => services);
 
             // Act
-            var context = new LocalPluginContext(mockProvider.ServiceProvider);
+            var context = new LocalPluginContext(serviceProvider);
 
             // Assert
             mockProvider.OrganizationServiceFactory.Received(1).CreateOrganizationService(userId);
@@ -113,9 +122,10 @@ namespace XrmPluginCore.Tests
         {
             // Arrange
             var mockProvider = new MockServiceProvider();
+            var serviceProvider = mockProvider.ServiceProvider.BuildServiceProvider(services => services);
 
             // Act
-            var context = new LocalPluginContext(mockProvider.ServiceProvider);
+            var context = new LocalPluginContext(serviceProvider);
 
             // Assert
             mockProvider.OrganizationServiceFactory.Received(1).CreateOrganizationService(null);

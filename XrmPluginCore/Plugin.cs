@@ -159,7 +159,7 @@ namespace XrmPluginCore
         /// <param name="action">The action to execute</param>
         /// <returns>The <see cref="PluginStepConfigBuilder{T}"/> to register filters and images</returns>
         protected PluginStepConfigBuilder<T> RegisterStep<T>(
-            EventOperation eventOperation, ExecutionStage executionStage, Action<IServiceProvider> action)
+            EventOperation eventOperation, ExecutionStage executionStage, Action<IExtendedServiceProvider> action)
             where T : Entity
         {
             var builder = new PluginStepConfigBuilder<T>(eventOperation, executionStage);
@@ -198,7 +198,7 @@ namespace XrmPluginCore
         /// </para>
         /// </summary>
         /// <exception cref="InvalidOperationException">If called multiple times in the same class</exception>
-        protected CustomApiConfigBuilder RegisterAPI(string name, Action<IServiceProvider> action)
+        protected CustomApiConfigBuilder RegisterAPI(string name, Action<IExtendedServiceProvider> action)
         {
             if (RegisteredCustomApi != null)
             {
@@ -219,14 +219,14 @@ namespace XrmPluginCore
         }
 
         protected PluginStepConfigBuilder<MessageEntity> RegisterStep(
-            string pluginMessage, EventOperation eventOperation, ExecutionStage executionStage, Action<IServiceProvider> action)
+            string pluginMessage, EventOperation eventOperation, ExecutionStage executionStage, Action<IExtendedServiceProvider> action)
         {
             var builder = new PluginStepConfigBuilder<MessageEntity>(pluginMessage, eventOperation, executionStage);
             RegisteredPluginSteps.Add(new PluginStepRegistration(builder, action));
             return builder;
         }
 
-        private Action<IServiceProvider> GetAction(IPluginExecutionContext context)
+        private Action<IExtendedServiceProvider> GetAction(IPluginExecutionContext context)
         {
             // Iterate over all of the expected registered events to ensure that the plugin
             // has been invoked by an expected event

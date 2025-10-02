@@ -258,7 +258,9 @@ namespace XrmPluginCore.Tests
         {
             // Arrange
             var mockProvider = new MockServiceProvider();
-            var context = new LocalPluginContext(mockProvider.ServiceProvider);
+
+            var serviceProvider = mockProvider.ServiceProvider.BuildServiceProvider(services => services);
+            var context = new LocalPluginContext(serviceProvider);
             var account = new Entity("account") { Id = Guid.NewGuid() };
             
             var inputParameters = new ParameterCollection { { "Target", account } };
@@ -273,7 +275,9 @@ namespace XrmPluginCore.Tests
         {
             // Arrange
             var mockProvider = new MockServiceProvider();
-            var context = new LocalPluginContext(mockProvider.ServiceProvider);
+            
+            var serviceProvider = mockProvider.ServiceProvider.BuildServiceProvider(services => services);
+            var context = new LocalPluginContext(serviceProvider);
             var inputParameters = new ParameterCollection();
             mockProvider.SetupInputParameters(inputParameters);
 
@@ -289,7 +293,9 @@ namespace XrmPluginCore.Tests
         {
             // Arrange
             var mockProvider = new MockServiceProvider();
-            var context = new LocalPluginContext(mockProvider.ServiceProvider);
+            
+            var serviceProvider = mockProvider.ServiceProvider.BuildServiceProvider(services => services);
+            var context = new LocalPluginContext(serviceProvider);
             var contact = new Entity("contact") { Id = Guid.NewGuid() };
             
             var inputParameters = new ParameterCollection { { "Target", contact } };
@@ -307,7 +313,9 @@ namespace XrmPluginCore.Tests
         {
             // Arrange
             var mockProvider = new MockServiceProvider();
-            var context = new LocalPluginContext(mockProvider.ServiceProvider);
+            
+            var serviceProvider = mockProvider.ServiceProvider.BuildServiceProvider(services => services);
+            var context = new LocalPluginContext(serviceProvider);
             var account = new Entity("account") { Id = Guid.NewGuid() };
             
             var preImages = new EntityImageCollection { { "PreImage", account } };
@@ -322,7 +330,9 @@ namespace XrmPluginCore.Tests
         {
             // Arrange
             var mockProvider = new MockServiceProvider();
-            var context = new LocalPluginContext(mockProvider.ServiceProvider);
+            
+            var serviceProvider = mockProvider.ServiceProvider.BuildServiceProvider(services => services);
+            var context = new LocalPluginContext(serviceProvider);
             var account = new Entity("account") { Id = Guid.NewGuid() };
             
             var postImages = new EntityImageCollection { { "PostImage", account } };
