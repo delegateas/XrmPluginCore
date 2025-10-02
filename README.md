@@ -109,7 +109,6 @@ To ensure XrmPluginCore, and it's dependencies are included, you can use the fol
     <InputAssemblies Include="$(TargetDir)Microsoft.Bcl.AsyncInterfaces.dll" />
     <InputAssemblies Include="$(TargetDir)Microsoft.Extensions.DependencyInjection.Abstractions.dll" />
     <InputAssemblies Include="$(TargetDir)Microsoft.Extensions.DependencyInjection.dll" />
-    <InputAssemblies Include="$(TargetDir)Microsoft.Extensions.Logging.Abstractions.dll" />
     <InputAssemblies Include="$(TargetDir)XrmPluginCore.Abstractions.dll" />
     <InputAssemblies Include="$(TargetDir)XrmPluginCore.dll" />
   </ItemGroup>

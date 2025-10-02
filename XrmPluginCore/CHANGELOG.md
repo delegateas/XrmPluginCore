@@ -1,4 +1,4 @@
-### v1.0.1-preview.1 - 2 October 2025
+### v1.0.1 - 2 October 2025
 * Refactor: Merge CustomAPI into Plugin base class for simplicity
 
 ### v1.0.0 - 30 September 2025

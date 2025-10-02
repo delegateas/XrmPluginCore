@@ -5,7 +5,8 @@
     <PackageId>XrmPluginCore.Abstractions</PackageId>
     <Title>XrmPluginCore.Abstractions</Title>
     <Company>Context&amp; A/S</Company>
-    <Copyright>2025 Context&amp; A/S</Copyright>
+	<Copyright>&#169; Context&amp; A/S</Copyright>
+	<Authors>Context&amp;</Authors>
     <PackageProjectUrl>https://github.com/delegateas/XrmPluginCore</PackageProjectUrl>
     <Description>Abstractions and shared Enums for the XrmPluginCore package</Description>
     <PackageReadmeFile>README.md</PackageReadmeFile>

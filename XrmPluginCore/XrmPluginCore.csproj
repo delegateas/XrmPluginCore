@@ -1,11 +1,12 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFrameworks>net462;net8</TargetFrameworks>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <PackageId>XrmPluginCore</PackageId>
     <Title>XrmPluginCore</Title>
     <Company>Context&amp; A/S</Company>
-    <Copyright>2025 Context&amp; A/S</Copyright>
+    <Copyright>©2025 Context&amp; A/S</Copyright>
+	<Authors>Context&amp;</Authors>
     <Description>XrmPluginCore provides base functionality for developing plugins and custom APIs in Dynamics 365. It includes context wrappers and registration utilities to streamline the development process.</Description>
     <PackageProjectUrl>https://github.com/delegateas/XrmPluginCore</PackageProjectUrl>
     <PackageReadmeFile>README.md</PackageReadmeFile>
