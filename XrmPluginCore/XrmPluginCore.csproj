@@ -15,7 +15,7 @@
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <IncludeSymbols>True</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
-    <PackageIcon>delegate.png</PackageIcon>
+    <PackageIcon>contextand.png</PackageIcon>
     <SignAssembly>True</SignAssembly>
     <AssemblyOriginatorKeyFile>../resources/delegate.snk</AssemblyOriginatorKeyFile>
     <Version>1.0.0-local</Version>
@@ -29,7 +29,7 @@
       <Pack>True</Pack>
       <PackagePath>\</PackagePath>
     </None>
-    <None Include="..\resources\delegate.png">
+    <None Include="..\resources\contextand.png">
       <Pack>True</Pack>
       <PackagePath>\</PackagePath>
     </None>

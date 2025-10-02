@@ -18,7 +18,7 @@
     <RootNamespace>XrmPluginCore</RootNamespace>
     <SignAssembly>True</SignAssembly>
     <AssemblyOriginatorKeyFile>../resources/delegate.snk</AssemblyOriginatorKeyFile>
-    <PackageIcon>delegate.png</PackageIcon>
+    <PackageIcon>contextand.png</PackageIcon>
     <Version>1.0.0-local</Version>
   </PropertyGroup>
   <ItemGroup>
@@ -30,7 +30,7 @@
       <Pack>True</Pack>
       <PackagePath>\</PackagePath>
     </None>
-    <None Include="..\resources\delegate.png">
+    <None Include="..\resources\contextand.png">
       <Pack>True</Pack>
       <PackagePath>\</PackagePath>
     </None>
