@@ -1,4 +1,4 @@
-# XrmPluginCore
+﻿# XrmPluginCore
 ![XrmPluginCore NuGet Version](https://img.shields.io/nuget/v/XrmPluginCore?label=XrmPluginCore%20NuGet) ![XrmPluginCore.Abstractions NuGet Version](https://img.shields.io/nuget/v/XrmPluginCore.Abstractions?label=Abstractions%20NuGet)
 
 XrmPluginCore provides base functionality for developing plugins and custom APIs in Dynamics 365. It includes context wrappers and registration utilities to streamline the development process.
@@ -14,48 +14,81 @@ XrmPluginCore provides base functionality for developing plugins and custom APIs
 ### Creating a Plugin
 
 1. Create a new class that inherits from `Plugin`.
-2. Register the plugin using the `RegisterPlugin` helper methods.
+2. Register the plugin using the `RegisterStep` helper method.
 3. Implement the function in the custom action
 
-#### Using the IServiceProvider wrapper
+#### Using the a service
+
+Create a service interface and concrete implementation:
 
 ```csharp
 namespace Some.Namespace {
-    using System;
-    using XrmFramework.BusinessDomain.ServiceContext;
-    using XrmPluginCore;
-    using XrmPluginCore.Enums;
+    interface IMyService {
+        void DoSomething();
+    }
 
-    public class AccountChainPostPlugin : Plugin {
+    public class MyService : IMyService {
+        private readonly IOrganizationService _service;
+        private readonly IPluginExecutionContext _context;
 
-        public AccountChainPostPlugin() {
-            RegisterStep<Account>(
-                EventOperation.Update,
-                ExecutionStage.PostOperation,
-                ExecutePlugin)
-                .AddFilteredAttributes(x => x.Fax);
+        public MyService(IOrganizationServiceFactory serviceFactory, IPluginExecutionContext pluginExecutionContext) {
+            // Store references to the services if needed
+            _service = _serviceFactory.CreateOrganizationService(pluginExecutionContext.UserId);
+            _context = pluginExecutionContext;
+        });
 
-        }
-
-        protected void ExecutePlugin(IServiceProvider serviceProvider) {
-            var serviceFactory = serviceProvider.GetService<IOrganizationServiceFactory>();
-            var executionContext = serviceProvider.GetService<IPluginExecutionContext>();
-            var service = serviceFactory.CreateOrganizationService(executionContext.UserId);
-
+        public void DoSomething() {
+            // Implementation here
             var rand = new Random();
 
-            var newAcc = new Account(localContext.PluginExecutionContext.PrimaryEntityId) {
+            var newAcc = new Account(_context.PrimaryEntityId) {
                 Fax = rand.Next().ToString()
             };
-            service.Update(newAcc);
+
+            _service.Update(newAcc);
         }
     }
 }
 ```
 
-**NOTE** It is recommended to use dependency injection based plugins instead of blindly using the IServiceProvider. See the example in [XrmBedrock](https://github.com/delegateas/XrmBedrock), or the sample plugin in the test project for more information.
+Create a base-plugin class that registers the service. Only do this once per assembly, and register all your custom services here:
+```csharp
+using XrmPluginCore;
+
+namespace Some.Namespace {
+    public class BasePlugin : Plugin {
+        protected override IServiceCollection OnBeforeBuildServiceProvider(IServiceCollection services)
+        {
+            return services.AddScoped<IMyService, MyService>();
+        }
+    }
+}
+```
+
+Finally, create your plugin class that inherits from the base-plugin, and use dependency injection to get your service:
+
+```csharp
+using System;
+using XrmFramework.BusinessDomain.ServiceContext;
+using XrmPluginCore;
+using XrmPluginCore.Enums;
+
+namespace Some.Namespace {
+    public class AccountChainPostPlugin : BasePlugin {
+        public AccountChainPostPlugin() {
+            RegisterStep<Account, IMyService>(
+                EventOperation.Update,
+                ExecutionStage.PostOperation,
+                s => s.DoSomething())
+                .AddFilteredAttributes(x => x.Fax);
+        }
+    }
+}
+```
 
 #### Using the LocalPluginContext wrapper
+
+**NOTE**: This is only support to support legacy DAXIF/XrmFramework style plugins. It is recommended to use dependency injection based plugins instead.
 
 ```csharp
 namespace Some.Namespace {
@@ -92,6 +125,27 @@ namespace Some.Namespace {
     }
 }
 ```
+
+### Injected Services
+The following services are available for injection into your plugin or custom API classes:
+
+| Service | Description |
+|---------|-------------|
+| [IExtendedTracingService](XrmPluginCore/IExtendedTracingService.cs) | Extension to ITracingService with additional helper methods. |
+| [ILogger 🔗](https://learn.microsoft.com/en-us/power-apps/developer/data-platform/application-insights-ilogger) | The Plugin Telemetry Service logger interface. |
+| [IOrganizationServiceFactory 🔗](https://learn.microsoft.com/en-us/dotnet/api/microsoft.xrm.sdk.iorganizationservicefactory) | Represents a factory for creating IOrganizationService instances. |
+| [IPluginExecutionContext 🔗](https://learn.microsoft.com/en-us/dotnet/api/microsoft.xrm.sdk.ipluginexecutioncontext) | The plugin execution context provides information about the current plugin execution, including input and output parameters, the message name, and the stage of execution. |
+| [IPluginExecutionContext2 🔗](https://learn.microsoft.com/en-us/dotnet/api/microsoft.xrm.sdk.ipluginexecutioncontext2) | Extension to IPluginExecutionContext with additional properties and methods. |
+| [IPluginExecutionContext3 🔗](https://learn.microsoft.com/en-us/dotnet/api/microsoft.xrm.sdk.ipluginexecutioncontext3) | Extension to IPluginExecutionContext2 with additional properties and methods. |
+| [IPluginExecutionContext4 🔗](https://learn.microsoft.com/en-us/dotnet/api/microsoft.xrm.sdk.ipluginexecutioncontext4) | Extension to IPluginExecutionContext3 with additional properties and methods. |
+| [IPluginExecutionContext5 🔗](https://learn.microsoft.com/en-us/dotnet/api/microsoft.xrm.sdk.ipluginexecutioncontext5) | Extension to IPluginExecutionContext4 with additional properties and methods. |
+| [IPluginExecutionContext6 🔗](https://learn.microsoft.com/en-us/dotnet/api/microsoft.xrm.sdk.ipluginexecutioncontext6) | Extension to IPluginExecutionContext5 with additional properties and methods. |
+| [IPluginExecutionContext7 🔗](https://learn.microsoft.com/en-us/dotnet/api/microsoft.xrm.sdk.ipluginexecutioncontext7) | Extension to IPluginExecutionContext6 with additional properties and methods. |
+| [ITracingService 🔗](https://learn.microsoft.com/en-us/dotnet/api/microsoft.xrm.sdk.itracingservice) | The tracing service interface. The actual class is the [ExtendedTracingService](https://github.com/delegateas/XrmPluginCore/blob/main/XrmPluginCore/ExtendedTracingService.cs) wrapping the built-in `ITracingService` |
+
+*Note:* Links marked with 🔗 point to official Microsoft documentation.
+
+To register additional services, override the `OnBeforeBuildServiceProvider` method in your plugin or custom API class.
 
 ### Registering a Plugin
 
