@@ -1,3 +1,6 @@
+### v1.1.0 - 08 October 2025
+* Change Plugin Step Configs to not use the EventOperation enum but instead use a string to allow for custom messages.
+
 ### v1.0.0 - 01 October 2025
 * Modifications to CustomAPI definitions to align better with data
 * Remove Delegate branding after company rebrand to Context&

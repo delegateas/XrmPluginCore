@@ -16,7 +16,7 @@ namespace XrmPluginCore.Interfaces.Plugin
         /// <summary>
         /// Event operation that the SDK message processing step is registered for.
         /// </summary>
-        EventOperation EventOperation { get; }
+        string EventOperation { get; }
 
         /// <summary>
         /// Stage in the execution pipeline that the SDK message processing step is in.

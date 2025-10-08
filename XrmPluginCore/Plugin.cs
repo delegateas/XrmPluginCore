@@ -125,8 +125,31 @@ namespace XrmPluginCore
         /// <param name="executionStage">The execution stage of the plugin registration</param>
         /// <param name="action">The action to execute</param>
         /// <returns>The <see cref="PluginStepConfigBuilder{T}"/> to register filters and images</returns>
+        [Obsolete("Use RegisterStep instead")]
         protected PluginStepConfigBuilder<T> RegisterPluginStep<T>(
             EventOperation eventOperation, ExecutionStage executionStage, Action<LocalPluginContext> action)
+            where T : Entity
+        {
+            return RegisterStep<T>(eventOperation.ToString(), executionStage, sp => action(new LocalPluginContext(sp)));
+        }
+
+        /// <summary>
+        /// Register a plugin step for the given entity type, event operation, and execution stage with the given action.<br/>
+        /// The action will get passed a <see cref="LocalPluginContext"/>.<br/>
+        /// <br/>
+        /// <b>
+        /// NOTE: It is strongly adviced to use the <see cref="RegisterPluginStep{T}(EventOperation, ExecutionStage, Action{LocalPluginContext})"/> method instead if possible.<br/>
+        /// Only use this method if you are registering for a non-standard message.
+        /// </b>
+        /// </summary>
+        /// <typeparam name="T">The entity type to register the plugin for</typeparam>
+        /// <param name="eventOperation">The event operation to register the plugin for</param>
+        /// <param name="executionStage">The execution stage of the plugin registration</param>
+        /// <param name="action">The action to execute</param>
+        /// <returns>The <see cref="PluginStepConfigBuilder{T}"/> to register filters and images</returns>
+        [Obsolete("Use RegisterStep instead")]
+        protected PluginStepConfigBuilder<T> RegisterPluginStep<T>(
+            string eventOperation, ExecutionStage executionStage, Action<LocalPluginContext> action)
             where T : Entity
         {
             return RegisterStep<T>(eventOperation, executionStage, sp => action(new LocalPluginContext(sp)));
@@ -146,6 +169,28 @@ namespace XrmPluginCore
             EventOperation eventOperation, ExecutionStage executionStage, Action<TService> action)
             where TEntity : Entity
         {
+            return RegisterStep<TEntity>(eventOperation.ToString(), executionStage, sp => action(sp.GetRequiredService<TService>()));
+        }
+
+        /// <summary>
+        /// Register a plugin step for the given entity type, event operation, and execution stage with the given action.<br/>
+        /// The action will get passed an instance of <typeparamref name="TService"/>.
+        /// <br/>
+        /// <b>
+        /// NOTE: It is strongly adviced to use the <see cref="RegisterStep{TEntity, TService}(EventOperation, ExecutionStage, Action{TService})"/> method instead if possible.<br/>
+        /// Only use this method if you are registering for a non-standard message.
+        /// </b>
+        /// </summary>
+        /// <typeparam name="TEntity">The entity type to register the plugin for</typeparam>
+        /// <typeparam name="TService">The service type to pass to the action</typeparam>
+        /// <param name="eventOperation">The event operation to register the plugin for</param>
+        /// <param name="executionStage">The execution stage of the plugin registration</param>
+        /// <param name="action">The action to execute</param>
+        /// <returns>The <see cref="PluginStepConfigBuilder{T}"/> to register filters and images</returns>
+        protected PluginStepConfigBuilder<TEntity> RegisterStep<TEntity, TService>(
+            string eventOperation, ExecutionStage executionStage, Action<TService> action)
+            where TEntity : Entity
+        {
             return RegisterStep<TEntity>(eventOperation, executionStage, sp => action(sp.GetRequiredService<TService>()));
         }
 
@@ -160,6 +205,27 @@ namespace XrmPluginCore
         /// <returns>The <see cref="PluginStepConfigBuilder{T}"/> to register filters and images</returns>
         protected PluginStepConfigBuilder<T> RegisterStep<T>(
             EventOperation eventOperation, ExecutionStage executionStage, Action<IExtendedServiceProvider> action)
+            where T : Entity
+        {
+            return RegisterStep<T>(eventOperation.ToString(), executionStage, action);
+        }
+
+        /// <summary>
+        /// Register a plugin step for the given entity type, event operation, and execution stage with the given action.<br/>
+        /// The action will get passed a <see cref="IServiceProvider"/>.
+        /// <br/>
+        /// <b>
+        /// NOTE: It is strongly adviced to use the <see cref="RegisterStep{T}(EventOperation, ExecutionStage, Action{IExtendedServiceProvider})"/> method instead if possible.<br/>
+        /// Only use this method if you are registering for a non-standard message.
+        /// </b>
+        /// </summary>
+        /// <typeparam name="T">The entity type to register the plugin for</typeparam>
+        /// <param name="eventOperation">The event operation to register the plugin for</param>
+        /// <param name="executionStage">The execution stage of the plugin registration</param>
+        /// <param name="action">The action to execute</param>
+        /// <returns>The <see cref="PluginStepConfigBuilder{T}"/> to register filters and images</returns>
+        protected PluginStepConfigBuilder<T> RegisterStep<T>(
+            string eventOperation, ExecutionStage executionStage, Action<IExtendedServiceProvider> action)
             where T : Entity
         {
             var builder = new PluginStepConfigBuilder<T>(eventOperation, executionStage);
@@ -209,21 +275,6 @@ namespace XrmPluginCore
             RegisteredCustomApi = new CustomApiRegistration(configBuilder, action);
 
             return configBuilder;
-        }
-
-        // TODO: THESE TWO ARE WRONG - IT'S NOT THE ENTITY THAT'S CUSTOM, IT'S THE EVENTOPERATION
-        protected PluginStepConfigBuilder<MessageEntity> RegisterPluginStep(
-            string pluginMessage, EventOperation eventOperation, ExecutionStage executionStage, Action<LocalPluginContext> action)
-        {
-            return RegisterStep(pluginMessage, eventOperation, executionStage, sp => action(new LocalPluginContext(sp)));
-        }
-
-        protected PluginStepConfigBuilder<MessageEntity> RegisterStep(
-            string pluginMessage, EventOperation eventOperation, ExecutionStage executionStage, Action<IExtendedServiceProvider> action)
-        {
-            var builder = new PluginStepConfigBuilder<MessageEntity>(pluginMessage, eventOperation, executionStage);
-            RegisteredPluginSteps.Add(new PluginStepRegistration(builder, action));
-            return builder;
         }
 
         private Action<IExtendedServiceProvider> GetAction(IPluginExecutionContext context)

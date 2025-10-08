@@ -8,7 +8,6 @@ using NSubstitute;
 using System;
 using System.Linq;
 using System.ServiceModel;
-using XrmPluginCore;
 using XrmPluginCore.Tests.TestPlugins.Bedrock;
 using Xunit;
 using XrmPluginCore.Extensions;
@@ -157,8 +156,8 @@ namespace XrmPluginCore.Tests
             var mockProvider = new MockServiceProvider();
             
             // Setup context for custom message
-            mockProvider.SetupPrimaryEntityName("custom_message");
-            mockProvider.SetupMessageName("Execute");
+            mockProvider.SetupPrimaryEntityName("account");
+            mockProvider.SetupMessageName("custom_message");
             mockProvider.SetupStage(20);
 
             // Act
@@ -249,8 +248,8 @@ namespace XrmPluginCore.Tests
 
             // Assert
             registrations.Should().HaveCount(2);
-            registrations.Should().Contain(r => r.EventOperation == EventOperation.Create);
-            registrations.Should().Contain(r => r.EventOperation == EventOperation.Update);
+            registrations.Should().Contain(r => r.EventOperation.Equals(nameof(EventOperation.Create)));
+            registrations.Should().Contain(r => r.EventOperation.Equals(nameof(EventOperation.Update)));
         }
 
         [Fact]

@@ -1,6 +1,9 @@
 ﻿namespace XrmPluginCore.Enums
 {
-    // EventOperation based on CRM 2016
+    /// <summary>
+    /// Known system messages based on CRM 2016.<br/>
+    /// Use this as a basis for plugin step registration.
+    /// </summary>
     public enum EventOperation
     {
         AddItem,

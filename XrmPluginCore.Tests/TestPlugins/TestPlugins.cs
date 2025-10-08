@@ -36,7 +36,7 @@ namespace XrmPluginCore.Tests.TestPlugins
 
         public TestCustomMessagePlugin()
         {
-            RegisterPluginStep("custom_message", EventOperation.Execute, ExecutionStage.PreOperation, Execute);
+            RegisterPluginStep<Entity>("custom_message", ExecutionStage.PreOperation, Execute);
         }
 
         private void Execute(LocalPluginContext context)

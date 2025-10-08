@@ -96,7 +96,7 @@ namespace XrmPluginCore.Tests.Integration
             registrations.Should().HaveCount(1);
             var registration = registrations.First();
             registration.EntityLogicalName.Should().Be("account");
-            registration.EventOperation.Should().Be(EventOperation.Update);
+            registration.EventOperation.Should().Be(nameof(EventOperation.Update));
             registration.ExecutionStage.Should().Be(ExecutionStage.PreOperation);
         }
     }

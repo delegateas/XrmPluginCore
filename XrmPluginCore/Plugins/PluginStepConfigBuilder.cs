@@ -16,7 +16,7 @@ namespace XrmPluginCore.Plugins
     public class PluginStepConfigBuilder<T> : IPluginStepConfigBuilder where T : Entity
     {
         public string EntityLogicalName { get; }
-        public EventOperation EventOperation { get; }
+        public string EventOperation { get; }
         public ExecutionStage ExecutionStage { get; }
 
         public string Name { get; private set; }
@@ -39,12 +39,12 @@ namespace XrmPluginCore.Plugins
 
         public Collection<string> FilteredAttributesCollection { get; } = new Collection<string>();
 
-        internal PluginStepConfigBuilder(EventOperation eventOperation, ExecutionStage executionStage)
+        internal PluginStepConfigBuilder(string eventOperation, ExecutionStage executionStage)
             : this(Activator.CreateInstance<T>().LogicalName, eventOperation, executionStage)
         {
         }
 
-        internal PluginStepConfigBuilder(string entityLogicalName, EventOperation eventOperation, ExecutionStage executionStage)
+        internal PluginStepConfigBuilder(string entityLogicalName, string eventOperation, ExecutionStage executionStage)
         {
             EntityLogicalName = entityLogicalName;
             EventOperation = eventOperation;

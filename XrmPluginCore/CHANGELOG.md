@@ -1,3 +1,7 @@
+### v1.1.0 - 8 October 2025
+* Breaking: Change Plugin Step Configs to not use the EventOperation enum but instead use a string to allow for custom messages. RegisterStep supports both enum and string for ease of use.
+* Fix: Remove the MessageEntity type since it isn't needed and muddies the waters
+
 ### v1.0.1 - 2 October 2025
 * Refactor: Merge CustomAPI into Plugin base class for simplicity
 
