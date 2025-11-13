@@ -13,7 +13,7 @@ namespace XrmPluginCore.Tests.TestPlugins.Bedrock
         public IPluginExecutionContext PluginContext { get; }
         public IOrganizationService OrganizationService { get; }
 
-        public SampleService(IPluginExecutionContext pluginContext, IOrganizationServiceFactory organizationServiceFactory)
+        public SampleService(IPluginExecutionContext pluginContext, IOrganizationServiceFactory organizationServiceFactory, IManagedIdentityService managedIdentityService)
         {
             PluginContext = pluginContext;
             OrganizationService = organizationServiceFactory.CreateOrganizationService(pluginContext.UserId);

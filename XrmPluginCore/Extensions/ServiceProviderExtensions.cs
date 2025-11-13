@@ -27,6 +27,7 @@ namespace XrmPluginCore.Extensions
             services.AddScoped(_ => serviceProvider.GetService<IPluginExecutionContext7>());
 
             services.AddScoped(_ => serviceProvider.GetService<IOrganizationServiceFactory>());
+            services.AddScoped(_ => serviceProvider.GetService<IManagedIdentityService>());
             services.AddScoped(_ => telemetryService);
             services.AddScoped<ITracingService>(_ => extendedTracingService);
             services.AddScoped<IExtendedTracingService>(_ => extendedTracingService);

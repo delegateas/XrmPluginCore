@@ -52,6 +52,7 @@ namespace XrmPluginCore.Tests.Helpers
             serviceCollection.AddScoped(_ => TracingService);
             serviceCollection.AddScoped(_ => PluginTelemetryLogger);
             serviceCollection.AddScoped(_ => OrganizationServiceFactory);
+            serviceCollection.AddScoped(_ => Substitute.For<IManagedIdentityService>());
             ServiceProvider = serviceCollection.BuildServiceProvider();
         }
 
