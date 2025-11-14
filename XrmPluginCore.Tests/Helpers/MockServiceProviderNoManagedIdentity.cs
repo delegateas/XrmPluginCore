@@ -7,7 +7,7 @@ using XrmPluginCore.Enums;
 
 namespace XrmPluginCore.Tests.Helpers
 {
-    public class MockServiceProvider
+    public class MockServiceProviderNoManagedIdentity
     {
         public IServiceProvider ServiceProvider { get; private set; }
         public IPluginExecutionContext PluginExecutionContext { get; private set; }
@@ -17,7 +17,7 @@ namespace XrmPluginCore.Tests.Helpers
         public IOrganizationService OrganizationAdminService { get; private set; }
         public ILogger PluginTelemetryLogger { get; private set; }
 
-        public MockServiceProvider()
+        public MockServiceProviderNoManagedIdentity()
         {
             SetupMocks();
         }
@@ -52,7 +52,6 @@ namespace XrmPluginCore.Tests.Helpers
             serviceCollection.AddScoped(_ => TracingService);
             serviceCollection.AddScoped(_ => PluginTelemetryLogger);
             serviceCollection.AddScoped(_ => OrganizationServiceFactory);
-            serviceCollection.AddScoped(_ => Substitute.For<IManagedIdentityService>());
             ServiceProvider = serviceCollection.BuildServiceProvider();
         }
 
