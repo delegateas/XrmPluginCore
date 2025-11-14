@@ -1,3 +1,6 @@
+### v1.1.1 - 14 November 2025
+* Add: IManagedIdentityService to service provider (#1)
+
 ### v1.1.0 - 8 October 2025
 * Breaking: Change Plugin Step Configs to not use the EventOperation enum but instead use a string to allow for custom messages. RegisterStep supports both enum and string for ease of use.
 * Fix: Remove the MessageEntity type since it isn't needed and muddies the waters
