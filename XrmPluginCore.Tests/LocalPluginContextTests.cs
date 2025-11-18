@@ -11,7 +11,7 @@ namespace XrmPluginCore.Tests
     public class LocalPluginContextTests
     {
         [Fact]
-        public void Constructor_ValidServiceProvider_ShouldInitializeCorrectly()
+        public void ConstructorValidServiceProviderShouldInitializeCorrectly()
         {
             // Arrange
             var mockProvider = new MockServiceProvider();
@@ -30,14 +30,14 @@ namespace XrmPluginCore.Tests
         }
 
         [Fact]
-        public void Constructor_NullServiceProvider_ShouldThrowArgumentNullException()
+        public void ConstructorNullServiceProviderShouldThrowArgumentNullException()
         {
             // Act & Assert
             Assert.Throws<ArgumentNullException>(() => new LocalPluginContext(null));
         }
 
         [Fact]
-        public void Trace_ValidMessage_ShouldCallTracingService()
+        public void TraceValidMessageShouldCallTracingService()
         {
             // Arrange
             var mockProvider = new MockServiceProvider();
@@ -57,7 +57,7 @@ namespace XrmPluginCore.Tests
         }
 
         [Fact]
-        public void Trace_NullMessage_ShouldNotCallTracingService()
+        public void TraceNullMessageShouldNotCallTracingService()
         {
             // Arrange
             var mockProvider = new MockServiceProvider();
@@ -72,7 +72,7 @@ namespace XrmPluginCore.Tests
         }
 
         [Fact]
-        public void Trace_EmptyMessage_ShouldNotCallTracingService()
+        public void TraceEmptyMessageShouldNotCallTracingService()
         {
             // Arrange
             var mockProvider = new MockServiceProvider();
@@ -87,7 +87,7 @@ namespace XrmPluginCore.Tests
         }
 
         [Fact]
-        public void Trace_WhitespaceMessage_ShouldNotCallTracingService()
+        public void TraceWhitespaceMessageShouldNotCallTracingService()
         {
             // Arrange
             var mockProvider = new MockServiceProvider();
@@ -102,7 +102,7 @@ namespace XrmPluginCore.Tests
         }
 
         [Fact]
-        public void OrganizationService_ShouldUseUserId()
+        public void OrganizationServiceShouldUseUserId()
         {
             // Arrange
             var mockProvider = new MockServiceProvider();
@@ -118,7 +118,7 @@ namespace XrmPluginCore.Tests
         }
 
         [Fact]
-        public void OrganizationAdminService_ShouldUseNullUserId()
+        public void OrganizationAdminServiceShouldUseNullUserId()
         {
             // Arrange
             var mockProvider = new MockServiceProvider();

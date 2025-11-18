@@ -14,7 +14,7 @@ namespace XrmPluginCore.Tests
     public class CustomAPITests
     {
         [Fact]
-        public void Execute_NullServiceProvider_ShouldThrowArgumentNullException()
+        public void ExecuteNullServiceProviderShouldThrowArgumentNullException()
         {
             // Arrange
             var customApi = new TestCustomAPI();
@@ -24,7 +24,7 @@ namespace XrmPluginCore.Tests
         }
 
         [Fact]
-        public void Execute_ValidRegistration_ShouldExecuteActionWithLocalPluginContext()
+        public void ExecuteValidRegistrationShouldExecuteActionWithLocalPluginContext()
         {
             // Arrange
             var customApi = new TestCustomAPI();
@@ -39,7 +39,7 @@ namespace XrmPluginCore.Tests
         }
 
         [Fact]
-        public void Execute_ValidRegistration_ShouldExecuteActionWithServiceProvider()
+        public void ExecuteValidRegistrationShouldExecuteActionWithServiceProvider()
         {
             // Arrange
             var customApi = new TestCustomAPIServiceProvider();
@@ -54,7 +54,7 @@ namespace XrmPluginCore.Tests
         }
 
         [Fact]
-        public void Execute_NoRegistration_ShouldNotExecuteAction()
+        public void ExecuteNoRegistrationShouldNotExecuteAction()
         {
             // Arrange
             var customApi = new TestNoRegistrationCustomAPI();
@@ -68,7 +68,7 @@ namespace XrmPluginCore.Tests
         }
 
         [Fact]
-        public void Execute_FaultException_ShouldRethrow()
+        public void ExecuteFaultExceptionShouldRethrow()
         {
             // Arrange
             var mockProvider = new MockServiceProvider();
@@ -86,7 +86,7 @@ namespace XrmPluginCore.Tests
         }
 
         [Fact]
-        public void RegisterCustomAPI_MultipleRegistrations_ShouldThrowInvalidOperationException()
+        public void RegisterCustomAPIMultipleRegistrationsShouldThrowInvalidOperationException()
         {
             // Arrange
             var customApi = new TestMultipleRegistrationCustomAPI();
@@ -96,7 +96,7 @@ namespace XrmPluginCore.Tests
         }
 
         [Fact]
-        public void GetRegistration_ValidRegistration_ShouldReturnConfiguration()
+        public void GetRegistrationValidRegistrationShouldReturnConfiguration()
         {
             // Arrange
             var customApi = new TestCustomAPI();
@@ -111,7 +111,7 @@ namespace XrmPluginCore.Tests
         }
 
         [Fact]
-        public void GetRegistration_WithConfiguration_ShouldReturnFullConfiguration()
+        public void GetRegistrationWithConfigurationShouldReturnFullConfiguration()
         {
             // Arrange
             var customApi = new TestCustomAPIWithConfig();
@@ -139,7 +139,7 @@ namespace XrmPluginCore.Tests
         }
 
         [Fact]
-        public void OnBeforeBuildServiceProvider_ShouldAllowModification()
+        public void OnBeforeBuildServiceProviderShouldAllowModification()
         {
             // Arrange
             var customApi = new TestServiceProviderModificationCustomAPI();
@@ -153,7 +153,7 @@ namespace XrmPluginCore.Tests
         }
 
         [Fact]
-        public void Execute_ShouldTraceEntryAndExit()
+        public void ExecuteShouldTraceEntryAndExit()
         {
             // Arrange
             var customApi = new TestCustomAPI();
@@ -188,7 +188,7 @@ namespace XrmPluginCore.Tests
         }
 
         [Fact]
-        public void Execute_ShouldTraceExecutionInfo()
+        public void ExecuteShouldTraceExecutionInfo()
         {
             // Arrange
             var customApi = new TestCustomAPI();

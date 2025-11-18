@@ -12,7 +12,7 @@ namespace XrmPluginCore.Tests.Integration
     public class CustomAPIIntegrationTests
     {
         [Fact]
-        public void FullCustomAPIWorkflow_ShouldExecuteCorrectly()
+        public void FullCustomAPIWorkflowShouldExecuteCorrectly()
         {
             // Arrange
             var customApi = new IntegrationTestCustomAPI();
@@ -39,7 +39,7 @@ namespace XrmPluginCore.Tests.Integration
         }
 
         [Fact]
-        public void CustomAPIRegistration_ShouldContainCorrectConfiguration()
+        public void CustomAPIRegistrationShouldContainCorrectConfiguration()
         {
             // Arrange
             var customApi = new IntegrationTestCustomAPI();
@@ -66,7 +66,7 @@ namespace XrmPluginCore.Tests.Integration
         }
 
         [Fact]
-        public void BoundCustomAPI_ShouldConfigureBinding()
+        public void BoundCustomAPIShouldConfigureBinding()
         {
             // Arrange
             var customApi = new BoundCustomAPI();
@@ -80,7 +80,7 @@ namespace XrmPluginCore.Tests.Integration
         }
 
         [Fact]
-        public void PrivateCustomAPI_ShouldBePrivate()
+        public void PrivateCustomAPIShouldBePrivate()
         {
             // Arrange
             var customApi = new PrivateCustomAPI();

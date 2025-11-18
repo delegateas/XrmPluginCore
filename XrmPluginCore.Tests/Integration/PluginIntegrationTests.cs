@@ -13,7 +13,7 @@ namespace XrmPluginCore.Tests.Integration
     public class PluginIntegrationTests
     {
         [Fact]
-        public void FullPluginWorkflow_CreateAccount_ShouldExecuteCorrectly()
+        public void FullPluginWorkflowCreateAccountShouldExecuteCorrectly()
         {
             // Arrange
             var plugin = new IntegrationTestPlugin();
@@ -51,7 +51,7 @@ namespace XrmPluginCore.Tests.Integration
         }
 
         [Fact]
-        public void PluginWithMultipleImages_ShouldAccessAllImages()
+        public void PluginWithMultipleImagesShouldAccessAllImages()
         {
             // Arrange
             var plugin = new MultipleImagesPlugin();
@@ -84,7 +84,7 @@ namespace XrmPluginCore.Tests.Integration
         }
 
         [Fact]
-        public void PluginRegistrations_ShouldContainCorrectConfiguration()
+        public void PluginRegistrationsShouldContainCorrectConfiguration()
         {
             // Arrange
             var plugin = new IntegrationTestPlugin();

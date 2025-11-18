@@ -17,7 +17,7 @@ namespace XrmPluginCore.Tests
     public class PluginTests
     {
         [Fact]
-        public void Execute_NullServiceProvider_ShouldThrowArgumentNullException()
+        public void ExecuteNullServiceProviderShouldThrowArgumentNullException()
         {
             // Arrange
             var plugin = new TestAccountPlugin();
@@ -27,7 +27,7 @@ namespace XrmPluginCore.Tests
         }
 
         [Fact]
-        public void Execute_MatchingRegistration_ShouldExecuteAction()
+        public void ExecuteMatchingRegistrationShouldExecuteAction()
         {
             // Arrange
             var plugin = new TestAccountPlugin();
@@ -48,7 +48,7 @@ namespace XrmPluginCore.Tests
         }
 
         [Fact]
-        public void Execute_MatchingRegistration_ShouldExecuteAction_ServiceProvider()
+        public void ExecuteMatchingRegistrationShouldExecuteActionServiceProvider()
         {
             // Arrange
             var plugin = new TestAccountPlugin();
@@ -69,7 +69,7 @@ namespace XrmPluginCore.Tests
         }
 
         [Fact]
-        public void Execute_MatchingRegistration_ShouldExecuteAction_ServiceProvider_DI()
+        public void ExecuteMatchingRegistrationShouldExecuteActionServiceProviderDI()
         {
             // Arrange
             var plugin = new SamplePlugin();
@@ -92,7 +92,7 @@ namespace XrmPluginCore.Tests
         }
         
         [Fact]
-        public void Execute_MatchingRegistration_ShouldExecuteAction_ServiceProvider_DI_NoManagedIdentity()
+        public void ExecuteMatchingRegistrationShouldExecuteActionServiceProviderDINoManagedIdentity()
         {
             // Arrange
             var plugin = new SamplePluginNoManagedIdentity();
@@ -115,7 +115,7 @@ namespace XrmPluginCore.Tests
         }
         
         [Fact]
-        public void Execute_MatchingRegistration_ShouldExecuteAction_ServiceProvider_DI_NoManagedIdentity_ProviderHas()
+        public void ExecuteMatchingRegistrationShouldExecuteActionServiceProviderDINoManagedIdentityProviderHas()
         {
             // Arrange
             var plugin = new SamplePluginNoManagedIdentity();
@@ -138,7 +138,7 @@ namespace XrmPluginCore.Tests
         }
 
         [Fact]
-        public void Execute_MatchingRegistration_ShouldExecuteAction_ServiceProvider_DI_NoManagedIdentityFromProvider()
+        public void ExecuteMatchingRegistrationShouldExecuteActionServiceProviderDINoManagedIdentityFromProvider()
         {
             // Arrange
             var plugin = new SamplePlugin();
@@ -161,7 +161,7 @@ namespace XrmPluginCore.Tests
         }
 
         [Fact]
-        public void Execute_NonMatchingEntity_ShouldNotExecuteAction()
+        public void ExecuteNonMatchingEntityShouldNotExecuteAction()
         {
             // Arrange
             var plugin = new TestAccountPlugin();
@@ -180,7 +180,7 @@ namespace XrmPluginCore.Tests
         }
 
         [Fact]
-        public void Execute_NonMatchingMessage_ShouldNotExecuteAction()
+        public void ExecuteNonMatchingMessageShouldNotExecuteAction()
         {
             // Arrange
             var plugin = new TestAccountPlugin();
@@ -199,7 +199,7 @@ namespace XrmPluginCore.Tests
         }
 
         [Fact]
-        public void Execute_NonMatchingStage_ShouldNotExecuteAction()
+        public void ExecuteNonMatchingStageShouldNotExecuteAction()
         {
             // Arrange
             var plugin = new TestAccountPlugin();
@@ -218,7 +218,7 @@ namespace XrmPluginCore.Tests
         }
 
         [Fact]
-        public void Execute_CustomMessage_ShouldExecuteAction()
+        public void ExecuteCustomMessageShouldExecuteAction()
         {
             // Arrange
             var plugin = new TestCustomMessagePlugin();
@@ -238,7 +238,7 @@ namespace XrmPluginCore.Tests
         }
 
         [Fact]
-        public void Execute_NoRegistrations_ShouldNotExecuteAction()
+        public void ExecuteNoRegistrationsShouldNotExecuteAction()
         {
             // Arrange
             var plugin = new TestNoRegistrationPlugin();
@@ -252,7 +252,7 @@ namespace XrmPluginCore.Tests
         }
 
         [Fact]
-        public void Execute_MultipleRegistrations_ShouldExecuteCorrectAction()
+        public void ExecuteMultipleRegistrationsShouldExecuteCorrectAction()
         {
             // Arrange
             var plugin = new TestMultipleRegistrationPlugin();
@@ -284,7 +284,7 @@ namespace XrmPluginCore.Tests
         }
 
         [Fact]
-        public void Execute_FaultException_ShouldRethrow()
+        public void ExecuteFaultExceptionShouldRethrow()
         {
             // Arrange
             var mockProvider = new MockServiceProvider();
@@ -307,7 +307,7 @@ namespace XrmPluginCore.Tests
         }
 
         [Fact]
-        public void GetRegistrations_ShouldReturnCorrectRegistrations()
+        public void GetRegistrationsShouldReturnCorrectRegistrations()
         {
             // Arrange
             var plugin = new TestMultipleRegistrationPlugin();
@@ -322,7 +322,7 @@ namespace XrmPluginCore.Tests
         }
 
         [Fact]
-        public void GetEntity_ValidTarget_ShouldReturnEntity()
+        public void GetEntityValidTargetShouldReturnEntity()
         {
             // Arrange
             var mockProvider = new MockServiceProvider();
@@ -339,7 +339,7 @@ namespace XrmPluginCore.Tests
         }
 
         [Fact]
-        public void GetEntity_NoTarget_ShouldReturnNull()
+        public void GetEntityNoTargetShouldReturnNull()
         {
             // Arrange
             var mockProvider = new MockServiceProvider();
@@ -357,7 +357,7 @@ namespace XrmPluginCore.Tests
         }
 
         [Fact]
-        public void GetEntity_WrongEntityType_ShouldReturnNull()
+        public void GetEntityWrongEntityTypeShouldReturnNull()
         {
             // Arrange
             var mockProvider = new MockServiceProvider();
@@ -377,7 +377,7 @@ namespace XrmPluginCore.Tests
         }
 
         [Fact]
-        public void GetPreImage_ValidImage_ShouldReturnEntity()
+        public void GetPreImageValidImageShouldReturnEntity()
         {
             // Arrange
             var mockProvider = new MockServiceProvider();
@@ -394,7 +394,7 @@ namespace XrmPluginCore.Tests
         }
 
         [Fact]
-        public void GetPostImage_ValidImage_ShouldReturnEntity()
+        public void GetPostImageValidImageShouldReturnEntity()
         {
             // Arrange
             var mockProvider = new MockServiceProvider();
@@ -411,7 +411,7 @@ namespace XrmPluginCore.Tests
         }
 
         [Fact]
-        public void OnBeforeBuildServiceProvider_ShouldAllowModification()
+        public void OnBeforeBuildServiceProviderShouldAllowModification()
         {
             // Arrange
             var plugin = new TestServiceProviderModificationPlugin();
