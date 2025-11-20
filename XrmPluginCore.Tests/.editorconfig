@@ -1,0 +1,4 @@
+# C# files
+[*.cs]
+
+dotnet_diagnostic.CS0618.severity = none # Suppress 'obsolete' warnings for test project
