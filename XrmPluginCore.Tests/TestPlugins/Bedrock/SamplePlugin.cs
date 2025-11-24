@@ -1,7 +1,5 @@
-﻿using XrmPluginCore.Enums;
-using XrmPluginCore.Tests;
+using XrmPluginCore.Enums;
 using Microsoft.Extensions.DependencyInjection;
-using XrmPluginCore;
 
 namespace XrmPluginCore.Tests.TestPlugins.Bedrock
 {

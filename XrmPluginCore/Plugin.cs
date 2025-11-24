@@ -20,12 +20,15 @@ namespace XrmPluginCore
     public abstract class Plugin : IPlugin, IPluginDefinition, ICustomApiDefinition
     {
         private string ChildClassName { get; }
+        private string ChildClassShortName { get; }
         private List<PluginStepRegistration> RegisteredPluginSteps { get; } = new List<PluginStepRegistration>();
         private CustomApiRegistration RegisteredCustomApi { get; set; }
 
         protected Plugin()
         {
-            ChildClassName = GetType().ToString();
+            var type = GetType();
+            ChildClassName = type.ToString();
+            ChildClassShortName = type.Name;
         }
 
         /// <summary>
@@ -54,17 +57,36 @@ namespace XrmPluginCore
                 throw new ArgumentNullException(nameof(serviceProvider));
             }
 
-            // Build a local service provider to manage the lifetime of services for this execution
+            // Build a local service provider
             var localServiceProvider = serviceProvider.BuildServiceProvider(OnBeforeBuildServiceProvider);
 
             try
             {
                 localServiceProvider.Trace(string.Format(CultureInfo.InvariantCulture, "Entered {0}.Execute()", ChildClassName));
-                var context = localServiceProvider.GetService<IPluginExecutionContext>() ?? throw new Exception("Unable to get Plugin Execution Context");
-                var pluginAction = GetAction(context);
+				var context = localServiceProvider.GetService<IPluginExecutionContext>()
+					?? throw new Exception("Unable to get Plugin Execution Context");
+
+				// Find the matching registration to determine if we need to register IPluginContext
+				var matchingRegistration = GetMatchingRegistration(context);
+				var pluginAction = matchingRegistration?.Action;
 
                 if (pluginAction == null)
                 {
+                    // Check if this is an incomplete builder chain (registration exists but Execute() was never called)
+                    if (matchingRegistration?.ConfigBuilder != null)
+                    {
+                        throw new InvalidPluginExecutionException(
+                            OperationStatus.Failed,
+                            string.Format(
+                                CultureInfo.InvariantCulture,
+                                "Plugin step registration for Entity: {0}, Message: {1} in {2} is incomplete. " +
+                                "Ensure Execute() is called on the builder to complete the registration.",
+                                context.PrimaryEntityName,
+                                context.MessageName,
+                                ChildClassName
+                            ));
+                    }
+
                     localServiceProvider.Trace(string.Format(
                         CultureInfo.InvariantCulture,
                         "No registered event found for Entity: {0}, Message: {1} in {2}",
@@ -229,8 +251,66 @@ namespace XrmPluginCore
             where T : Entity
         {
             var builder = new PluginStepConfigBuilder<T>(eventOperation, executionStage);
-            RegisteredPluginSteps.Add(new PluginStepRegistration(builder, action));
+            var registration = new PluginStepRegistration(builder, action)
+            {
+                // Store metadata for convention-based type-safe wrapper discovery
+                EntityTypeName = typeof(T).Name,
+                EventOperation = eventOperation,
+                ExecutionStage = executionStage.ToString(),
+                PluginClassName = ChildClassShortName
+            };
+            RegisteredPluginSteps.Add(registration);
             return builder;
+        }
+
+        /// <summary>
+        /// Register a plugin step for the given entity type with type-safe image support.
+        /// Use WithPreImage/WithPostImage to add images, then call Execute to complete registration.
+        /// </summary>
+        /// <typeparam name="TEntity">The entity type to register the plugin for</typeparam>
+        /// <typeparam name="TService">The service type to pass to the action</typeparam>
+        /// <param name="eventOperation">The event operation to register the plugin for</param>
+        /// <param name="executionStage">The execution stage of the plugin registration</param>
+        /// <returns>A <see cref="PluginStepBuilder{TEntity, TService}"/> for configuring images and completing registration</returns>
+        protected PluginStepBuilder<TEntity, TService> RegisterStep<TEntity, TService>(
+            EventOperation eventOperation, ExecutionStage executionStage)
+            where TEntity : Entity
+        {
+            return RegisterStep<TEntity, TService>(eventOperation.ToString(), executionStage);
+        }
+
+        /// <summary>
+        /// Register a plugin step for the given entity type with type-safe image support.
+        /// Use WithPreImage/WithPostImage to add images, then call Execute to complete registration.
+        /// <br/>
+        /// <b>
+        /// NOTE: It is strongly advised to use the <see cref="RegisterStep{TEntity, TService}(EventOperation, ExecutionStage)"/> method instead if possible.<br/>
+        /// Only use this method if you are registering for a non-standard message.
+        /// </b>
+        /// </summary>
+        /// <typeparam name="TEntity">The entity type to register the plugin for</typeparam>
+        /// <typeparam name="TService">The service type to pass to the action</typeparam>
+        /// <param name="eventOperation">The event operation to register the plugin for</param>
+        /// <param name="executionStage">The execution stage of the plugin registration</param>
+        /// <returns>A <see cref="PluginStepBuilder{TEntity, TService}"/> for configuring images and completing registration</returns>
+        protected PluginStepBuilder<TEntity, TService> RegisterStep<TEntity, TService>(
+            string eventOperation, ExecutionStage executionStage)
+            where TEntity : Entity
+        {
+            var builder = new PluginStepConfigBuilder<TEntity>(eventOperation, executionStage);
+
+            // Create registration immediately so XrmSync/DAXIF can find it via GetRegistrations()
+            // Action is set later when Execute() is called on the builder
+            var registration = new PluginStepRegistration(builder, null)
+            {
+                EntityTypeName = typeof(TEntity).Name,
+                EventOperation = eventOperation,
+                ExecutionStage = executionStage.ToString(),
+                PluginClassName = ChildClassShortName
+            };
+            RegisteredPluginSteps.Add(registration);
+
+            return new PluginStepBuilder<TEntity, TService>(builder, registration);
         }
 
         /// <summary>
@@ -277,23 +357,20 @@ namespace XrmPluginCore
             return configBuilder;
         }
 
-        private Action<IExtendedServiceProvider> GetAction(IPluginExecutionContext context)
+        private PluginStepRegistration GetMatchingRegistration(IPluginExecutionContext context)
         {
             // Iterate over all of the expected registered events to ensure that the plugin
             // has been invoked by an expected event
             // For any given plug-in event at an instance in time, we would expect at most 1 result to match.
-            var pluginAction =
-                RegisteredPluginSteps
-                .FirstOrDefault(a => a.ConfigBuilder?.Matches(context) == true)?
-                .Action;
+            var pluginStepRegistration = RegisteredPluginSteps.FirstOrDefault(a => a.ConfigBuilder?.Matches(context) == true);
 
-            if (pluginAction != null)
+            // If no plugin step found and we have a CustomAPI, return a registration with that action
+            if (pluginStepRegistration == null && RegisteredCustomApi != null)
             {
-                return pluginAction;
+                return new PluginStepRegistration(null, RegisteredCustomApi.Action);
             }
 
-            // If no plugin step was found, check if this is a CustomAPI call
-            return RegisteredCustomApi?.Action;
+            return pluginStepRegistration;
         }
     }
 }

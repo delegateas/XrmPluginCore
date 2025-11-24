@@ -1,3 +1,8 @@
+### v1.2.0 - 21 November 2025
+* Add: Type-Safe Images feature with compile-time enforcement via `WithPreImage()` and `WithPostImage()` builder methods
+* Add: `PluginStepBuilder` pattern that enforces image handling at compile time
+* Deprecate: `AddImage()`, methods in favor of new `WithPreImage()`/`WithPostImage()` API
+
 ### v1.1.1 - 14 November 2025
 * Add: IManagedIdentityService to service provider (#1)
 

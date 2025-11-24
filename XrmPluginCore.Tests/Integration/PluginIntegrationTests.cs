@@ -4,7 +4,6 @@ using FluentAssertions;
 using Microsoft.Xrm.Sdk;
 using System;
 using System.Linq;
-using XrmPluginCore;
 using Xunit;
 using XrmPluginCore.Extensions;
 

@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Xrm.Sdk;
 using Microsoft.Xrm.Sdk.PluginTelemetry;
 using System;
@@ -7,7 +7,12 @@ namespace XrmPluginCore.Extensions
 {
     public static class ServiceProviderExtensions
     {
-        public static ExtendedServiceProvider BuildServiceProvider(this IServiceProvider serviceProvider, Func<IServiceCollection, IServiceCollection> onBeforeBuild)
+        /// <summary>
+        /// Builds a local scoped service provider for plugin execution.
+        /// </summary>
+        public static ExtendedServiceProvider BuildServiceProvider(
+            this IServiceProvider serviceProvider,
+            Func<IServiceCollection, IServiceCollection> onBeforeBuild)
         {
             // Get services of the ServiceProvider
             var tracingService = serviceProvider.GetService<ITracingService>() ?? throw new Exception("Unable to get Tracing service");
