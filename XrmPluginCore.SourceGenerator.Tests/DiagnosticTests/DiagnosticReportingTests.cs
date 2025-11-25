@@ -40,6 +40,7 @@ using XrmPluginCore;
 using XrmPluginCore.Enums;
 using Microsoft.Extensions.DependencyInjection;
 using TestNamespace;
+using TestNamespace.PluginRegistrations.TestPlugin.AccountUpdatePostOperation;
 
 namespace TestNamespace
 {
@@ -48,9 +49,9 @@ namespace TestNamespace
         // Only has a constructor WITH parameters - no parameterless constructor
         public TestPlugin(string config)
         {
-            RegisterStep<Account, ITestService>(EventOperation.Update, ExecutionStage.PostOperation)
-                .WithPreImage(x => x.Name)
-                .Execute<PreImage>((service, preImage) => service.Process(preImage));
+            RegisterStep<Account, ITestService>(EventOperation.Update, ExecutionStage.PostOperation,
+                service => service.Process)
+                .AddImage(ImageType.PreImage, x => x.Name);
         }
 
         protected override IServiceCollection OnBeforeBuildServiceProvider(IServiceCollection services)
@@ -59,8 +60,8 @@ namespace TestNamespace
         }
     }
 
-    public interface ITestService { void Process(object image); }
-    public class TestService : ITestService { public void Process(object image) { } }
+    public interface ITestService { void Process(PreImage preImage); }
+    public class TestService : ITestService { public void Process(PreImage preImage) { } }
 }";
 
         var source = TestFixtures.GetCompleteSource(TestFixtures.AccountEntity, pluginSource);
@@ -69,7 +70,7 @@ namespace TestNamespace
         var result = GeneratorTestHelper.RunGenerator(
             CompilationHelper.CreateCompilation(source));
 
-        // Assert - should report XPC4001 (was XPC4002, now renamed)
+        // Assert - should report XPC4001
         var errorDiagnostics = result.GeneratorDiagnostics
             .Where(d => d.Id == "XPC4001")
             .ToArray();
@@ -105,9 +106,9 @@ namespace TestNamespace
     }
 
     [Fact]
-    public void Should_Report_XPC4002_When_Execute_Not_Called_After_WithImage()
+    public void Should_Report_XPC4002_When_Handler_Method_Not_Found()
     {
-        // Arrange - plugin with WithPreImage but NO Execute() call
+        // Arrange - method reference points to NonExistentMethod but service has Process
         var pluginSource = @"
 using XrmPluginCore;
 using XrmPluginCore.Enums;
@@ -120,10 +121,9 @@ namespace TestNamespace
     {
         public TestPlugin()
         {
-            // This registration has WithPreImage but NO Execute() - incomplete!
-            RegisterStep<Account, ITestService>(EventOperation.Update, ExecutionStage.PostOperation)
-                .WithPreImage(x => x.Name, x => x.Revenue);
-            // Missing: .Execute<PreImage>((service, preImage) => service.Process(preImage));
+            RegisterStep<Account, ITestService>(EventOperation.Update, ExecutionStage.PostOperation,
+                service => service.NonExistentMethod)
+                .WithPreImage(x => x.Name);
         }
 
         protected override IServiceCollection OnBeforeBuildServiceProvider(IServiceCollection services)
@@ -132,8 +132,15 @@ namespace TestNamespace
         }
     }
 
-    public interface ITestService { void Process(object image); }
-    public class TestService : ITestService { public void Process(object image) { } }
+    public interface ITestService
+    {
+        void Process();
+    }
+
+    public class TestService : ITestService
+    {
+        public void Process() { }
+    }
 }";
 
         var source = TestFixtures.GetCompleteSource(TestFixtures.AccountEntity, pluginSource);
@@ -142,12 +149,438 @@ namespace TestNamespace
         var result = GeneratorTestHelper.RunGenerator(
             CompilationHelper.CreateCompilation(source));
 
-        // Assert - should report XPC4002
+        // Assert
         var errorDiagnostics = result.GeneratorDiagnostics
             .Where(d => d.Id == "XPC4002")
             .ToArray();
 
-        errorDiagnostics.Should().NotBeEmpty("XPC4002 should be reported when Execute() is not called after WithPreImage/WithPostImage");
-        errorDiagnostics.Should().OnlyContain(d => d.Severity == DiagnosticSeverity.Warning);
+        errorDiagnostics.Should().NotBeEmpty("XPC4002 should be reported when handler method is not found");
+        errorDiagnostics.Should().OnlyContain(d => d.Severity == DiagnosticSeverity.Error);
+    }
+
+    [Fact]
+    public void Should_Report_XPC4003_When_Handler_Missing_PreImage_Parameter()
+    {
+        // Arrange - WithPreImage is registered but handler takes no parameters
+        var pluginSource = @"
+using XrmPluginCore;
+using XrmPluginCore.Enums;
+using Microsoft.Extensions.DependencyInjection;
+using TestNamespace;
+
+namespace TestNamespace
+{
+    public class TestPlugin : Plugin
+    {
+        public TestPlugin()
+        {
+            RegisterStep<Account, ITestService>(EventOperation.Update, ExecutionStage.PostOperation,
+                service => service.Process)
+                .WithPreImage(x => x.Name);
+        }
+
+        protected override IServiceCollection OnBeforeBuildServiceProvider(IServiceCollection services)
+        {
+            return services.AddScoped<ITestService, TestService>();
+        }
+    }
+
+    public interface ITestService
+    {
+        void Process();  // No PreImage parameter!
+    }
+
+    public class TestService : ITestService
+    {
+        public void Process() { }
+    }
+}";
+
+        var source = TestFixtures.GetCompleteSource(TestFixtures.AccountEntity, pluginSource);
+
+        // Act
+        var result = GeneratorTestHelper.RunGenerator(
+            CompilationHelper.CreateCompilation(source));
+
+        // Assert
+        var errorDiagnostics = result.GeneratorDiagnostics
+            .Where(d => d.Id == "XPC4003")
+            .ToArray();
+
+        errorDiagnostics.Should().NotBeEmpty("XPC4003 should be reported when handler is missing PreImage parameter");
+        errorDiagnostics.Should().OnlyContain(d => d.Severity == DiagnosticSeverity.Error);
+    }
+
+    [Fact]
+    public void Should_Report_XPC4003_When_Handler_Missing_PostImage_Parameter()
+    {
+        // Arrange - WithPostImage is registered but handler takes no parameters
+        var pluginSource = @"
+using XrmPluginCore;
+using XrmPluginCore.Enums;
+using Microsoft.Extensions.DependencyInjection;
+using TestNamespace;
+
+namespace TestNamespace
+{
+    public class TestPlugin : Plugin
+    {
+        public TestPlugin()
+        {
+            RegisterStep<Account, ITestService>(EventOperation.Update, ExecutionStage.PostOperation,
+                service => service.Process)
+                .WithPostImage(x => x.Name);
+        }
+
+        protected override IServiceCollection OnBeforeBuildServiceProvider(IServiceCollection services)
+        {
+            return services.AddScoped<ITestService, TestService>();
+        }
+    }
+
+    public interface ITestService
+    {
+        void Process();  // No PostImage parameter!
+    }
+
+    public class TestService : ITestService
+    {
+        public void Process() { }
+    }
+}";
+
+        var source = TestFixtures.GetCompleteSource(TestFixtures.AccountEntity, pluginSource);
+
+        // Act
+        var result = GeneratorTestHelper.RunGenerator(
+            CompilationHelper.CreateCompilation(source));
+
+        // Assert
+        var errorDiagnostics = result.GeneratorDiagnostics
+            .Where(d => d.Id == "XPC4003")
+            .ToArray();
+
+        errorDiagnostics.Should().NotBeEmpty("XPC4003 should be reported when handler is missing PostImage parameter");
+        errorDiagnostics.Should().OnlyContain(d => d.Severity == DiagnosticSeverity.Error);
+    }
+
+    [Fact]
+    public void Should_Report_XPC4003_When_Handler_Missing_Both_Image_Parameters()
+    {
+        // Arrange - Both WithPreImage and WithPostImage but handler takes no parameters
+        var pluginSource = @"
+using XrmPluginCore;
+using XrmPluginCore.Enums;
+using Microsoft.Extensions.DependencyInjection;
+using TestNamespace;
+
+namespace TestNamespace
+{
+    public class TestPlugin : Plugin
+    {
+        public TestPlugin()
+        {
+            RegisterStep<Account, ITestService>(EventOperation.Update, ExecutionStage.PostOperation,
+                service => service.Process)
+                .WithPreImage(x => x.Name)
+                .WithPostImage(x => x.AccountNumber);
+        }
+
+        protected override IServiceCollection OnBeforeBuildServiceProvider(IServiceCollection services)
+        {
+            return services.AddScoped<ITestService, TestService>();
+        }
+    }
+
+    public interface ITestService
+    {
+        void Process();  // No parameters!
+    }
+
+    public class TestService : ITestService
+    {
+        public void Process() { }
+    }
+}";
+
+        var source = TestFixtures.GetCompleteSource(TestFixtures.AccountEntity, pluginSource);
+
+        // Act
+        var result = GeneratorTestHelper.RunGenerator(
+            CompilationHelper.CreateCompilation(source));
+
+        // Assert
+        var errorDiagnostics = result.GeneratorDiagnostics
+            .Where(d => d.Id == "XPC4003")
+            .ToArray();
+
+        errorDiagnostics.Should().NotBeEmpty("XPC4003 should be reported when handler is missing both image parameters");
+        errorDiagnostics.Should().OnlyContain(d => d.Severity == DiagnosticSeverity.Error);
+    }
+
+    [Fact]
+    public void Should_Report_XPC4003_When_Handler_Has_Wrong_Parameter_Order()
+    {
+        // Arrange - WithPreImage and WithPostImage but handler has parameters in wrong order
+        var pluginSource = @"
+using XrmPluginCore;
+using XrmPluginCore.Enums;
+using Microsoft.Extensions.DependencyInjection;
+using TestNamespace;
+using TestNamespace.PluginRegistrations.TestPlugin.AccountUpdatePostOperation;
+
+namespace TestNamespace
+{
+    public class TestPlugin : Plugin
+    {
+        public TestPlugin()
+        {
+            RegisterStep<Account, ITestService>(EventOperation.Update, ExecutionStage.PostOperation,
+                service => service.Process)
+                .WithPreImage(x => x.Name)
+                .WithPostImage(x => x.AccountNumber);
+        }
+
+        protected override IServiceCollection OnBeforeBuildServiceProvider(IServiceCollection services)
+        {
+            return services.AddScoped<ITestService, TestService>();
+        }
+    }
+
+    public interface ITestService
+    {
+        void Process(PostImage post, PreImage pre);  // Wrong order! Should be PreImage, PostImage
+    }
+
+    public class TestService : ITestService
+    {
+        public void Process(PostImage post, PreImage pre) { }
+    }
+}";
+
+        var source = TestFixtures.GetCompleteSource(TestFixtures.AccountEntity, pluginSource);
+
+        // Act
+        var result = GeneratorTestHelper.RunGenerator(
+            CompilationHelper.CreateCompilation(source));
+
+        // Assert
+        var errorDiagnostics = result.GeneratorDiagnostics
+            .Where(d => d.Id == "XPC4003")
+            .ToArray();
+
+        errorDiagnostics.Should().NotBeEmpty("XPC4003 should be reported when handler has wrong parameter order");
+        errorDiagnostics.Should().OnlyContain(d => d.Severity == DiagnosticSeverity.Error);
+    }
+
+    [Fact]
+    public void Should_Report_XPC4004_When_WithPreImage_Used_With_Invocation_Syntax()
+    {
+        // Arrange - WithPreImage used with s => s.DoSomething() (invocation) instead of s => s.DoSomething (method reference)
+        var pluginSource = @"
+using XrmPluginCore;
+using XrmPluginCore.Enums;
+using Microsoft.Extensions.DependencyInjection;
+using TestNamespace;
+
+namespace TestNamespace
+{
+    public class TestPlugin : Plugin
+    {
+        public TestPlugin()
+        {
+            RegisterStep<Account, ITestService>(EventOperation.Update, ExecutionStage.PostOperation,
+                s => s.DoSomething())  // Invocation syntax - NOT method reference
+                .WithPreImage(x => x.Name);
+        }
+
+        protected override IServiceCollection OnBeforeBuildServiceProvider(IServiceCollection services)
+        {
+            return services.AddScoped<ITestService, TestService>();
+        }
+    }
+
+    public interface ITestService
+    {
+        void DoSomething();
+    }
+
+    public class TestService : ITestService
+    {
+        public void DoSomething() { }
+    }
+}";
+
+        var source = TestFixtures.GetCompleteSource(TestFixtures.AccountEntity, pluginSource);
+
+        // Act
+        var result = GeneratorTestHelper.RunGenerator(
+            CompilationHelper.CreateCompilation(source));
+
+        // Assert
+        var warningDiagnostics = result.GeneratorDiagnostics
+            .Where(d => d.Id == "XPC4004")
+            .ToArray();
+
+        warningDiagnostics.Should().NotBeEmpty("XPC4004 should be reported when WithPreImage is used with invocation syntax");
+        warningDiagnostics.Should().OnlyContain(d => d.Severity == DiagnosticSeverity.Warning);
+    }
+
+    [Fact]
+    public void Should_Report_XPC4004_When_WithPostImage_Used_With_Invocation_Syntax()
+    {
+        // Arrange - WithPostImage used with s => s.DoSomething() (invocation) instead of s => s.DoSomething (method reference)
+        var pluginSource = @"
+using XrmPluginCore;
+using XrmPluginCore.Enums;
+using Microsoft.Extensions.DependencyInjection;
+using TestNamespace;
+
+namespace TestNamespace
+{
+    public class TestPlugin : Plugin
+    {
+        public TestPlugin()
+        {
+            RegisterStep<Account, ITestService>(EventOperation.Update, ExecutionStage.PostOperation,
+                s => s.DoSomething())  // Invocation syntax - NOT method reference
+                .WithPostImage(x => x.Name);
+        }
+
+        protected override IServiceCollection OnBeforeBuildServiceProvider(IServiceCollection services)
+        {
+            return services.AddScoped<ITestService, TestService>();
+        }
+    }
+
+    public interface ITestService
+    {
+        void DoSomething();
+    }
+
+    public class TestService : ITestService
+    {
+        public void DoSomething() { }
+    }
+}";
+
+        var source = TestFixtures.GetCompleteSource(TestFixtures.AccountEntity, pluginSource);
+
+        // Act
+        var result = GeneratorTestHelper.RunGenerator(
+            CompilationHelper.CreateCompilation(source));
+
+        // Assert
+        var warningDiagnostics = result.GeneratorDiagnostics
+            .Where(d => d.Id == "XPC4004")
+            .ToArray();
+
+        warningDiagnostics.Should().NotBeEmpty("XPC4004 should be reported when WithPostImage is used with invocation syntax");
+        warningDiagnostics.Should().OnlyContain(d => d.Severity == DiagnosticSeverity.Warning);
+    }
+
+    [Fact]
+    public void Should_Not_Report_XPC4004_When_Using_Method_Reference_Syntax()
+    {
+        // Arrange - Method reference syntax (correct usage)
+        var pluginSource = @"
+using XrmPluginCore;
+using XrmPluginCore.Enums;
+using Microsoft.Extensions.DependencyInjection;
+using TestNamespace;
+using TestNamespace.PluginRegistrations.TestPlugin.AccountUpdatePostOperation;
+
+namespace TestNamespace
+{
+    public class TestPlugin : Plugin
+    {
+        public TestPlugin()
+        {
+            RegisterStep<Account, ITestService>(EventOperation.Update, ExecutionStage.PostOperation,
+                s => s.HandleUpdate)  // Method reference - correct syntax
+                .WithPreImage(x => x.Name);
+        }
+
+        protected override IServiceCollection OnBeforeBuildServiceProvider(IServiceCollection services)
+        {
+            return services.AddScoped<ITestService, TestService>();
+        }
+    }
+
+    public interface ITestService
+    {
+        void HandleUpdate(PreImage preImage);
+    }
+
+    public class TestService : ITestService
+    {
+        public void HandleUpdate(PreImage preImage) { }
+    }
+}";
+
+        var source = TestFixtures.GetCompleteSource(TestFixtures.AccountEntity, pluginSource);
+
+        // Act
+        var result = GeneratorTestHelper.RunGenerator(
+            CompilationHelper.CreateCompilation(source));
+
+        // Assert
+        var warningDiagnostics = result.GeneratorDiagnostics
+            .Where(d => d.Id == "XPC4004")
+            .ToArray();
+
+        warningDiagnostics.Should().BeEmpty("XPC4004 should NOT be reported when using method reference syntax");
+    }
+
+    [Fact]
+    public void Should_Not_Report_XPC4004_When_Old_Api_Used_Without_Images()
+    {
+        // Arrange - Invocation syntax but without WithPreImage/WithPostImage (no images registered)
+        var pluginSource = @"
+using XrmPluginCore;
+using XrmPluginCore.Enums;
+using Microsoft.Extensions.DependencyInjection;
+using TestNamespace;
+
+namespace TestNamespace
+{
+    public class TestPlugin : Plugin
+    {
+        public TestPlugin()
+        {
+            RegisterStep<Account, ITestService>(EventOperation.Update, ExecutionStage.PostOperation,
+                s => s.DoSomething())  // Invocation syntax - but no images
+                .AddFilteredAttributes(x => x.Name);
+        }
+
+        protected override IServiceCollection OnBeforeBuildServiceProvider(IServiceCollection services)
+        {
+            return services.AddScoped<ITestService, TestService>();
+        }
+    }
+
+    public interface ITestService
+    {
+        void DoSomething();
+    }
+
+    public class TestService : ITestService
+    {
+        public void DoSomething() { }
+    }
+}";
+
+        var source = TestFixtures.GetCompleteSource(TestFixtures.AccountEntity, pluginSource);
+
+        // Act
+        var result = GeneratorTestHelper.RunGenerator(
+            CompilationHelper.CreateCompilation(source));
+
+        // Assert
+        var warningDiagnostics = result.GeneratorDiagnostics
+            .Where(d => d.Id == "XPC4004")
+            .ToArray();
+
+        warningDiagnostics.Should().BeEmpty("XPC4004 should NOT be reported when old API is used without images");
     }
 }

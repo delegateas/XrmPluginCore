@@ -4,6 +4,8 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Linq.Expressions;
+using System.Reflection;
 using System.ServiceModel;
 using XrmPluginCore.CustomApis;
 using XrmPluginCore.Enums;
@@ -70,20 +72,27 @@ namespace XrmPluginCore
 				var matchingRegistration = GetMatchingRegistration(context);
 				var pluginAction = matchingRegistration?.Action;
 
+                // If action is null but we have a handler method name, try to discover generated action wrapper
+                if (pluginAction == null && matchingRegistration?.HandlerMethodName != null)
+                {
+                    pluginAction = DiscoverGeneratedAction(matchingRegistration);
+                }
+
                 if (pluginAction == null)
                 {
-                    // Check if this is an incomplete builder chain (registration exists but Execute() was never called)
-                    if (matchingRegistration?.ConfigBuilder != null)
+                    // If we have a handler method but no generated wrapper, provide a clear error
+                    if (matchingRegistration?.HandlerMethodName != null)
                     {
                         throw new InvalidPluginExecutionException(
                             OperationStatus.Failed,
                             string.Format(
                                 CultureInfo.InvariantCulture,
-                                "Plugin step registration for Entity: {0}, Message: {1} in {2} is incomplete. " +
-                                "Ensure Execute() is called on the builder to complete the registration.",
+                                "Plugin step registration for Entity: {0}, Message: {1} in {2} uses method reference " +
+                                "'{3}' but no generated ActionWrapper was found. Ensure the source generator is running.",
                                 context.PrimaryEntityName,
                                 context.MessageName,
-                                ChildClassName
+                                ChildClassName,
+                                matchingRegistration.HandlerMethodName
                             ));
                     }
 
@@ -264,53 +273,100 @@ namespace XrmPluginCore
         }
 
         /// <summary>
-        /// Register a plugin step for the given entity type with type-safe image support.
-        /// Use WithPreImage/WithPostImage to add images, then call Execute to complete registration.
+        /// Register a plugin step for the given entity type with a method reference.
+        /// The source generator will emit an ActionWrapper that calls the specified method.
+        /// Use WithPreImage/WithPostImage to add images - the method signature must match.
         /// </summary>
         /// <typeparam name="TEntity">The entity type to register the plugin for</typeparam>
-        /// <typeparam name="TService">The service type to pass to the action</typeparam>
+        /// <typeparam name="TService">The service type that contains the handler method</typeparam>
         /// <param name="eventOperation">The event operation to register the plugin for</param>
         /// <param name="executionStage">The execution stage of the plugin registration</param>
-        /// <returns>A <see cref="PluginStepBuilder{TEntity, TService}"/> for configuring images and completing registration</returns>
-        protected PluginStepBuilder<TEntity, TService> RegisterStep<TEntity, TService>(
-            EventOperation eventOperation, ExecutionStage executionStage)
+        /// <param name="methodReference">A lambda expression pointing to the handler method (e.g., service => service.HandleUpdate)</param>
+        /// <returns>A <see cref="PluginStepConfigBuilder{TEntity}"/> for configuring images and filtered attributes</returns>
+        protected PluginStepConfigBuilder<TEntity> RegisterStep<TEntity, TService>(
+            EventOperation eventOperation,
+            ExecutionStage executionStage,
+            Expression<Func<TService, Delegate>> methodReference)
             where TEntity : Entity
         {
-            return RegisterStep<TEntity, TService>(eventOperation.ToString(), executionStage);
+            return RegisterStep<TEntity, TService>(eventOperation.ToString(), executionStage, methodReference);
         }
 
         /// <summary>
-        /// Register a plugin step for the given entity type with type-safe image support.
-        /// Use WithPreImage/WithPostImage to add images, then call Execute to complete registration.
+        /// Register a plugin step for the given entity type with a method reference.
+        /// The source generator will emit an ActionWrapper that calls the specified method.
+        /// Use WithPreImage/WithPostImage to add images - the method signature must match.
         /// <br/>
         /// <b>
-        /// NOTE: It is strongly advised to use the <see cref="RegisterStep{TEntity, TService}(EventOperation, ExecutionStage)"/> method instead if possible.<br/>
+        /// NOTE: It is strongly advised to use the <see cref="RegisterStep{TEntity, TService}(EventOperation, ExecutionStage, Expression{Func{TService, Delegate}})"/> method instead if possible.<br/>
         /// Only use this method if you are registering for a non-standard message.
         /// </b>
         /// </summary>
         /// <typeparam name="TEntity">The entity type to register the plugin for</typeparam>
-        /// <typeparam name="TService">The service type to pass to the action</typeparam>
+        /// <typeparam name="TService">The service type that contains the handler method</typeparam>
         /// <param name="eventOperation">The event operation to register the plugin for</param>
         /// <param name="executionStage">The execution stage of the plugin registration</param>
-        /// <returns>A <see cref="PluginStepBuilder{TEntity, TService}"/> for configuring images and completing registration</returns>
-        protected PluginStepBuilder<TEntity, TService> RegisterStep<TEntity, TService>(
-            string eventOperation, ExecutionStage executionStage)
+        /// <param name="methodReference">A lambda expression pointing to the handler method (e.g., service => service.HandleUpdate)</param>
+        /// <returns>A <see cref="PluginStepConfigBuilder{TEntity}"/> for configuring images and filtered attributes</returns>
+        protected PluginStepConfigBuilder<TEntity> RegisterStep<TEntity, TService>(
+            string eventOperation,
+            ExecutionStage executionStage,
+            Expression<Func<TService, Delegate>> methodReference)
             where TEntity : Entity
         {
+            var methodName = ExtractMethodName(methodReference);
             var builder = new PluginStepConfigBuilder<TEntity>(eventOperation, executionStage);
 
-            // Create registration immediately so XrmSync/DAXIF can find it via GetRegistrations()
-            // Action is set later when Execute() is called on the builder
             var registration = new PluginStepRegistration(builder, null)
             {
                 EntityTypeName = typeof(TEntity).Name,
                 EventOperation = eventOperation,
                 ExecutionStage = executionStage.ToString(),
-                PluginClassName = ChildClassShortName
+                PluginClassName = ChildClassShortName,
+                ServiceTypeName = typeof(TService).Name,
+                ServiceTypeFullName = typeof(TService).FullName,
+                HandlerMethodName = methodName
             };
-            RegisteredPluginSteps.Add(registration);
 
-            return new PluginStepBuilder<TEntity, TService>(builder, registration);
+            RegisteredPluginSteps.Add(registration);
+            return builder;
+        }
+
+        private static string ExtractMethodName<TService>(Expression<Func<TService, Delegate>> methodReference)
+        {
+            // Handle: service => service.HandleUpdate
+            // This compiles to a UnaryExpression (Convert) wrapping a CreateDelegate call
+            if (methodReference.Body is UnaryExpression unary &&
+                unary.Operand is MethodCallExpression methodCall &&
+                methodCall.Object is ConstantExpression constant &&
+                constant.Value is MethodInfo methodInfo)
+            {
+                return methodInfo.Name;
+            }
+
+            // Fallback for simple member access (property or field that is a delegate)
+            if (methodReference.Body is MemberExpression member)
+            {
+                return member.Member.Name;
+            }
+
+            throw new ArgumentException("Could not extract method name from expression. Use format: service => service.MethodName");
+        }
+
+        private Action<IExtendedServiceProvider> DiscoverGeneratedAction(PluginStepRegistration registration)
+        {
+            // Build the wrapper type name using naming convention
+            // Format: {Namespace}.PluginRegistrations.{PluginClassName}.{Entity}{Operation}{Stage}.ActionWrapper
+            var wrapperTypeName = $"{GetType().Namespace}.PluginRegistrations.{registration.PluginClassName}." +
+                                  $"{registration.EntityTypeName}{registration.EventOperation}{registration.ExecutionStage}.ActionWrapper";
+
+            var wrapperType = GetType().Assembly.GetType(wrapperTypeName);
+            if (wrapperType == null)
+                return null;
+
+            // Use interface instead of reflection
+            var wrapper = (IActionWrapper)Activator.CreateInstance(wrapperType);
+            return wrapper.CreateAction();
         }
 
         /// <summary>

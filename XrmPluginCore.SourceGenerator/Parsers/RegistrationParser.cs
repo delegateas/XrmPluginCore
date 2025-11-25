@@ -107,12 +107,26 @@ internal static class RegistrationParser
 			PluginClassName = classDeclaration.Identifier.Text
 		};
 
+		// Extract service type from generic parameter TService (if present)
+		if (methodSymbol.TypeArguments.Length >= 2)
+		{
+			var serviceType = methodSymbol.TypeArguments[1];
+			metadata.ServiceTypeName = serviceType.Name;
+			metadata.ServiceTypeFullName = serviceType.ToDisplayString();
+		}
+
 		// Extract EventOperation and ExecutionStage from arguments
 		var arguments = registerStepInvocation.ArgumentList.Arguments;
 		if (arguments.Count >= 2)
 		{
 			metadata.EventOperation = ExtractEnumValue(arguments[0].Expression);
 			metadata.ExecutionStage = ExtractEnumValue(arguments[1].Expression);
+		}
+
+		// Extract method reference from 3rd argument if present
+		if (arguments.Count >= 3)
+		{
+			metadata.HandlerMethodName = ParseMethodReference(arguments[2].Expression, semanticModel);
 		}
 
 		// Find image calls
@@ -125,27 +139,51 @@ internal static class RegistrationParser
 			}
 		}
 
-		// Check if Execute() was called
-		metadata.HasExecuteCall = SyntaxHelper.HasExecuteCall(registerStepInvocation);
-
-		// If images exist but Execute() is not called, add diagnostic
-		if (metadata.Images.Any(i => i.Attributes.Any()) && !metadata.HasExecuteCall)
+		// After parsing images, check if we have images but no method reference
+		// This indicates using old API (s => s.Method()) with new image methods (WithPreImage/WithPostImage)
+		if (metadata.Images.Any() && string.IsNullOrEmpty(metadata.HandlerMethodName))
 		{
 			metadata.Diagnostics.Add(new DiagnosticInfo
 			{
-				Descriptor = DiagnosticDescriptors.MissingExecuteCall,
+				Descriptor = DiagnosticDescriptors.ImageWithoutMethodReference,
 				Location = registerStepInvocation.GetLocation(),
-				MessageArgs = [$"{metadata.EntityTypeName}.{metadata.EventOperation}"]
+				MessageArgs = []
 			});
 		}
 
-		// Only return metadata if we have images with attributes
-		return metadata.Images.Any(i => i.Attributes.Any()) ? metadata : null;
+		// Return metadata if we have a method reference (for code generation)
+		// OR if we have diagnostics to report
+		return !string.IsNullOrEmpty(metadata.HandlerMethodName) || metadata.Diagnostics.Any() ? metadata : null;
 	}
 
 	/// <summary>
-	/// Parses WithPreImage, WithPostImage, AddPreImage, AddPostImage, or AddImage call to extract image metadata.
-	/// Handles both the old API (AddImage with ImageType) and new API (WithPreImage/WithPostImage).
+	/// Parses a method reference expression like "service => service.HandleUpdate"
+	/// </summary>
+	private static string ParseMethodReference(ExpressionSyntax expression, SemanticModel semanticModel)
+	{
+		// Handle: service => service.HandleUpdate
+		if (expression is SimpleLambdaExpressionSyntax lambda)
+		{
+			if (lambda.Body is MemberAccessExpressionSyntax memberAccess)
+			{
+				return memberAccess.Name.Identifier.Text;
+			}
+		}
+
+		// Handle: (service) => service.HandleUpdate
+		if (expression is ParenthesizedLambdaExpressionSyntax parenLambda)
+		{
+			if (parenLambda.Body is MemberAccessExpressionSyntax memberAccess)
+			{
+				return memberAccess.Name.Identifier.Text;
+			}
+		}
+
+		return null;
+	}
+
+	/// <summary>
+	/// Parses WithPreImage, WithPostImage, or AddImage call to extract image metadata.
 	/// </summary>
 	private static ImageMetadata ParseImageInvocation(
 		InvocationExpressionSyntax imageInvocation,
@@ -201,8 +239,8 @@ internal static class RegistrationParser
 			attributeStartIndex = 0;
 		}
 
-		// For new API (WithPreImage/WithPostImage), all arguments are attributes
-		// For old API with AddImage, first string after ImageType might be image name
+		// For WithPreImage/WithPostImage, all arguments are attributes
+		// For AddImage, first string after ImageType might be image name
 		bool allArgumentsAreAttributes = isGenericMethod ||
 			methodName == Constants.WithPreImageMethodName || methodName == Constants.WithPostImageMethodName;
 

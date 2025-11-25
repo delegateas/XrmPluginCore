@@ -86,7 +86,7 @@ namespace Some.Namespace {
 }
 ```
 
-### Type-Safe Images (Advanced)
+### Type-Safe Images
 
 XrmPluginCore includes a source generator that creates type-safe wrapper classes for your plugin images (PreImage/PostImage), giving you compile-time safety and IntelliSense support.
 
@@ -95,17 +95,19 @@ XrmPluginCore includes a source generator that creates type-safe wrapper classes
 ```csharp
 using XrmPluginCore;
 using XrmPluginCore.Enums;
-using MyPlugin.PluginImages.AccountUpdatePlugin.AccountUpdatePostOperation;
+using MyPlugin.PluginRegistrations.AccountUpdatePlugin.AccountUpdatePostOperation;
 
 namespace MyPlugin {
     public class AccountUpdatePlugin : Plugin {
         public AccountUpdatePlugin() {
-            // Type-safe API: WithPreImage enforces that Execute receives PreImage
-            RegisterStep<Account, IAccountService>(EventOperation.Update, ExecutionStage.PostOperation)
+            // Type-safe API: method reference enables source generator validation
+            RegisterStep<Account, IAccountService>(
+				EventOperation.Update,
+				ExecutionStage.PostOperation,
+				service => service.Process)
                 .AddFilteredAttributes(x => x.Name, x => x.AccountNumber)
-                .WithPreImage(x => x.Name, x => x.Revenue)
-                .Execute<PreImage>((service, pre) => service.Process(pre));
-                // ↑ Compile error if you don't accept PreImage!
+                .WithPreImage(x => x.Name, x => x.Revenue);
+                // Source generator validates that Process accepts PreImage parameter
         }
     }
 
@@ -124,7 +126,7 @@ namespace MyPlugin {
 ```
 
 **Benefits of type-safe images:**
-- **Compile-time enforcement** - You MUST handle registered images
+- **Compile-time enforcement** - Source generator diagnostics ensure handler signature matches registered images
 - **IntelliSense support** - Auto-completion for available attributes
 - **Null safety** - Proper handling of missing attributes
 - **No boilerplate** - Just add a `using` statement for the generated namespace
@@ -132,16 +134,18 @@ namespace MyPlugin {
 #### Working with Both Images
 
 ```csharp
-using MyPlugin.PluginImages.AccountUpdatePlugin.AccountUpdatePostOperation;
+using MyPlugin.PluginRegistrations.AccountUpdatePlugin.AccountUpdatePostOperation;
 
 public class AccountUpdatePlugin : Plugin {
     public AccountUpdatePlugin() {
-        RegisterStep<Account, IAccountService>(EventOperation.Update, ExecutionStage.PostOperation)
+        RegisterStep<Account, IAccountService>(
+				EventOperation.Update,
+				ExecutionStage.PostOperation,
+				service => service.Process)
             .AddFilteredAttributes(x => x.Name, x => x.AccountNumber)
             .WithPreImage(x => x.Name, x => x.Revenue)
-            .WithPostImage(x => x.Name, x => x.AccountNumber)
-            .Execute<PreImage, PostImage>((service, pre, post) => service.Process(pre, post));
-            // Must accept both PreImage AND PostImage!
+            .WithPostImage(x => x.Name, x => x.AccountNumber);
+            // Handler method must accept both PreImage AND PostImage!
     }
 }
 
@@ -155,11 +159,11 @@ public class AccountService : IAccountService {
 
 **Generated Namespace Convention:**
 ```
-{YourNamespace}.PluginImages.{PluginClassName}.{Entity}{Operation}{Stage}
+{YourNamespace}.PluginRegistrations.{PluginClassName}.{Entity}{Operation}{Stage}
 ```
-Example: `MyPlugin.PluginImages.AccountUpdatePlugin.AccountUpdatePostOperation`
+Example: `MyPlugin.PluginRegistrations.AccountUpdatePlugin.AccountUpdatePostOperation`
 
-Inside this namespace you'll find simple class names: `PreImage` and `PostImage`
+Inside this namespace you'll find simple class names: `PreImage`, `PostImage`, and `ActionWrapper`
 
 ### Using the LocalPluginContext wrapper (Legacy)
 

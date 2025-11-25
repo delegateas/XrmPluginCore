@@ -12,19 +12,14 @@ internal static class WrapperClassGenerator
 {
 	/// <summary>
 	/// Generates a complete source file containing wrapper classes for a plugin step registration.
-	/// Only generates PreImage and PostImage wrappers (no Target wrapper).
+	/// Generates PreImage and PostImage wrappers, and ActionWrapper for the new method reference API.
 	/// </summary>
 	public static string GenerateWrapperClasses(PluginStepMetadata metadata)
 	{
-		// Only generate if there are images with attributes
 		var imagesWithAttributes = metadata.Images.Where(i => i.Attributes.Any()).ToList();
-		if (!imagesWithAttributes.Any())
-		{
-			return null;
-		}
 
-		// Estimate capacity: ~500 chars per image wrapper class
-		var estimatedCapacity = imagesWithAttributes.Count * 500;
+		// Estimate capacity: ~500 chars per image wrapper class + ~300 for ActionWrapper
+		var estimatedCapacity = (imagesWithAttributes.Count * 500) + 500;
 		var sb = new StringBuilder(estimatedCapacity);
 
 		// File header
@@ -33,20 +28,26 @@ internal static class WrapperClassGenerator
 
 		// Using directives
 		sb.AppendLine("using System;");
+		sb.AppendLine("using System.Linq;");
 		sb.AppendLine("using System.Runtime.CompilerServices;");
 		sb.AppendLine("using Microsoft.Xrm.Sdk;");
+		sb.AppendLine("using Microsoft.Extensions.DependencyInjection;");
 		sb.AppendLine("using XrmPluginCore;");
 		sb.AppendLine();
 
-		// Namespace declaration on the format {Namespace}.PluginImages.{PluginClassName}.{EntityTypeName}{EventOperation}{ExecutionStage}
-		sb.AppendLine($"namespace {metadata.ImageNamespace}");
+		var namespaceToUse = metadata.RegistrationNamespace;
+
+		// Namespace declaration
+		sb.AppendLine($"namespace {namespaceToUse}");
 		sb.AppendLine("{");
 
-		// Generate Image wrapper classes
+		// Generate Image wrapper classes if we have images with attributes
 		foreach (var image in imagesWithAttributes)
 		{
 			GenerateImageWrapperClass(sb, metadata, image);
 		}
+
+		GenerateActionWrapperClass(sb, metadata, imagesWithAttributes);
 
 		// Close namespace
 		sb.AppendLine("}");
@@ -134,6 +135,72 @@ internal static class WrapperClassGenerator
 	}
 
 	/// <summary>
+	/// Generates the ActionWrapper class that wraps the service method call.
+	/// This is used by the runtime to discover and invoke the plugin action.
+	/// </summary>
+	private static void GenerateActionWrapperClass(StringBuilder sb, PluginStepMetadata metadata, List<ImageMetadata> images)
+	{
+		var hasPreImage = images.Any(i => i.ImageType == "PreImage");
+		var hasPostImage = images.Any(i => i.ImageType == "PostImage");
+
+		// XML documentation
+		sb.AppendLine("    /// <summary>");
+		sb.AppendLine($"    /// Generated action wrapper for {metadata.ServiceTypeName}.{metadata.HandlerMethodName}");
+		sb.AppendLine("    /// </summary>");
+
+		// CompilerGenerated attribute
+		sb.AppendLine("    [CompilerGenerated]");
+
+		// Class declaration
+		sb.AppendLine("    internal sealed class ActionWrapper : IActionWrapper");
+		sb.AppendLine("    {");
+
+		// CreateAction method
+		sb.AppendLine("        /// <summary>");
+		sb.AppendLine("        /// Creates the action delegate that invokes the service method with appropriate images.");
+		sb.AppendLine("        /// </summary>");
+		sb.AppendLine("        public Action<IExtendedServiceProvider> CreateAction()");
+		sb.AppendLine("        {");
+		sb.AppendLine("            return serviceProvider =>");
+		sb.AppendLine("            {");
+
+		// Get the service
+		sb.AppendLine($"                var service = serviceProvider.GetRequiredService<{metadata.ServiceTypeFullName}>();");
+
+		// Get images if needed
+		if (hasPreImage || hasPostImage)
+		{
+			sb.AppendLine("                var context = serviceProvider.GetService<IPluginExecutionContext>();");
+		}
+
+		var args = new List<string>();
+		if (hasPreImage)
+		{
+			sb.AppendLine("                var preImageEntity = context?.PreEntityImages?.Values?.FirstOrDefault();");
+			sb.AppendLine("                var preImage = preImageEntity != null ? new PreImage(preImageEntity) : null;");
+			args.Add("preImage");
+		}
+		if (hasPostImage)
+		{
+			sb.AppendLine("                var postImageEntity = context?.PostEntityImages?.Values?.FirstOrDefault();");
+			sb.AppendLine("                var postImage = postImageEntity != null ? new PostImage(postImageEntity) : null;");
+			args.Add("postImage");
+		}
+
+		var argsString = string.Join(", ", args);
+
+		// Call the service method
+		sb.AppendLine($"                service.{metadata.HandlerMethodName}({argsString});");
+
+		sb.AppendLine("            };");
+		sb.AppendLine("        }");
+
+		// Close class
+		sb.AppendLine("    }");
+		sb.AppendLine();
+	}
+
+	/// <summary>
 	/// Generates a unique hint name for the source file
 	/// </summary>
 	public static string GenerateHintName(PluginStepMetadata metadata)
@@ -161,6 +228,9 @@ internal static class WrapperClassGenerator
 			ExecutionStage = list[0].ExecutionStage,
 			Namespace = list[0].Namespace,
 			PluginClassName = list[0].PluginClassName,
+			ServiceTypeName = list[0].ServiceTypeName,
+			ServiceTypeFullName = list[0].ServiceTypeFullName,
+			HandlerMethodName = list[0].HandlerMethodName,
 			Images = []
 		};
 

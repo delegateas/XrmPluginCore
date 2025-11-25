@@ -48,7 +48,7 @@ public class CompilationTests
         // Act
         using var loadedAssembly = GeneratorTestHelper.LoadAssembly(result.AssemblyBytes!);
         var preImageType = loadedAssembly.Assembly.GetType(
-            "TestNamespace.PluginImages.TestPlugin.AccountUpdatePostOperation.PreImage");
+            "TestNamespace.PluginRegistrations.TestPlugin.AccountUpdatePostOperation.PreImage");
 
         preImageType.Should().NotBeNull("PreImage class should be generated");
 
@@ -89,7 +89,7 @@ public class CompilationTests
         // Act
         using var loadedAssembly = GeneratorTestHelper.LoadAssembly(result.AssemblyBytes!);
         var postImageType = loadedAssembly.Assembly.GetType(
-            "TestNamespace.PluginImages.TestPlugin.AccountUpdatePostOperation.PostImage");
+            "TestNamespace.PluginRegistrations.TestPlugin.AccountUpdatePostOperation.PostImage");
 
         var postImageInstance = Activator.CreateInstance(postImageType!, entity);
 
@@ -126,7 +126,7 @@ public class CompilationTests
 
         // Act
         using var loadedAssembly = GeneratorTestHelper.LoadAssembly(result.AssemblyBytes!);
-        var baseNamespace = "TestNamespace.PluginImages.TestPlugin.AccountUpdatePostOperation";
+        var baseNamespace = "TestNamespace.PluginRegistrations.TestPlugin.AccountUpdatePostOperation";
 
         var preImageType = loadedAssembly.Assembly.GetType($"{baseNamespace}.PreImage");
         var postImageType = loadedAssembly.Assembly.GetType($"{baseNamespace}.PostImage");
@@ -161,7 +161,7 @@ public class CompilationTests
         // Act
         using var loadedAssembly = GeneratorTestHelper.LoadAssembly(result.AssemblyBytes!);
         var preImageType = loadedAssembly.Assembly.GetType(
-            "TestNamespace.PluginImages.TestPlugin.AccountUpdatePostOperation.PreImage");
+            "TestNamespace.PluginRegistrations.TestPlugin.AccountUpdatePostOperation.PreImage");
 
         var preImageInstance = Activator.CreateInstance(preImageType!, entity);
 
@@ -189,11 +189,40 @@ public class CompilationTests
         // Act
         using var loadedAssembly = GeneratorTestHelper.LoadAssembly(result.AssemblyBytes!);
 
-        // Assert - namespace should follow pattern: {Namespace}.PluginImages.{Plugin}.{Entity}{Operation}{Stage}
-        var expectedNamespace = "TestNamespace.PluginImages.TestPlugin.AccountUpdatePostOperation";
+        // Assert - namespace should follow pattern: {Namespace}.PluginRegistrations.{Plugin}.{Entity}{Operation}{Stage}
+        var expectedNamespace = "TestNamespace.PluginRegistrations.TestPlugin.AccountUpdatePostOperation";
         var preImageType = loadedAssembly.Assembly.GetType($"{expectedNamespace}.PreImage");
 
         preImageType.Should().NotBeNull("PreImage should be in the expected namespace");
         preImageType!.Namespace.Should().Be(expectedNamespace);
+    }
+
+    [Fact]
+    public void Should_Generate_ActionWrapper_Class()
+    {
+        // Arrange
+        var source = TestFixtures.GetCompleteSource(
+            TestFixtures.AccountEntity,
+            TestFixtures.GetPluginWithPreImage());
+
+        var result = GeneratorTestHelper.RunGeneratorAndCompile(source);
+        result.Success.Should().BeTrue();
+
+        // Act
+        using var loadedAssembly = GeneratorTestHelper.LoadAssembly(result.AssemblyBytes!);
+        var expectedNamespace = "TestNamespace.PluginRegistrations.TestPlugin.AccountUpdatePostOperation";
+        var actionWrapperType = loadedAssembly.Assembly.GetType($"{expectedNamespace}.ActionWrapper");
+
+        // Assert
+        actionWrapperType.Should().NotBeNull("ActionWrapper should be generated");
+
+        // Verify ActionWrapper implements IActionWrapper interface
+        var iactionWrapperInterface = actionWrapperType!.GetInterface("IActionWrapper");
+        iactionWrapperInterface.Should().NotBeNull("ActionWrapper should implement IActionWrapper interface");
+
+        // Verify CreateAction method exists (now instance method, not static)
+        var createActionMethod = actionWrapperType.GetMethod("CreateAction");
+        createActionMethod.Should().NotBeNull("CreateAction method should exist");
+        createActionMethod!.IsStatic.Should().BeFalse("CreateAction should be an instance method since ActionWrapper implements IActionWrapper");
     }
 }

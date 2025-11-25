@@ -1,7 +1,7 @@
 using System;
 
 // Import the generated PreImage from the namespace
-using XrmPluginCore.Tests.TestPlugins.TypeSafe.PluginImages.TypeSafeContactPlugin.ContactCreatePostOperation;
+using XrmPluginCore.Tests.TestPlugins.TypeSafe.PluginRegistrations.TypeSafeContactPlugin.ContactCreatePostOperation;
 
 namespace XrmPluginCore.Tests.TestPlugins.TypeSafe
 {

@@ -9,6 +9,7 @@ using XrmPluginCore.SourceGenerator.CodeGeneration;
 using XrmPluginCore.SourceGenerator.Helpers;
 using XrmPluginCore.SourceGenerator.Models;
 using XrmPluginCore.SourceGenerator.Parsers;
+using XrmPluginCore.SourceGenerator.Validation;
 
 namespace XrmPluginCore.SourceGenerator.Generators;
 
@@ -93,12 +94,26 @@ public class PluginImageGenerator : IIncrementalGenerator
 			// Merge multiple registrations for the same entity/operation/stage
 			var mergedMetadata = WrapperClassGenerator.MergeMetadata(group);
 
-			// Include if there are images with attributes OR if there are diagnostics to report
-			if (mergedMetadata?.Images.Any(i => i.Attributes.Any()) == true ||
-				mergedMetadata?.Diagnostics?.Any() == true)
+			if (mergedMetadata is null)
+				continue;
+
+			// Store location for diagnostics
+			mergedMetadata.Location = location;
+
+			// Validate handler method signature
+			HandlerMethodValidator.ValidateHandlerMethod(
+				mergedMetadata,
+				semanticModel.Compilation,
+				location);
+
+			// Include if:
+			// - Has method reference (for ActionWrapper generation)
+			// - OR has images with attributes (for image wrapper generation)
+			// - OR has diagnostics to report
+			if (!string.IsNullOrEmpty(mergedMetadata.HandlerMethodName) ||
+				mergedMetadata.Images.Any(i => i.Attributes.Any()) ||
+				mergedMetadata.Diagnostics?.Any() == true)
 			{
-				// Store location for diagnostics
-				mergedMetadata.Location = location;
 				results.Add(mergedMetadata);
 			}
 		}
@@ -127,7 +142,8 @@ public class PluginImageGenerator : IIncrementalGenerator
 			}
 		}
 
-		if (metadata?.Images.Any(i => i.Attributes.Any()) != true)
+		// Generate code if we have a handler method reference (ActionWrapper always needed)
+		if (string.IsNullOrEmpty(metadata?.HandlerMethodName))
 			return;
 
 		try
@@ -166,7 +182,7 @@ public class PluginImageGenerator : IIncrementalGenerator
 			DiagnosticDescriptors.GenerationSuccess,
 			metadata.Location ?? Location.None,
 			1, // wrapper class count
-			metadata.ImageNamespace);
+			metadata.RegistrationNamespace);
 
 		// Uncomment to see generation info in build output
 		context.ReportDiagnostic(diagnostic);

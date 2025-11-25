@@ -3,7 +3,7 @@ using Microsoft.Xrm.Sdk;
 using XrmPluginCore.Enums;
 
 // Import the generated PreImage/PostImage from the namespace
-using XrmPluginCore.Tests.TestPlugins.TypeSafe.PluginImages.TypeSafeAccountPlugin.AccountUpdatePreOperation;
+using XrmPluginCore.Tests.TestPlugins.TypeSafe.PluginRegistrations.TypeSafeAccountPlugin.AccountUpdatePreOperation;
 
 namespace XrmPluginCore.Tests.TestPlugins.TypeSafe
 {
@@ -20,13 +20,12 @@ namespace XrmPluginCore.Tests.TestPlugins.TypeSafe
 
         public TypeSafeAccountPlugin()
         {
-            // Type-safe API: Images are passed directly to the action
-            // Using WithPreImage/WithPostImage enforces that Execute receives both images
-            RegisterStep<Account, TypeSafeAccountService>(EventOperation.Update, ExecutionStage.PreOperation)
+            // Type-safe API: Images are passed directly to the action via source-generated wrapper
+            RegisterStep<Account, TypeSafeAccountService>(EventOperation.Update, ExecutionStage.PreOperation,
+                service => service.HandleUpdate)
                 .AddFilteredAttributes(x => x.Name, x => x.Accountnumber)
                 .WithPreImage(x => x.Name, x => x.Accountnumber, x => x.Revenue)
-                .WithPostImage(x => x.Name, x => x.Accountnumber)
-                .Execute<PreImage, PostImage>((service, pre, post) => service.HandleUpdate(pre, post));
+                .WithPostImage(x => x.Name, x => x.Accountnumber);
         }
 
         protected override IServiceCollection OnBeforeBuildServiceProvider(IServiceCollection services)

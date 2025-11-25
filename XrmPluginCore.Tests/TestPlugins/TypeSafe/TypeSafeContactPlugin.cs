@@ -3,7 +3,7 @@ using Microsoft.Xrm.Sdk;
 using XrmPluginCore.Enums;
 
 // Import the generated PreImage from the namespace
-using XrmPluginCore.Tests.TestPlugins.TypeSafe.PluginImages.TypeSafeContactPlugin.ContactCreatePostOperation;
+using XrmPluginCore.Tests.TestPlugins.TypeSafe.PluginRegistrations.TypeSafeContactPlugin.ContactCreatePostOperation;
 
 namespace XrmPluginCore.Tests.TestPlugins.TypeSafe
 {
@@ -19,12 +19,11 @@ namespace XrmPluginCore.Tests.TestPlugins.TypeSafe
 
         public TypeSafeContactPlugin()
         {
-            // Type-safe API: PreImage is passed directly to the action
-            // Using WithPreImage enforces that Execute receives PreImage
-            RegisterStep<Contact, TypeSafeContactService>(EventOperation.Create, ExecutionStage.PostOperation)
+            // Type-safe API: PreImage is passed directly to the action via source-generated wrapper
+            RegisterStep<Contact, TypeSafeContactService>(EventOperation.Create, ExecutionStage.PostOperation,
+                service => service.HandleCreate)
                 .AddFilteredAttributes(x => x.Firstname, x => x.Lastname, x => x.Emailaddress1)
-                .WithPreImage(x => x.Firstname, x => x.Lastname, x => x.Mobilephone)
-                .Execute<PreImage>((service, pre) => service.HandleCreate(pre));
+                .WithPreImage(x => x.Firstname, x => x.Lastname, x => x.Mobilephone);
         }
 
         protected override IServiceCollection OnBeforeBuildServiceProvider(IServiceCollection services)

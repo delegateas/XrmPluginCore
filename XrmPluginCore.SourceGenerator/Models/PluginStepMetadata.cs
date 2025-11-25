@@ -15,7 +15,21 @@ internal sealed class PluginStepMetadata
 	public List<ImageMetadata> Images { get; set; } = [];
 	public string Namespace { get; set; }
 	public string PluginClassName { get; set; }
-	public bool HasExecuteCall { get; set; }
+
+	/// <summary>
+	/// Gets or sets the service type name (short name) for action wrapper generation.
+	/// </summary>
+	public string ServiceTypeName { get; set; }
+
+	/// <summary>
+	/// Gets or sets the fully qualified service type name for action wrapper generation.
+	/// </summary>
+	public string ServiceTypeFullName { get; set; }
+
+	/// <summary>
+	/// Gets or sets the handler method name on the service.
+	/// </summary>
+	public string HandlerMethodName { get; set; }
 
 	/// <summary>
 	/// Source location for diagnostic reporting. Not included in equality comparison.
@@ -28,11 +42,11 @@ internal sealed class PluginStepMetadata
 	public List<DiagnosticInfo> Diagnostics { get; set; } = [];
 
 	/// <summary>
-	/// Gets the namespace for generated image wrapper classes.
-	/// Format: {OriginalNamespace}.PluginImages.{PluginClassName}.{Entity}{Op}{Stage}
+	/// Gets the namespace for generated wrapper classes.
+	/// Format: {OriginalNamespace}.PluginRegistrations.{PluginClassName}.{Entity}{Op}{Stage}
 	/// </summary>
-	public string ImageNamespace =>
-		$"{Namespace}.PluginImages.{PluginClassName}.{EntityTypeName}{EventOperation}{ExecutionStage}";
+	public string RegistrationNamespace =>
+		$"{Namespace}.PluginRegistrations.{PluginClassName}.{EntityTypeName}{EventOperation}{ExecutionStage}";
 
 	/// <summary>
 	/// Gets a unique identifier for this registration.
@@ -50,7 +64,10 @@ internal sealed class PluginStepMetadata
 				&& EventOperation == other.EventOperation
 				&& ExecutionStage == other.ExecutionStage
 				&& Images.SequenceEqual(other.Images)
-				&& Namespace == other.Namespace;
+				&& Namespace == other.Namespace
+				&& ServiceTypeName == other.ServiceTypeName
+				&& ServiceTypeFullName == other.ServiceTypeFullName
+				&& HandlerMethodName == other.HandlerMethodName;
 		}
 		return false;
 	}
@@ -65,6 +82,9 @@ internal sealed class PluginStepMetadata
 			hash = (hash * 31) + (EventOperation?.GetHashCode() ?? 0);
 			hash = (hash * 31) + (ExecutionStage?.GetHashCode() ?? 0);
 			hash = (hash * 31) + (Namespace?.GetHashCode() ?? 0);
+			hash = (hash * 31) + (ServiceTypeName?.GetHashCode() ?? 0);
+			hash = (hash * 31) + (ServiceTypeFullName?.GetHashCode() ?? 0);
+			hash = (hash * 31) + (HandlerMethodName?.GetHashCode() ?? 0);
 			foreach (var img in Images)
 			{
 				hash = (hash * 31) + img.GetHashCode();

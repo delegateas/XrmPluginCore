@@ -93,66 +93,68 @@ The source generator provides compile-time type safety for plugin images (PreIma
 
 #### API Design
 
-Use `WithPreImage`/`WithPostImage` to register images. The `Execute` method signature is **enforced** by the compiler to accept the registered image types:
+Use `WithPreImage`/`WithPostImage` (convenience methods for `AddImage`) to register images. The method reference pattern (`service => service.HandleUpdate`) enables the source generator to validate that your handler method signature matches the registered images:
 
 ```csharp
-// PreImage only - Execute MUST accept PreImage parameter
-RegisterStep<Account, AccountService>(EventOperation.Update, ExecutionStage.PostOperation)
-    .AddFilteredAttributes(x => x.Name, x => x.AccountNumber)
-    .WithPreImage(x => x.Name, x => x.Revenue)
-    .Execute<PreImage>((service, preImage) => service.HandleUpdate(preImage));
+// Basic plugin (no images)
+RegisterStep<Account, AccountService>(EventOperation.Update, ExecutionStage.PostOperation, s => s.DoSomething())
+    .AddFilteredAttributes(x => x.Name);
 
-// PostImage only - Execute MUST accept PostImage parameter
-RegisterStep<Account, AccountService>(EventOperation.Update, ExecutionStage.PostOperation)
+// PreImage only - handler method MUST accept PreImage parameter
+RegisterStep<Account, AccountService>(EventOperation.Update, ExecutionStage.PostOperation, service => service.HandleUpdate)
+    .AddFilteredAttributes(x => x.Name, x => x.AccountNumber)
+    .WithPreImage(x => x.Name, x => x.Revenue);
+
+// PostImage only - handler method MUST accept PostImage parameter
+RegisterStep<Account, AccountService>(EventOperation.Update, ExecutionStage.PostOperation, service => service.HandleUpdate)
     .AddFilteredAttributes(x => x.Name)
-    .WithPostImage(x => x.Name, x => x.AccountNumber)
-    .Execute<PostImage>((service, postImage) => service.HandleUpdate(postImage));
+    .WithPostImage(x => x.Name, x => x.AccountNumber);
 
-// Both images - Execute MUST accept both parameters
-RegisterStep<Account, AccountService>(EventOperation.Update, ExecutionStage.PostOperation)
+// Both images - handler method MUST accept both parameters
+RegisterStep<Account, AccountService>(EventOperation.Update, ExecutionStage.PostOperation, service => service.HandleUpdate)
     .AddFilteredAttributes(x => x.Name, x => x.AccountNumber)
     .WithPreImage(x => x.Name, x => x.Revenue)
-    .WithPostImage(x => x.Name, x => x.AccountNumber)
-    .Execute<PreImage, PostImage>((service, pre, post) => service.HandleUpdate(pre, post));
+    .WithPostImage(x => x.Name, x => x.AccountNumber);
 ```
 
-**Key benefit**: If you register an image with `WithPreImage`, there is NO way to complete the registration without accepting the image in `Execute`. This prevents developers from accidentally ignoring registered images.
+**Key benefit**: The source generator emits diagnostics if your handler method signature does not match the registered images. This prevents developers from accidentally ignoring registered images.
 
 #### How It Works
 
-1. **Compile-Time Analysis**: The source generator scans all classes that inherit from `Plugin` and finds `RegisterStep` calls that use `WithPreImage()` or `WithPostImage()`.
+1. **Compile-Time Analysis**: The source generator scans all classes that inherit from `Plugin` and finds `RegisterStep` calls that use `WithPreImage()`, `WithPostImage()`, or `AddImage()`.
 
 2. **Metadata Extraction**: For each registration, it extracts:
    - Plugin class name
    - Entity type (TEntity)
    - Event operation and execution stage
    - Filtered attributes from `AddFilteredAttributes()` calls
-   - Pre/Post image attributes from `WithPreImage()`/`WithPostImage()` calls
+   - Pre/Post image attributes from `WithPreImage()`/`WithPostImage()`/`AddImage()` calls
+   - Method reference from the action delegate
 
-3. **Code Generation**: Generates image wrapper classes in isolated namespaces:
-   - Namespace: `{Namespace}.PluginImages.{PluginClassName}.{Entity}{Operation}{Stage}`
-   - Classes: `PreImage`, `PostImage` (simple names, no prefixes)
+3. **Code Generation**: Generates wrapper classes in isolated namespaces:
+   - Namespace: `{Namespace}.PluginRegistrations.{PluginClassName}.{Entity}{Operation}{Stage}`
+   - Classes: `PreImage`, `PostImage`, `ActionWrapper` (simple names, no prefixes)
 
-4. **Runtime Execution**: When the plugin executes:
-   - The `Execute` action is invoked with the service and image instances
-   - Images are constructed using `Activator.CreateInstance(typeof(TImage), entity)` from the execution context
-   - Services receive strongly-typed image wrappers as parameters
+4. **Signature Validation**: The source generator validates that the handler method signature matches the registered images and emits compile-time diagnostics if there is a mismatch.
+
+5. **Runtime Execution**: When the plugin executes:
+   - Images are constructed from the execution context
+   - The handler method is invoked with strongly-typed image wrappers as parameters
 
 #### Example Usage
 
 ```csharp
-using XrmPluginCore.Tests.TestPlugins.TypeSafe.PluginImages.AccountPlugin.AccountUpdatePostOperation;
+using MyNamespace.PluginRegistrations.AccountPlugin.AccountUpdatePostOperation;
 
 public class AccountPlugin : Plugin
 {
     public AccountPlugin()
     {
-        // Type-safe API with compile-time enforcement
-        RegisterStep<Account, AccountService>(EventOperation.Update, ExecutionStage.PostOperation)
+        // Type-safe API with compile-time enforcement via method reference
+        RegisterStep<Account, AccountService>(EventOperation.Update, ExecutionStage.PostOperation, service => service.HandleUpdate)
             .AddFilteredAttributes(x => x.Name, x => x.AccountNumber)
             .WithPreImage(x => x.Name, x => x.Revenue)
-            .WithPostImage(x => x.Name, x => x.AccountNumber)
-            .Execute<PreImage, PostImage>((service, pre, post) => service.HandleUpdate(pre, post));
+            .WithPostImage(x => x.Name, x => x.AccountNumber);
     }
 
     protected override IServiceCollection OnBeforeBuildServiceProvider(IServiceCollection services)
@@ -163,7 +165,7 @@ public class AccountPlugin : Plugin
 
 public class AccountService
 {
-    // Images are passed directly to the method - no DI injection needed
+    // Handler signature MUST match registered images (enforced by source generator diagnostics)
     public void HandleUpdate(PreImage preImage, PostImage postImage)
     {
         var previousName = preImage.Name;     // Type-safe, IntelliSense works
@@ -178,69 +180,54 @@ public class AccountService
 The source generator creates wrapper classes in isolated namespaces:
 
 ```csharp
-// Generated in: {Namespace}.PluginImages.AccountPlugin.AccountUpdatePostOperation
-namespace YourNamespace.PluginImages.AccountPlugin.AccountUpdatePostOperation
+// Generated in: {Namespace}.PluginRegistrations.AccountPlugin.AccountUpdatePostOperation
+namespace YourNamespace.PluginRegistrations.AccountPlugin.AccountUpdatePostOperation
 {
-    public class PreImage
+    public sealed class PreImage
     {
-        private readonly Entity _entity;
+        private readonly Entity entity;
 
         public PreImage(Entity entity)
         {
-            _entity = entity ?? throw new ArgumentNullException(nameof(entity));
+            this.entity = entity ?? throw new ArgumentNullException(nameof(entity));
         }
 
-        public string Name => _entity.GetAttributeValue<string>("name");
-        public Money Revenue => _entity.GetAttributeValue<Money>("revenue");
+        public string Name => entity.GetAttributeValue<string>("name");
+        public Money Revenue => entity.GetAttributeValue<Money>("revenue");
 
-        public T ToEntity<T>() where T : Entity => _entity.ToEntity<T>();
+        public T ToEntity<T>() where T : Entity => entity.ToEntity<T>();
     }
 
-    public class PostImage
+    public sealed class PostImage
     {
-        private readonly Entity _entity;
+        private readonly Entity entity;
 
         public PostImage(Entity entity)
         {
-            _entity = entity ?? throw new ArgumentNullException(nameof(entity));
+            this.entity = entity ?? throw new ArgumentNullException(nameof(entity));
         }
 
-        public string Name => _entity.GetAttributeValue<string>("name");
-        public string Accountnumber => _entity.GetAttributeValue<string>("accountnumber");
+        public string Name => entity.GetAttributeValue<string>("name");
+        public string Accountnumber => entity.GetAttributeValue<string>("accountnumber");
 
-        public T ToEntity<T>() where T : Entity => _entity.ToEntity<T>();
+        public T ToEntity<T>() where T : Entity => entity.ToEntity<T>();
     }
 }
 ```
 
-#### Builder Pattern
+#### Image Registration Methods
 
-The API uses a type-state builder pattern that enforces image acceptance at compile time:
+The following methods are available for registering images:
 
-- `RegisterStep<TEntity, TService>(op, stage)` → returns `PluginStepBuilder`
-- `.WithPreImage(...)` → returns `PluginStepBuilderWithPreImage` (must call `Execute<TPreImage>`)
-- `.WithPostImage(...)` → returns `PluginStepBuilderWithPostImage` (must call `Execute<TPostImage>`)
-- `.WithPreImage(...).WithPostImage(...)` → returns `PluginStepBuilderWithBothImages` (must call `Execute<TPre, TPost>`)
+- `WithPreImage(params Expression<Func<TEntity, object>>[] attributes)` - Convenience method to register a PreImage with selected attributes
+- `WithPostImage(params Expression<Func<TEntity, object>>[] attributes)` - Convenience method to register a PostImage with selected attributes
+- `AddImage(ImageType imageType, params Expression<Func<TEntity, object>>[] attributes)` - General method to register any image type
 
-#### Migration from AddImage
-
-The old `AddImage` API is marked as `[Obsolete]`. Migrate to the new API:
-
-```csharp
-// Old API (obsolete, no enforcement)
-RegisterStep<Account, AccountService>(EventOperation.Update, ExecutionStage.PostOperation,
-    service => service.Process())
-    .AddImage(ImageType.PreImage, x => x.Name, x => x.Revenue);
-
-// New API (enforced at compile time)
-RegisterStep<Account, AccountService>(EventOperation.Update, ExecutionStage.PostOperation)
-    .WithPreImage(x => x.Name, x => x.Revenue)
-    .Execute<PreImage>((service, preImage) => service.Process(preImage));
-```
+All three methods are valid and supported. `WithPreImage` and `WithPostImage` are convenience wrappers around `AddImage`.
 
 #### Benefits
 
-- **Compile-time enforcement**: Cannot register an image without accepting it in Execute
+- **Compile-time enforcement**: Source generator diagnostics ensure handler signature matches registered images
 - **Type safety**: Wrong image types cause compile errors
 - **IntelliSense support**: Auto-completion for available image attributes
 - **No runtime overhead**: Simple property accessors, no reflection at access time
@@ -341,12 +328,19 @@ RegisterStep<MyEntity>("custom_CustomMessage", ExecutionStage.PostOperation, s =
 
 ### Plugin Step Images
 
-Images are configured through the builder:
+Images are configured through the builder using `WithPreImage`, `WithPostImage`, or `AddImage`:
 ```csharp
-RegisterStep<Account, IAccountService>(EventOperation.Update, ExecutionStage.PostOperation, s => s.Process())
+// Using convenience methods (recommended)
+RegisterStep<Account, IAccountService>(EventOperation.Update, ExecutionStage.PostOperation, service => service.HandleUpdate)
     .AddFilteredAttributes(x => x.Name, x => x.AccountNumber)
-    .AddPreImage("PreImage", x => x.Name, x => x.Revenue)
-    .AddPostImage("PostImage", x => x.Name, x => x.Revenue);
+    .WithPreImage(x => x.Name, x => x.Revenue)
+    .WithPostImage(x => x.Name, x => x.AccountNumber);
+
+// Using AddImage directly
+RegisterStep<Account, IAccountService>(EventOperation.Update, ExecutionStage.PostOperation, service => service.HandleUpdate)
+    .AddFilteredAttributes(x => x.Name, x => x.AccountNumber)
+    .AddImage(ImageType.PreImage, x => x.Name, x => x.Revenue)
+    .AddImage(ImageType.PostImage, x => x.Name, x => x.AccountNumber);
 ```
 
 ### Custom APIs

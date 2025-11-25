@@ -10,8 +10,8 @@ using XrmPluginCore.Extensions;
 namespace XrmPluginCore.Plugins
 {
     /// <summary>
-    /// Class the help build the <see cref="IPluginStepConfig"/> for a specific entity type.<br/>
-    /// Should be initialized using the <see cref="Plugin.RegisterPluginStep{T}(EventOperation, ExecutionStage, Action{LocalPluginContext})"/> method.
+    /// Class to help build the <see cref="IPluginStepConfig"/> for a specific entity type.<br/>
+    /// Should be initialized using one of the Plugin.RegisterStep methods.
     /// </summary>
     public class PluginStepConfigBuilder<T> : IPluginStepConfigBuilder where T : Entity
     {
@@ -139,31 +139,26 @@ namespace XrmPluginCore.Plugins
             return this;
         }
 
-        [Obsolete("Use RegisterStep<TEntity, TService>(operation, stage).WithPreImage(...) or .WithPostImage(...) for type-safe image handling")]
         public PluginStepConfigBuilder<T> AddImage(ImageType imageType)
         {
             return AddImage(imageType.ToString(), imageType.ToString(), imageType);
         }
 
-        [Obsolete("Use RegisterStep<TEntity, TService>(operation, stage).WithPreImage(...) or .WithPostImage(...) for type-safe image handling")]
         public PluginStepConfigBuilder<T> AddImage(string name, string entityAlias, ImageType imageType)
         {
             return AddImage(name, entityAlias, imageType, (string[])null);
         }
 
-        [Obsolete("Use RegisterStep<TEntity, TService>(operation, stage).WithPreImage(...) or .WithPostImage(...) for type-safe image handling")]
         public PluginStepConfigBuilder<T> AddImage(ImageType imageType, params string[] attributes)
         {
             return AddImage(imageType.ToString(), imageType.ToString(), imageType, attributes);
         }
 
-        [Obsolete("Use RegisterStep<TEntity, TService>(operation, stage).WithPreImage(...) or .WithPostImage(...) for type-safe image handling")]
         public PluginStepConfigBuilder<T> AddImage(ImageType imageType, params Expression<Func<T, object>>[] attributes)
         {
             return AddImage(imageType.ToString(), imageType.ToString(), imageType, attributes);
         }
 
-        [Obsolete("Use RegisterStep<TEntity, TService>(operation, stage).WithPreImage(...) or .WithPostImage(...) for type-safe image handling")]
         public PluginStepConfigBuilder<T> AddImage(string name, string entityAlias, ImageType imageType, params string[] attributes)
         {
             Images.Add(new PluginStepImage(name, entityAlias, imageType, attributes));
@@ -171,12 +166,29 @@ namespace XrmPluginCore.Plugins
             return this;
         }
 
-        [Obsolete("Use RegisterStep<TEntity, TService>(operation, stage).WithPreImage(...) or .WithPostImage(...) for type-safe image handling")]
         public PluginStepConfigBuilder<T> AddImage(string name, string entityAlias, ImageType imageType, params Expression<Func<T, object>>[] attributes)
         {
             Images.Add(PluginStepImage.Create(name, entityAlias, imageType, attributes));
 
             return this;
+        }
+
+        /// <summary>
+        /// Add a PreImage with the specified attributes.
+        /// The source generator will create a type-safe PreImage wrapper.
+        /// </summary>
+        public PluginStepConfigBuilder<T> WithPreImage(params Expression<Func<T, object>>[] attributes)
+        {
+            return AddImage(ImageType.PreImage, attributes);
+        }
+
+        /// <summary>
+        /// Add a PostImage with the specified attributes.
+        /// The source generator will create a type-safe PostImage wrapper.
+        /// </summary>
+        public PluginStepConfigBuilder<T> WithPostImage(params Expression<Func<T, object>>[] attributes)
+        {
+            return AddImage(ImageType.PostImage, attributes);
         }
     }
 }

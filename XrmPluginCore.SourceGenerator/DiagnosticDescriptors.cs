@@ -41,11 +41,27 @@ internal static class DiagnosticDescriptors
 		DiagnosticSeverity.Warning,
 		isEnabledByDefault: true);
 
-	public static readonly DiagnosticDescriptor MissingExecuteCall = new(
+	public static readonly DiagnosticDescriptor HandlerMethodNotFound = new(
 		id: "XPC4002",
-		title: "Missing Execute() call on plugin step registration",
-		messageFormat: "Plugin step registration for '{0}' has image registrations but Execute() was never called. The registration is incomplete.",
+		title: "Handler method not found",
+		messageFormat: "Method '{0}' not found on service type '{1}'",
 		category: Category,
-		DiagnosticSeverity.Warning,
+		DiagnosticSeverity.Error,
+		isEnabledByDefault: true);
+
+	public static readonly DiagnosticDescriptor HandlerSignatureMismatch = new(
+		id: "XPC4003",
+		title: "Handler signature does not match registered images",
+		messageFormat: "Handler method '{0}' does not have expected signature. Expected parameters in order: {1}. PreImage must be the first parameter, followed by PostImage if both are used.",
+		category: Category,
+		DiagnosticSeverity.Error,
+		isEnabledByDefault: true);
+
+	public static readonly DiagnosticDescriptor ImageWithoutMethodReference = new(
+		id: "XPC4004",
+		title: "Image registration without method reference",
+		messageFormat: "WithPreImage/WithPostImage requires method reference syntax (e.g., 'service => service.HandleUpdate'). Using method invocation (e.g., 's => s.HandleUpdate()') will not generate type-safe wrappers.",
+		category: Category,
+		defaultSeverity: DiagnosticSeverity.Warning,
 		isEnabledByDefault: true);
 }

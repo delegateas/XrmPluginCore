@@ -1,7 +1,7 @@
 using System;
 
 // Import the generated PreImage/PostImage from the namespace
-using XrmPluginCore.Tests.TestPlugins.TypeSafe.PluginImages.TypeSafeAccountPlugin.AccountUpdatePreOperation;
+using XrmPluginCore.Tests.TestPlugins.TypeSafe.PluginRegistrations.TypeSafeAccountPlugin.AccountUpdatePreOperation;
 
 namespace XrmPluginCore.Tests.TestPlugins.TypeSafe
 {

@@ -28,7 +28,7 @@ public class GeneratedCodeSnapshotTests
         // Verify essential structure elements
         var expectedElements = new[]
         {
-            "namespace TestNamespace.PluginImages.TestPlugin.AccountUpdatePostOperation",
+            "namespace TestNamespace.PluginRegistrations.TestPlugin.AccountUpdatePostOperation",
             "public class PreImage : IEntityImageWrapper",
             "private readonly Entity entity;",
             "public PreImage(Entity entity)",
@@ -64,7 +64,7 @@ public class GeneratedCodeSnapshotTests
         // Verify essential structure elements
         var expectedElements = new[]
         {
-            "namespace TestNamespace.PluginImages.TestPlugin.AccountUpdatePostOperation",
+            "namespace TestNamespace.PluginRegistrations.TestPlugin.AccountUpdatePostOperation",
             "public class PostImage : IEntityImageWrapper",
             "private readonly Entity entity;",
             "public PostImage(Entity entity)",
@@ -111,14 +111,14 @@ public class GeneratedCodeSnapshotTests
                 Source = TestFixtures.GetCompleteSource(
                     TestFixtures.AccountEntity,
                     TestFixtures.GetPluginWithPreImage()),
-                ExpectedNamespace = "TestNamespace.PluginImages.TestPlugin.AccountUpdatePostOperation"
+                ExpectedNamespace = "TestNamespace.PluginRegistrations.TestPlugin.AccountUpdatePostOperation"
             },
             new
             {
                 Source = TestFixtures.GetCompleteSource(
                     TestFixtures.ContactEntity,
                     TestFixtures.GetPluginWithPreImage("Contact")),
-                ExpectedNamespace = "TestNamespace.PluginImages.TestPlugin.ContactUpdatePostOperation"
+                ExpectedNamespace = "TestNamespace.PluginRegistrations.TestPlugin.ContactUpdatePostOperation"
             }
         };
 
@@ -131,7 +131,7 @@ public class GeneratedCodeSnapshotTests
             // Assert
             var generatedSource = result.GeneratedTrees[0].GetText().ToString();
             generatedSource.Should().Contain($"namespace {testCase.ExpectedNamespace}",
-                $"namespace should follow pattern: {{Namespace}}.PluginImages.{{Plugin}}.{{Entity}}{{Operation}}{{Stage}}");
+                $"namespace should follow pattern: {{Namespace}}.PluginRegistrations.{{Plugin}}.{{Entity}}{{Operation}}{{Stage}}");
         }
     }
 
@@ -156,8 +156,64 @@ public class GeneratedCodeSnapshotTests
         // Both classes should be marked
         generatedSource.Should().Contain("[CompilerGenerated]");
 
-        // Count occurrences - should be at least 2 (one for each class)
+        // Count occurrences - should be at least 3 (PreImage, PostImage, and ActionWrapper)
         var matches = System.Text.RegularExpressions.Regex.Matches(generatedSource, @"\[CompilerGenerated\]");
-        matches.Count.Should().BeGreaterOrEqualTo(2, "both PreImage and PostImage classes should be marked");
+        matches.Count.Should().BeGreaterOrEqualTo(3, "PreImage, PostImage, and ActionWrapper classes should be marked");
+    }
+
+    [Fact]
+    public void Should_Generate_ActionWrapper_Class_For_New_Api()
+    {
+        // Arrange
+        var source = TestFixtures.GetCompleteSource(
+            TestFixtures.AccountEntity,
+            TestFixtures.GetPluginWithPreImage());
+
+        // Act
+        var result = GeneratorTestHelper.RunGenerator(
+            CompilationHelper.CreateCompilation(source));
+
+        // Assert
+        var generatedSource = result.GeneratedTrees[0].GetText().ToString();
+
+        // Verify ActionWrapper structure (now implements IActionWrapper interface with inline image construction)
+        var expectedElements = new[]
+        {
+            "internal sealed class ActionWrapper : IActionWrapper",
+            "public Action<IExtendedServiceProvider> CreateAction()",
+            "serviceProvider =>",
+            "var service = serviceProvider.GetRequiredService<",
+            "var preImageEntity = context?.PreEntityImages?.Values?.FirstOrDefault();",
+            "var preImage = preImageEntity != null ? new PreImage(preImageEntity) : null;",
+            "service.Process(preImage)"
+        };
+
+        foreach (var element in expectedElements)
+        {
+            generatedSource.Should().Contain(element, $"generated code should contain: {element}");
+        }
+    }
+
+    [Fact]
+    public void Should_Generate_ActionWrapper_With_Both_Images()
+    {
+        // Arrange
+        var source = TestFixtures.GetCompleteSource(
+            TestFixtures.AccountEntity,
+            TestFixtures.GetPluginWithBothImages());
+
+        // Act
+        var result = GeneratorTestHelper.RunGenerator(
+            CompilationHelper.CreateCompilation(source));
+
+        // Assert
+        var generatedSource = result.GeneratedTrees[0].GetText().ToString();
+
+        // Verify ActionWrapper handles both images (now inline instead of using PluginImageHelper)
+        generatedSource.Should().Contain("var preImageEntity = context?.PreEntityImages?.Values?.FirstOrDefault();");
+        generatedSource.Should().Contain("var preImage = preImageEntity != null ? new PreImage(preImageEntity) : null;");
+        generatedSource.Should().Contain("var postImageEntity = context?.PostEntityImages?.Values?.FirstOrDefault();");
+        generatedSource.Should().Contain("var postImage = postImageEntity != null ? new PostImage(postImageEntity) : null;");
+        generatedSource.Should().Contain("service.Process(preImage, postImage)");
     }
 }

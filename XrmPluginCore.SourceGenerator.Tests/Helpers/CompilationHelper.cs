@@ -42,6 +42,7 @@ public static class CompilationHelper
         yield return MetadataReference.CreateFromFile(typeof(Console).Assembly.Location);
         yield return MetadataReference.CreateFromFile(typeof(System.Linq.Expressions.Expression).Assembly.Location); // System.Linq.Expressions
         yield return MetadataReference.CreateFromFile(typeof(System.ComponentModel.DescriptionAttribute).Assembly.Location); // System.ComponentModel
+        yield return MetadataReference.CreateFromFile(typeof(IServiceProvider).Assembly.Location); // IServiceProvider
         yield return MetadataReference.CreateFromFile(Assembly.Load("System.Runtime").Location);
         yield return MetadataReference.CreateFromFile(Assembly.Load("System.Collections").Location);
         yield return MetadataReference.CreateFromFile(Assembly.Load("netstandard").Location);

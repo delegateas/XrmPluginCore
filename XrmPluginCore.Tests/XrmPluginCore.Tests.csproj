@@ -4,6 +4,7 @@
     <TargetFrameworks>net462;net8.0</TargetFrameworks>
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
+    <LangVersion>10.0</LangVersion>
 
     <!-- Enable source generator output for inspection -->
     <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
