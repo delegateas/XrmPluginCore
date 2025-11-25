@@ -93,8 +93,9 @@ public class PluginImageGenerator : IIncrementalGenerator
 			// Merge multiple registrations for the same entity/operation/stage
 			var mergedMetadata = WrapperClassGenerator.MergeMetadata(group);
 
-			// Only include if there are images with attributes
-			if (mergedMetadata?.Images.Any(i => i.Attributes.Any()) == true)
+			// Include if there are images with attributes OR if there are diagnostics to report
+			if (mergedMetadata?.Images.Any(i => i.Attributes.Any()) == true ||
+				mergedMetadata?.Diagnostics?.Any() == true)
 			{
 				// Store location for diagnostics
 				mergedMetadata.Location = location;
@@ -113,6 +114,19 @@ public class PluginImageGenerator : IIncrementalGenerator
 		PluginStepMetadata metadata,
 		SourceProductionContext context)
 	{
+		// Report any collected diagnostics first
+		if (metadata?.Diagnostics != null)
+		{
+			foreach (var diagnosticInfo in metadata.Diagnostics)
+			{
+				var diagnostic = Diagnostic.Create(
+					diagnosticInfo.Descriptor,
+					diagnosticInfo.Location,
+					diagnosticInfo.MessageArgs);
+				context.ReportDiagnostic(diagnostic);
+			}
+		}
+
 		if (metadata?.Images.Any(i => i.Attributes.Any()) != true)
 			return;
 

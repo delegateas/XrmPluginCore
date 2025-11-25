@@ -33,16 +33,8 @@ internal static class DiagnosticDescriptors
 		DiagnosticSeverity.Warning,
 		isEnabledByDefault: true);
 
-	public static readonly DiagnosticDescriptor PropertyNotFound = new(
-		id: "XPC4001",
-		title: "Property not found in entity type",
-		messageFormat: "Property '{0}' not found in entity type '{1}'. This property will be excluded from the generated image wrapper.",
-		category: Category,
-		DiagnosticSeverity.Warning,
-		isEnabledByDefault: true);
-
 	public static readonly DiagnosticDescriptor NoParameterlessConstructor = new(
-		id: "XPC4002",
+		id: "XPC4001",
 		title: "No parameterless constructor found",
 		messageFormat: "Plugin class '{0}' has no parameterless constructor. Image wrappers will not be generated for this plugin.",
 		category: Category,

@@ -19,6 +19,38 @@ internal static class RegistrationParser
 		ClassDeclarationSyntax classDeclaration,
 		SemanticModel semanticModel)
 	{
+		// Check if plugin class has a parameterless constructor
+		var hasParameterlessConstructor = classDeclaration.Members
+			.OfType<ConstructorDeclarationSyntax>()
+			.Any(c => c.ParameterList.Parameters.Count == 0);
+
+		// Check if class has ANY explicit constructors
+		var hasExplicitConstructors = classDeclaration.Members
+			.OfType<ConstructorDeclarationSyntax>()
+			.Any();
+
+		// If class has explicit constructors but no parameterless one, report diagnostic
+		if (hasExplicitConstructors && !hasParameterlessConstructor)
+		{
+			var diagnosticMetadata = new PluginStepMetadata
+			{
+				PluginClassName = classDeclaration.Identifier.Text,
+				Namespace = classDeclaration.GetNamespace(),
+				Location = classDeclaration.GetLocation(),
+				Images = new List<ImageMetadata>() // Empty - no generation
+			};
+
+			diagnosticMetadata.Diagnostics.Add(new DiagnosticInfo
+			{
+				Descriptor = DiagnosticDescriptors.NoParameterlessConstructor,
+				Location = classDeclaration.Identifier.GetLocation(),
+				MessageArgs = new object[] { classDeclaration.Identifier.Text }
+			});
+
+			yield return diagnosticMetadata;
+			yield break;
+		}
+
 		// Find the parameterless constructor (registration pipeline only supports parameterless)
 		var constructor = classDeclaration.Members
 			.OfType<ConstructorDeclarationSyntax>()

@@ -31,13 +31,13 @@ public class DiagnosticReportingTests
         successDiagnostics.Should().OnlyContain(d => d.Severity == DiagnosticSeverity.Info);
     }
 
-    [Fact(Skip = "XPC4001 diagnostic not yet implemented - property validation happens silently")]
-    public void Should_Report_XPC4001_When_Property_Not_Found()
+    [Fact]
+    public void Should_Report_XPC4001_When_Plugin_Has_No_Parameterless_Constructor()
     {
-        // Arrange - plugin references a property that doesn't exist on the entity
+        // Arrange - plugin class with only a parameterized constructor (no parameterless)
         var pluginSource = @"
 using XrmPluginCore;
-using XrmPluginCore.Abstractions;
+using XrmPluginCore.Enums;
 using Microsoft.Extensions.DependencyInjection;
 using TestNamespace;
 
@@ -45,10 +45,11 @@ namespace TestNamespace
 {
     public class TestPlugin : Plugin
     {
-        public TestPlugin()
+        // Only has a constructor WITH parameters - no parameterless constructor
+        public TestPlugin(string config)
         {
             RegisterStep<Account, ITestService>(EventOperation.Update, ExecutionStage.PostOperation)
-                .WithPreImage(x => x.NonExistentProperty)
+                .WithPreImage(x => x.Name)
                 .Execute<PreImage>((service, preImage) => service.Process(preImage));
         }
 
@@ -68,79 +69,12 @@ namespace TestNamespace
         var result = GeneratorTestHelper.RunGenerator(
             CompilationHelper.CreateCompilation(source));
 
-        // Assert
+        // Assert - should report XPC4001 (was XPC4002, now renamed)
         var errorDiagnostics = result.GeneratorDiagnostics
             .Where(d => d.Id == "XPC4001")
             .ToArray();
 
-        errorDiagnostics.Should().NotBeEmpty("XPC4001 should be reported when property is not found");
-        errorDiagnostics.Should().OnlyContain(d => d.Severity == DiagnosticSeverity.Warning);
-    }
-
-    [Fact(Skip = "XPC4002 diagnostic not yet implemented - constructor validation happens silently")]
-    public void Should_Report_XPC4002_When_Entity_Has_No_Parameterless_Constructor()
-    {
-        // Arrange - entity without parameterless constructor
-        var entitySource = @"
-using System;
-using Microsoft.Xrm.Sdk;
-
-namespace TestNamespace
-{
-    [EntityLogicalName(""customentity"")]
-    public class CustomEntity : Entity
-    {
-        // No parameterless constructor
-        public CustomEntity(string requiredParam) : base(""customentity"") { }
-
-        [AttributeLogicalName(""name"")]
-        public string Name
-        {
-            get => GetAttributeValue<string>(""name"");
-            set => SetAttributeValue(""name"", value);
-        }
-    }
-}";
-
-        var pluginSource = @"
-using XrmPluginCore;
-using XrmPluginCore.Abstractions;
-using Microsoft.Extensions.DependencyInjection;
-using TestNamespace;
-
-namespace TestNamespace
-{
-    public class TestPlugin : Plugin
-    {
-        public TestPlugin()
-        {
-            RegisterStep<CustomEntity, ITestService>(EventOperation.Update, ExecutionStage.PostOperation)
-                .WithPreImage(x => x.Name)
-                .Execute<PreImage>((service, preImage) => service.Process(preImage));
-        }
-
-        protected override IServiceCollection OnBeforeBuildServiceProvider(IServiceCollection services)
-        {
-            return services.AddScoped<ITestService, TestService>();
-        }
-    }
-
-    public interface ITestService { void Process(object image); }
-    public class TestService : ITestService { public void Process(object image) { } }
-}";
-
-        var source = TestFixtures.GetCompleteSource(entitySource, pluginSource);
-
-        // Act
-        var result = GeneratorTestHelper.RunGenerator(
-            CompilationHelper.CreateCompilation(source));
-
-        // Assert
-        var errorDiagnostics = result.GeneratorDiagnostics
-            .Where(d => d.Id == "XPC4002")
-            .ToArray();
-
-        errorDiagnostics.Should().NotBeEmpty("XPC4002 should be reported when entity has no parameterless constructor");
+        errorDiagnostics.Should().NotBeEmpty("XPC4001 should be reported when plugin class has no parameterless constructor");
         errorDiagnostics.Should().OnlyContain(d => d.Severity == DiagnosticSeverity.Warning);
     }
 

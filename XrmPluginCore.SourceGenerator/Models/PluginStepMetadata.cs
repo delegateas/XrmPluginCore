@@ -22,6 +22,11 @@ internal sealed class PluginStepMetadata
 	public Location Location { get; set; }
 
 	/// <summary>
+	/// Diagnostics to report for this plugin step. Not included in equality comparison.
+	/// </summary>
+	public List<DiagnosticInfo> Diagnostics { get; set; } = [];
+
+	/// <summary>
 	/// Gets the namespace for generated image wrapper classes.
 	/// Format: {OriginalNamespace}.PluginImages.{PluginClassName}.{Entity}{Op}{Stage}
 	/// </summary>
@@ -141,4 +146,14 @@ internal sealed class ImageMetadata
 			return hash;
 		}
 	}
+}
+
+/// <summary>
+/// Represents a diagnostic to be reported during source generation
+/// </summary>
+internal sealed class DiagnosticInfo
+{
+	public DiagnosticDescriptor Descriptor { get; set; }
+	public Location Location { get; set; }
+	public object[] MessageArgs { get; set; }
 }
