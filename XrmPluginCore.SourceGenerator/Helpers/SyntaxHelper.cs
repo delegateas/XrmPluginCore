@@ -182,4 +182,24 @@ internal static class SyntaxHelper
 
 		return null;
 	}
+
+	/// <summary>
+	/// Checks if Execute() is called anywhere in the builder chain starting from RegisterStep
+	/// </summary>
+	public static bool HasExecuteCall(InvocationExpressionSyntax registerStepInvocation)
+	{
+		var current = registerStepInvocation.Parent;
+		while (current is not null)
+		{
+			if (current is InvocationExpressionSyntax invocation &&
+				invocation.Expression is MemberAccessExpressionSyntax memberAccess)
+			{
+				var methodName = memberAccess.Name.Identifier.Text;
+				if (methodName == "Execute")
+					return true;
+			}
+			current = current.Parent;
+		}
+		return false;
+	}
 }

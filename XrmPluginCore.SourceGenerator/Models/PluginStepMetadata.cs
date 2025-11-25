@@ -15,6 +15,7 @@ internal sealed class PluginStepMetadata
 	public List<ImageMetadata> Images { get; set; } = [];
 	public string Namespace { get; set; }
 	public string PluginClassName { get; set; }
+	public bool HasExecuteCall { get; set; }
 
 	/// <summary>
 	/// Source location for diagnostic reporting. Not included in equality comparison.

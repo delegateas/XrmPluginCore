@@ -103,4 +103,51 @@ namespace TestNamespace
         // Verify generation succeeded
         result.GeneratedTrees.Should().NotBeEmpty("code should be generated");
     }
+
+    [Fact]
+    public void Should_Report_XPC4002_When_Execute_Not_Called_After_WithImage()
+    {
+        // Arrange - plugin with WithPreImage but NO Execute() call
+        var pluginSource = @"
+using XrmPluginCore;
+using XrmPluginCore.Enums;
+using Microsoft.Extensions.DependencyInjection;
+using TestNamespace;
+
+namespace TestNamespace
+{
+    public class TestPlugin : Plugin
+    {
+        public TestPlugin()
+        {
+            // This registration has WithPreImage but NO Execute() - incomplete!
+            RegisterStep<Account, ITestService>(EventOperation.Update, ExecutionStage.PostOperation)
+                .WithPreImage(x => x.Name, x => x.Revenue);
+            // Missing: .Execute<PreImage>((service, preImage) => service.Process(preImage));
+        }
+
+        protected override IServiceCollection OnBeforeBuildServiceProvider(IServiceCollection services)
+        {
+            return services.AddScoped<ITestService, TestService>();
+        }
+    }
+
+    public interface ITestService { void Process(object image); }
+    public class TestService : ITestService { public void Process(object image) { } }
+}";
+
+        var source = TestFixtures.GetCompleteSource(TestFixtures.AccountEntity, pluginSource);
+
+        // Act
+        var result = GeneratorTestHelper.RunGenerator(
+            CompilationHelper.CreateCompilation(source));
+
+        // Assert - should report XPC4002
+        var errorDiagnostics = result.GeneratorDiagnostics
+            .Where(d => d.Id == "XPC4002")
+            .ToArray();
+
+        errorDiagnostics.Should().NotBeEmpty("XPC4002 should be reported when Execute() is not called after WithPreImage/WithPostImage");
+        errorDiagnostics.Should().OnlyContain(d => d.Severity == DiagnosticSeverity.Warning);
+    }
 }

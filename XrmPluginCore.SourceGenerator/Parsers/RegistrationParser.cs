@@ -37,14 +37,14 @@ internal static class RegistrationParser
 				PluginClassName = classDeclaration.Identifier.Text,
 				Namespace = classDeclaration.GetNamespace(),
 				Location = classDeclaration.GetLocation(),
-				Images = new List<ImageMetadata>() // Empty - no generation
+				Images = [] // Empty - no generation
 			};
 
 			diagnosticMetadata.Diagnostics.Add(new DiagnosticInfo
 			{
 				Descriptor = DiagnosticDescriptors.NoParameterlessConstructor,
 				Location = classDeclaration.Identifier.GetLocation(),
-				MessageArgs = new object[] { classDeclaration.Identifier.Text }
+				MessageArgs = [classDeclaration.Identifier.Text]
 			});
 
 			yield return diagnosticMetadata;
@@ -123,6 +123,20 @@ internal static class RegistrationParser
 			{
 				metadata.Images.Add(imageMetadata);
 			}
+		}
+
+		// Check if Execute() was called
+		metadata.HasExecuteCall = SyntaxHelper.HasExecuteCall(registerStepInvocation);
+
+		// If images exist but Execute() is not called, add diagnostic
+		if (metadata.Images.Any(i => i.Attributes.Any()) && !metadata.HasExecuteCall)
+		{
+			metadata.Diagnostics.Add(new DiagnosticInfo
+			{
+				Descriptor = DiagnosticDescriptors.MissingExecuteCall,
+				Location = registerStepInvocation.GetLocation(),
+				MessageArgs = [$"{metadata.EntityTypeName}.{metadata.EventOperation}"]
+			});
 		}
 
 		// Only return metadata if we have images with attributes

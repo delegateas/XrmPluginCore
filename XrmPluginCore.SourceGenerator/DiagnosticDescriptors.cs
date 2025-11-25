@@ -40,4 +40,12 @@ internal static class DiagnosticDescriptors
 		category: Category,
 		DiagnosticSeverity.Warning,
 		isEnabledByDefault: true);
+
+	public static readonly DiagnosticDescriptor MissingExecuteCall = new(
+		id: "XPC4002",
+		title: "Missing Execute() call on plugin step registration",
+		messageFormat: "Plugin step registration for '{0}' has image registrations but Execute() was never called. The registration is incomplete.",
+		category: Category,
+		DiagnosticSeverity.Warning,
+		isEnabledByDefault: true);
 }
