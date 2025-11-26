@@ -53,7 +53,14 @@
   </ItemGroup>
 
   <!-- Bundle the source generator into this package's analyzers folder -->
+  <!-- Ensure the source generator DLL is copied to the analyzers folder before packaging -->
+  <Target Name="CopySourceGeneratorDll" BeforeTargets="GenerateNuspec">
+    <ItemGroup>
+      <SourceGeneratorDll Include="@(ProjectReference->'%(RootDir)%(Directory)bin\$(Configuration)\netstandard2.0\XrmPluginCore.SourceGenerator.dll')" />
+    </ItemGroup>
+    <Copy SourceFiles="@(SourceGeneratorDll)" DestinationFolder="$(OutDir)analyzers\dotnet\cs" SkipUnchangedFiles="true" />
+  </Target>
   <ItemGroup>
-    <None Include="..\XrmPluginCore.SourceGenerator\bin\$(Configuration)\netstandard2.0\XrmPluginCore.SourceGenerator.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
+    <None Include="$(OutDir)analyzers\dotnet\cs\XrmPluginCore.SourceGenerator.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
   </ItemGroup>
 </Project>
