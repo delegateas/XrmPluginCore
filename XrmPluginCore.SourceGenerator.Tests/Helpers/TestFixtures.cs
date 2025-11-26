@@ -117,7 +117,7 @@ namespace TestNamespace
         public TestPlugin()
         {{
             RegisterStep<{entityClass}, ITestService>(EventOperation.Update, ExecutionStage.PostOperation,
-                service => service.Process)
+                nameof(ITestService.Process))
                 .AddFilteredAttributes(x => x.{(entityClass == "Account" ? "Name" : "FirstName")})
                 .WithPreImage(x => x.{(entityClass == "Account" ? "Name" : "FirstName")}, x => x.{(entityClass == "Account" ? "Revenue" : "EmailAddress")});
         }}
@@ -157,7 +157,7 @@ namespace TestNamespace
         public TestPlugin()
         {{
             RegisterStep<{entityClass}, ITestService>(EventOperation.Update, ExecutionStage.PostOperation,
-                service => service.Process)
+                nameof(ITestService.Process))
                 .AddFilteredAttributes(x => x.{(entityClass == "Account" ? "Name" : "FirstName")})
                 .WithPostImage(x => x.{(entityClass == "Account" ? "Name" : "FirstName")}, x => x.{(entityClass == "Account" ? "AccountNumber" : "LastName")});
         }}
@@ -197,7 +197,7 @@ namespace TestNamespace
         public TestPlugin()
         {{
             RegisterStep<{entityClass}, ITestService>(EventOperation.Update, ExecutionStage.PostOperation,
-                service => service.Process)
+                nameof(ITestService.Process))
                 .AddFilteredAttributes(x => x.Name)
                 .WithPreImage(x => x.Name, x => x.{(entityClass == "Account" ? "Revenue" : "EmailAddress")})
                 .WithPostImage(x => x.Name, x => x.{(entityClass == "Account" ? "AccountNumber" : "LastName")});
@@ -239,7 +239,7 @@ namespace TestNamespace
         public TestPlugin()
         {{
             RegisterStep<{entityClass}, ITestService>(EventOperation.Update, ExecutionStage.PostOperation,
-                service => service.HandleUpdate)
+                nameof(ITestService.HandleUpdate))
                 .AddFilteredAttributes(x => x.{(entityClass == "Account" ? "Name" : "FirstName")});
         }}
 
@@ -306,6 +306,11 @@ namespace TestNamespace
         var usesAccount = pluginSource.Contains("RegisterStep<Account");
         var usesContact = pluginSource.Contains("RegisterStep<Contact");
 
+        // Determine which operation is being used
+        var usesDelete = pluginSource.Contains("EventOperation.Delete");
+        var accountOperation = usesDelete ? "Delete" : "Update";
+        var contactOperation = usesDelete ? "Delete" : "Update";
+
         // Build using statements conditionally
         var usingStatements = new System.Text.StringBuilder();
         usingStatements.AppendLine("using System;");
@@ -317,11 +322,11 @@ namespace TestNamespace
 
         if (usesAccount)
         {
-            usingStatements.AppendLine($"using TestNamespace.PluginRegistrations.TestPlugin.AccountUpdatePostOperation;");
+            usingStatements.AppendLine($"using TestNamespace.PluginRegistrations.TestPlugin.Account{accountOperation}PostOperation;");
         }
         if (usesContact)
         {
-            usingStatements.AppendLine($"using TestNamespace.PluginRegistrations.TestPlugin.ContactUpdatePostOperation;");
+            usingStatements.AppendLine($"using TestNamespace.PluginRegistrations.TestPlugin.Contact{contactOperation}PostOperation;");
         }
 
         // Properly combine sources by merging namespaces
@@ -450,4 +455,44 @@ namespace TestNamespace
 
         return result.ToString();
     }
+
+    /// <summary>
+    /// Plugin with method reference and PostImage parameter - mirrors XrmMockup's AccountPostImagePlugin.
+    /// Tests that method groups for methods with parameters can be used with Expression&lt;Func&lt;TService, Delegate&gt;&gt;.
+    /// </summary>
+    public static string GetPluginWithMethodReferenceAndPostImage(string entityClass = "Account") => $@"
+using XrmPluginCore;
+using XrmPluginCore.Abstractions;
+using XrmPluginCore.Enums;
+using Microsoft.Extensions.DependencyInjection;
+using TestNamespace;
+using TestNamespace.PluginRegistrations.TestPlugin.{entityClass}DeletePostOperation;
+
+namespace TestNamespace
+{{
+    public class TestPlugin : Plugin
+    {{
+        public TestPlugin()
+        {{
+            RegisterStep<{entityClass}, ITestService>(EventOperation.Delete, ExecutionStage.PostOperation,
+                nameof(ITestService.HandleDelete))
+                .WithPostImage(x => x.{(entityClass == "Account" ? "Name" : "FirstName")});
+        }}
+
+        protected override IServiceCollection OnBeforeBuildServiceProvider(IServiceCollection services)
+        {{
+            return services.AddScoped<ITestService, TestService>();
+        }}
+    }}
+
+    public interface ITestService
+    {{
+        void HandleDelete(PostImage postImage);
+    }}
+
+    public class TestService : ITestService
+    {{
+        public void HandleDelete(PostImage postImage) {{ }}
+    }}
+}}";
 }

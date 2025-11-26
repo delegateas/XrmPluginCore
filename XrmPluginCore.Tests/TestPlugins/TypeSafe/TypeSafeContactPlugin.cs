@@ -21,7 +21,7 @@ namespace XrmPluginCore.Tests.TestPlugins.TypeSafe
         {
             // Type-safe API: PreImage is passed directly to the action via source-generated wrapper
             RegisterStep<Contact, TypeSafeContactService>(EventOperation.Create, ExecutionStage.PostOperation,
-                service => service.HandleCreate)
+                nameof(TypeSafeContactService.HandleCreate))
                 .AddFilteredAttributes(x => x.Firstname, x => x.Lastname, x => x.Emailaddress1)
                 .WithPreImage(x => x.Firstname, x => x.Lastname, x => x.Mobilephone);
         }

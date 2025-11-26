@@ -93,37 +93,38 @@ The source generator provides compile-time type safety for plugin images (PreIma
 
 #### API Design
 
-Use `WithPreImage`/`WithPostImage` (convenience methods for `AddImage`) to register images. The method reference pattern (`service => service.HandleUpdate`) enables the source generator to validate that your handler method signature matches the registered images:
+Use `WithPreImage`/`WithPostImage` (convenience methods for `AddImage`) to register images. The `nameof()` pattern enables the source generator to validate that your handler method signature matches the registered images:
 
 ```csharp
-// Basic plugin (no images)
+// Basic plugin (no images) - use lambda invocation syntax
 RegisterStep<Account, AccountService>(
     EventOperation.Update,
-	ExecutionStage.PostOperation,
-	s => s.DoSomething())
+    ExecutionStage.PostOperation,
+    s => s.DoSomething())
     .AddFilteredAttributes(x => x.Name);
 
 // PreImage only - handler method MUST accept PreImage parameter
+// Use nameof() for compile-time safety when images are registered
 RegisterStep<Account, AccountService>(
     EventOperation.Update,
-	ExecutionStage.PostOperation,
-	service => service.HandleUpdate)
+    ExecutionStage.PostOperation,
+    nameof(AccountService.HandleUpdate))
     .AddFilteredAttributes(x => x.Name, x => x.AccountNumber)
     .WithPreImage(x => x.Name, x => x.Revenue);
 
 // PostImage only - handler method MUST accept PostImage parameter
 RegisterStep<Account, AccountService>(
     EventOperation.Update,
-	ExecutionStage.PostOperation,
-	service => service.HandleUpdate)
+    ExecutionStage.PostOperation,
+    nameof(AccountService.HandleUpdate))
     .AddFilteredAttributes(x => x.Name)
     .WithPostImage(x => x.Name, x => x.AccountNumber);
 
 // Both images - handler method MUST accept both parameters
 RegisterStep<Account, AccountService>(
     EventOperation.Update,
-	ExecutionStage.PostOperation,
-	service => service.HandleUpdate)
+    ExecutionStage.PostOperation,
+    nameof(AccountService.HandleUpdate))
     .AddFilteredAttributes(x => x.Name, x => x.AccountNumber)
     .WithPreImage(x => x.Name, x => x.Revenue)
     .WithPostImage(x => x.Name, x => x.AccountNumber);
@@ -162,8 +163,11 @@ public class AccountPlugin : Plugin
 {
     public AccountPlugin()
     {
-        // Type-safe API with compile-time enforcement via method reference
-        RegisterStep<Account, AccountService>(EventOperation.Update, ExecutionStage.PostOperation, service => service.HandleUpdate)
+        // Type-safe API with compile-time enforcement via nameof()
+        RegisterStep<Account, AccountService>(
+            EventOperation.Update,
+            ExecutionStage.PostOperation,
+            nameof(AccountService.HandleUpdate))
             .AddFilteredAttributes(x => x.Name, x => x.AccountNumber)
             .WithPreImage(x => x.Name, x => x.Revenue)
             .WithPostImage(x => x.Name, x => x.AccountNumber);
@@ -340,16 +344,22 @@ RegisterStep<MyEntity>("custom_CustomMessage", ExecutionStage.PostOperation, s =
 
 ### Plugin Step Images
 
-Images are configured through the builder using `WithPreImage`, `WithPostImage`, or `AddImage`:
+Images are configured through the builder using `WithPreImage`, `WithPostImage`, or `AddImage`. Use `nameof()` for compile-time safety when registering images:
 ```csharp
 // Using convenience methods (recommended)
-RegisterStep<Account, IAccountService>(EventOperation.Update, ExecutionStage.PostOperation, service => service.HandleUpdate)
+RegisterStep<Account, IAccountService>(
+    EventOperation.Update,
+    ExecutionStage.PostOperation,
+    nameof(IAccountService.HandleUpdate))
     .AddFilteredAttributes(x => x.Name, x => x.AccountNumber)
     .WithPreImage(x => x.Name, x => x.Revenue)
     .WithPostImage(x => x.Name, x => x.AccountNumber);
 
 // Using AddImage directly
-RegisterStep<Account, IAccountService>(EventOperation.Update, ExecutionStage.PostOperation, service => service.HandleUpdate)
+RegisterStep<Account, IAccountService>(
+    EventOperation.Update,
+    ExecutionStage.PostOperation,
+    nameof(IAccountService.HandleUpdate))
     .AddFilteredAttributes(x => x.Name, x => x.AccountNumber)
     .AddImage(ImageType.PreImage, x => x.Name, x => x.Revenue)
     .AddImage(ImageType.PostImage, x => x.Name, x => x.AccountNumber);

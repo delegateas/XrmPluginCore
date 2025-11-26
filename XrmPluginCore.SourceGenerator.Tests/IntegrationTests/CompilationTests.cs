@@ -225,4 +225,21 @@ public class CompilationTests
         createActionMethod.Should().NotBeNull("CreateAction method should exist");
         createActionMethod!.IsStatic.Should().BeFalse("CreateAction should be an instance method since ActionWrapper implements IActionWrapper");
     }
+
+    [Fact]
+    public void Should_Compile_Method_Reference_With_Image_Parameter()
+    {
+        // Arrange - Source code that mirrors XrmMockup's AccountPostImagePlugin pattern:
+        // service => service.HandleDelete where HandleDelete(PostImage postImage)
+        var source = TestFixtures.GetCompleteSource(
+            TestFixtures.AccountEntity,
+            TestFixtures.GetPluginWithMethodReferenceAndPostImage());
+
+        // Act
+        var result = GeneratorTestHelper.RunGeneratorAndCompile(source);
+
+        // Assert
+        result.Success.Should().BeTrue(
+            because: $"method reference with image parameter should compile. Errors: {string.Join(", ", result.Errors ?? Array.Empty<string>())}");
+    }
 }

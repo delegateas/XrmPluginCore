@@ -157,11 +157,38 @@ internal static class RegistrationParser
 	}
 
 	/// <summary>
-	/// Parses a method reference expression like "service => service.HandleUpdate"
+	/// Parses a method reference from various expression forms:
+	/// - nameof(IService.HandleUpdate)
+	/// - "HandleUpdate" (string literal)
+	/// - service => service.HandleUpdate (lambda - legacy support)
 	/// </summary>
 	private static string ParseMethodReference(ExpressionSyntax expression, SemanticModel semanticModel)
 	{
-		// Handle: service => service.HandleUpdate
+		// Handle nameof(): nameof(IService.HandleDelete)
+		if (expression is InvocationExpressionSyntax invocation &&
+			invocation.Expression is IdentifierNameSyntax identifier &&
+			identifier.Identifier.Text == "nameof")
+		{
+			var argument = invocation.ArgumentList.Arguments.FirstOrDefault();
+			if (argument?.Expression is MemberAccessExpressionSyntax nameofMemberAccess)
+			{
+				return nameofMemberAccess.Name.Identifier.Text;
+			}
+			// Handle simple nameof: nameof(HandleDelete)
+			if (argument?.Expression is IdentifierNameSyntax simpleIdentifier)
+			{
+				return simpleIdentifier.Identifier.Text;
+			}
+		}
+
+		// Handle string literal: "HandleDelete"
+		if (expression is LiteralExpressionSyntax literal &&
+			literal.IsKind(Microsoft.CodeAnalysis.CSharp.SyntaxKind.StringLiteralExpression))
+		{
+			return literal.Token.ValueText;
+		}
+
+		// Handle lambda: service => service.HandleUpdate (legacy support)
 		if (expression is SimpleLambdaExpressionSyntax lambda)
 		{
 			if (lambda.Body is MemberAccessExpressionSyntax memberAccess)
@@ -170,7 +197,7 @@ internal static class RegistrationParser
 			}
 		}
 
-		// Handle: (service) => service.HandleUpdate
+		// Handle: (service) => service.HandleUpdate (legacy support)
 		if (expression is ParenthesizedLambdaExpressionSyntax parenLambda)
 		{
 			if (parenLambda.Body is MemberAccessExpressionSyntax memberAccess)
