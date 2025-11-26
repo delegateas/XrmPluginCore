@@ -48,13 +48,13 @@ dotnet pack --configuration Release --no-build --output ./nupkg
    - `RegisterPluginStep<T>(EventOperation, ExecutionStage, Action<LocalPluginContext>)` - Legacy approach (deprecated)
    - `RegisterAPI<TService>(string name, Action<TService>)` - For Custom APIs
 
-   When `AddFilteredAttributes()` or `AddImage()` are used, the source generator automatically creates wrapper classes that are discovered at runtime by naming convention.
+   When `AddImage()`, `WithPreImage()` or `WithPostImage()` are used, the source generator automatically creates wrapper classes that are discovered at runtime by naming convention.
 
 3. **Service Provider Pattern**:
    - `ExtendedServiceProvider` wraps the Dynamics SDK's IServiceProvider
    - `ServiceProviderExtensions.BuildServiceProvider()` creates a scoped DI container per execution
    - Built-in services injected: IPluginExecutionContext, IOrganizationServiceFactory, ITracingService (as ExtendedTracingService), ILogger
-   - Type-safe registrations automatically register generated wrapper classes (Target, PreImage, PostImage) directly in DI
+   - Type-safe registrations automatically register generated wrapper classes (PreImage, PostImage) directly in DI
    - Custom services registered via `OnBeforeBuildServiceProvider()` override
 
 4. **Configuration Builders**:
@@ -81,7 +81,7 @@ dotnet pack --configuration Release --no-build --output ./nupkg
 - `ICustomApiDefinition.cs` - Interface for retrieving custom API configuration
 
 **XrmPluginCore.SourceGenerator/** (Compile-time code generation)
-- `Generators/TargetEntityGenerator.cs` - Incremental source generator that scans for Plugin classes
+- `Generators/PluginImageGenerator.cs` - Incremental source generator that scans for Plugin classes
 - `Parsers/RegistrationParser.cs` - Extracts metadata from RegisterStep invocations
 - `CodeGeneration/WrapperClassGenerator.cs` - Generates type-safe wrapper classes
 - `Helpers/SyntaxHelper.cs` - Roslyn syntax tree analysis utilities
@@ -97,21 +97,33 @@ Use `WithPreImage`/`WithPostImage` (convenience methods for `AddImage`) to regis
 
 ```csharp
 // Basic plugin (no images)
-RegisterStep<Account, AccountService>(EventOperation.Update, ExecutionStage.PostOperation, s => s.DoSomething())
+RegisterStep<Account, AccountService>(
+    EventOperation.Update,
+	ExecutionStage.PostOperation,
+	s => s.DoSomething())
     .AddFilteredAttributes(x => x.Name);
 
 // PreImage only - handler method MUST accept PreImage parameter
-RegisterStep<Account, AccountService>(EventOperation.Update, ExecutionStage.PostOperation, service => service.HandleUpdate)
+RegisterStep<Account, AccountService>(
+    EventOperation.Update,
+	ExecutionStage.PostOperation,
+	service => service.HandleUpdate)
     .AddFilteredAttributes(x => x.Name, x => x.AccountNumber)
     .WithPreImage(x => x.Name, x => x.Revenue);
 
 // PostImage only - handler method MUST accept PostImage parameter
-RegisterStep<Account, AccountService>(EventOperation.Update, ExecutionStage.PostOperation, service => service.HandleUpdate)
+RegisterStep<Account, AccountService>(
+    EventOperation.Update,
+	ExecutionStage.PostOperation,
+	service => service.HandleUpdate)
     .AddFilteredAttributes(x => x.Name)
     .WithPostImage(x => x.Name, x => x.AccountNumber);
 
 // Both images - handler method MUST accept both parameters
-RegisterStep<Account, AccountService>(EventOperation.Update, ExecutionStage.PostOperation, service => service.HandleUpdate)
+RegisterStep<Account, AccountService>(
+    EventOperation.Update,
+	ExecutionStage.PostOperation,
+	service => service.HandleUpdate)
     .AddFilteredAttributes(x => x.Name, x => x.AccountNumber)
     .WithPreImage(x => x.Name, x => x.Revenue)
     .WithPostImage(x => x.Name, x => x.AccountNumber);
@@ -125,7 +137,7 @@ RegisterStep<Account, AccountService>(EventOperation.Update, ExecutionStage.Post
 
 2. **Metadata Extraction**: For each registration, it extracts:
    - Plugin class name
-   - Entity type (TEntity)
+   - Entity type (`TEntity`)
    - Event operation and execution stage
    - Filtered attributes from `AddFilteredAttributes()` calls
    - Pre/Post image attributes from `WithPreImage()`/`WithPostImage()`/`AddImage()` calls
