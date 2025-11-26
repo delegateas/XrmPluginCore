@@ -9,8 +9,7 @@ internal static class HandlerMethodValidator
 {
 	public static void ValidateHandlerMethod(
 		PluginStepMetadata metadata,
-		Compilation compilation,
-		Location location)
+		Compilation compilation)
 	{
 		if (string.IsNullOrEmpty(metadata.HandlerMethodName) ||
 			string.IsNullOrEmpty(metadata.ServiceTypeFullName))
@@ -26,7 +25,6 @@ internal static class HandlerMethodValidator
 			metadata.Diagnostics.Add(new DiagnosticInfo
 			{
 				Descriptor = DiagnosticDescriptors.HandlerMethodNotFound,
-				Location = location,
 				MessageArgs = [metadata.HandlerMethodName, metadata.ServiceTypeName]
 			});
 			return;
@@ -42,7 +40,6 @@ internal static class HandlerMethodValidator
 			metadata.Diagnostics.Add(new DiagnosticInfo
 			{
 				Descriptor = DiagnosticDescriptors.HandlerSignatureMismatch,
-				Location = location,
 				MessageArgs = [metadata.HandlerMethodName, expectedSignature]
 			});
 		}

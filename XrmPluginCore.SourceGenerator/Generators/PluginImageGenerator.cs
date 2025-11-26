@@ -77,9 +77,6 @@ public class PluginImageGenerator : IIncrementalGenerator
 		if (!metadataList.Any())
 			return null;
 
-		// Store location for diagnostic reporting
-		var location = classDecl.GetLocation();
-
 		// Group metadata by unique registration (EntityType + EventOperation + ExecutionStage)
 		var groupedMetadata = metadataList.GroupBy(m => m.UniqueId);
 
@@ -97,14 +94,10 @@ public class PluginImageGenerator : IIncrementalGenerator
 			if (mergedMetadata is null)
 				continue;
 
-			// Store location for diagnostics
-			mergedMetadata.Location = location;
-
 			// Validate handler method signature
 			HandlerMethodValidator.ValidateHandlerMethod(
 				mergedMetadata,
-				semanticModel.Compilation,
-				location);
+				semanticModel.Compilation);
 
 			// Include if:
 			// - Has method reference (for ActionWrapper generation)
@@ -130,13 +123,15 @@ public class PluginImageGenerator : IIncrementalGenerator
 		SourceProductionContext context)
 	{
 		// Report any collected diagnostics first
+		// Note: We use Location.None because Location objects cannot be cached across
+		// incremental compilations (they reference SyntaxTrees from the original compilation)
 		if (metadata?.Diagnostics != null)
 		{
 			foreach (var diagnosticInfo in metadata.Diagnostics)
 			{
 				var diagnostic = Diagnostic.Create(
 					diagnosticInfo.Descriptor,
-					diagnosticInfo.Location,
+					Location.None,
 					diagnosticInfo.MessageArgs);
 				context.ReportDiagnostic(diagnostic);
 			}
@@ -180,7 +175,7 @@ public class PluginImageGenerator : IIncrementalGenerator
 	{
 		var diagnostic = Diagnostic.Create(
 			DiagnosticDescriptors.GenerationSuccess,
-			metadata.Location ?? Location.None,
+			Location.None,
 			1, // wrapper class count
 			metadata.RegistrationNamespace);
 
@@ -198,7 +193,7 @@ public class PluginImageGenerator : IIncrementalGenerator
 	{
 		var diagnostic = Diagnostic.Create(
 			DiagnosticDescriptors.GenerationError,
-			metadata.Location ?? Location.None,
+			Location.None,
 			exception.Message);
 
 		context.ReportDiagnostic(diagnostic);

@@ -36,14 +36,12 @@ internal static class RegistrationParser
 			{
 				PluginClassName = classDeclaration.Identifier.Text,
 				Namespace = classDeclaration.GetNamespace(),
-				Location = classDeclaration.GetLocation(),
 				Images = [] // Empty - no generation
 			};
 
 			diagnosticMetadata.Diagnostics.Add(new DiagnosticInfo
 			{
 				Descriptor = DiagnosticDescriptors.NoParameterlessConstructor,
-				Location = classDeclaration.Identifier.GetLocation(),
 				MessageArgs = [classDeclaration.Identifier.Text]
 			});
 
@@ -146,7 +144,6 @@ internal static class RegistrationParser
 			metadata.Diagnostics.Add(new DiagnosticInfo
 			{
 				Descriptor = DiagnosticDescriptors.ImageWithoutMethodReference,
-				Location = registerStepInvocation.GetLocation(),
 				MessageArgs = []
 			});
 		}

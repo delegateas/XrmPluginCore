@@ -32,11 +32,6 @@ internal sealed class PluginStepMetadata
 	public string HandlerMethodName { get; set; }
 
 	/// <summary>
-	/// Source location for diagnostic reporting. Not included in equality comparison.
-	/// </summary>
-	public Location Location { get; set; }
-
-	/// <summary>
 	/// Diagnostics to report for this plugin step. Not included in equality comparison.
 	/// </summary>
 	public List<DiagnosticInfo> Diagnostics { get; set; } = [];
@@ -170,11 +165,11 @@ internal sealed class ImageMetadata
 }
 
 /// <summary>
-/// Represents a diagnostic to be reported during source generation
+/// Represents a diagnostic to be reported during source generation.
+/// Note: Location is not stored to avoid caching stale SyntaxTree references across incremental compilations.
 /// </summary>
 internal sealed class DiagnosticInfo
 {
 	public DiagnosticDescriptor Descriptor { get; set; }
-	public Location Location { get; set; }
 	public object[] MessageArgs { get; set; }
 }
