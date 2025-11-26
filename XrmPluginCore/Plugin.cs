@@ -332,6 +332,53 @@ namespace XrmPluginCore
             return builder;
         }
 
+        /// <summary>
+        /// Register a plugin step for the given entity type with a parameterless method reference.
+        /// The source generator will emit an ActionWrapper that calls the specified method.
+        /// </summary>
+        /// <typeparam name="TEntity">The entity type to register the plugin for</typeparam>
+        /// <typeparam name="TService">The service type that contains the handler method</typeparam>
+        /// <param name="eventOperation">The event operation to register the plugin for</param>
+        /// <param name="executionStage">The execution stage of the plugin registration</param>
+        /// <param name="methodReference">A lambda expression pointing to a parameterless handler method (e.g., service => service.HandleCreate)</param>
+        /// <returns>A <see cref="PluginStepConfigBuilder{TEntity}"/> for configuring images and filtered attributes</returns>
+        protected PluginStepConfigBuilder<TEntity> RegisterStep<TEntity, TService>(
+            EventOperation eventOperation,
+            ExecutionStage executionStage,
+            Expression<Func<TService, Action>> methodReference)
+            where TEntity : Entity
+        {
+            return RegisterStep<TEntity, TService>(eventOperation.ToString(), executionStage, methodReference);
+        }
+
+        /// <summary>
+        /// Register a plugin step for the given entity type with a parameterless method reference.
+        /// The source generator will emit an ActionWrapper that calls the specified method.
+        /// <br/>
+        /// <b>
+        /// NOTE: It is strongly advised to use the <see cref="RegisterStep{TEntity, TService}(EventOperation, ExecutionStage, Expression{Func{TService, Action}})"/> method instead if possible.<br/>
+        /// Only use this method if you are registering for a non-standard message.
+        /// </b>
+        /// </summary>
+        /// <typeparam name="TEntity">The entity type to register the plugin for</typeparam>
+        /// <typeparam name="TService">The service type that contains the handler method</typeparam>
+        /// <param name="eventOperation">The event operation to register the plugin for</param>
+        /// <param name="executionStage">The execution stage of the plugin registration</param>
+        /// <param name="methodReference">A lambda expression pointing to a parameterless handler method (e.g., service => service.HandleCreate)</param>
+        /// <returns>A <see cref="PluginStepConfigBuilder{TEntity}"/> for configuring images and filtered attributes</returns>
+        protected PluginStepConfigBuilder<TEntity> RegisterStep<TEntity, TService>(
+            string eventOperation,
+            ExecutionStage executionStage,
+            Expression<Func<TService, Action>> methodReference)
+            where TEntity : Entity
+        {
+            // Convert the Action expression to a Delegate expression and delegate to existing overload
+            var delegateExpression = Expression.Lambda<Func<TService, Delegate>>(
+                Expression.Convert(methodReference.Body, typeof(Delegate)),
+                methodReference.Parameters);
+            return RegisterStep<TEntity, TService>(eventOperation, executionStage, delegateExpression);
+        }
+
         private static string ExtractMethodName<TService>(Expression<Func<TService, Delegate>> methodReference)
         {
             // Handle: service => service.HandleUpdate

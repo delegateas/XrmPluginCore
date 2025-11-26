@@ -259,4 +259,127 @@ namespace TestNamespace
         var generatedSource = result.GeneratedTrees[0].GetText().ToString();
         generatedSource.Should().Contain("service.HandleAccountUpdate(preImage)");
     }
+
+    [Fact]
+    public void Should_Parse_Parameterless_Method_Reference()
+    {
+        // Arrange - plugin with a parameterless handler method (no images)
+        // This tests the Expression<Func<TService, Action>> overload for parameterless methods
+        var pluginSource = @"
+using XrmPluginCore;
+using XrmPluginCore.Abstractions;
+using XrmPluginCore.Enums;
+using Microsoft.Extensions.DependencyInjection;
+using TestNamespace;
+using TestNamespace.PluginRegistrations.TestPlugin.AccountCreatePostOperation;
+
+namespace TestNamespace
+{
+    public class TestPlugin : Plugin
+    {
+        public TestPlugin()
+        {
+            RegisterStep<Account, ITestService>(EventOperation.Create, ExecutionStage.PostOperation,
+                service => service.HandleCreate)
+                .AddFilteredAttributes(x => x.Name);
+        }
+
+        protected override IServiceCollection OnBeforeBuildServiceProvider(IServiceCollection services)
+        {
+            return services.AddScoped<ITestService, TestService>();
+        }
+    }
+
+    public interface ITestService
+    {
+        void HandleCreate();
+    }
+
+    public class TestService : ITestService
+    {
+        public void HandleCreate() { }
+    }
+}";
+
+        var source = TestFixtures.GetCompleteSource(TestFixtures.AccountEntity, pluginSource);
+
+        // Act
+        var result = GeneratorTestHelper.RunGenerator(
+            CompilationHelper.CreateCompilation(source));
+
+        // Assert - should generate ActionWrapper that calls HandleCreate with no parameters
+        result.GeneratedTrees.Should().NotBeEmpty();
+        var generatedSource = result.GeneratedTrees[0].GetText().ToString();
+
+        // Verify the method name was extracted correctly
+        generatedSource.Should().Contain("service.HandleCreate()");
+
+        // Verify ActionWrapper is generated
+        generatedSource.Should().Contain("internal sealed class ActionWrapper : IActionWrapper");
+
+        // Verify correct namespace is used
+        generatedSource.Should().Contain("namespace TestNamespace.PluginRegistrations.TestPlugin.AccountCreatePostOperation");
+
+        // Verify NO image classes are generated since it's a parameterless method
+        generatedSource.Should().NotContain("public class PreImage");
+        generatedSource.Should().NotContain("public class PostImage");
+    }
+
+    [Fact]
+    public void Should_Parse_Parameterless_Method_Reference_With_Custom_Method_Name()
+    {
+        // Arrange - plugin with a parameterless handler method with a unique name
+        // This ensures the method name extraction works for various naming conventions
+        var pluginSource = @"
+using XrmPluginCore;
+using XrmPluginCore.Abstractions;
+using XrmPluginCore.Enums;
+using Microsoft.Extensions.DependencyInjection;
+using TestNamespace;
+using TestNamespace.PluginRegistrations.TestPlugin.AccountDeletePreOperation;
+
+namespace TestNamespace
+{
+    public class TestPlugin : Plugin
+    {
+        public TestPlugin()
+        {
+            RegisterStep<Account, ITestService>(EventOperation.Delete, ExecutionStage.PreOperation,
+                service => service.OnAccountDeleting)
+                .AddFilteredAttributes(x => x.Name);
+        }
+
+        protected override IServiceCollection OnBeforeBuildServiceProvider(IServiceCollection services)
+        {
+            return services.AddScoped<ITestService, TestService>();
+        }
+    }
+
+    public interface ITestService
+    {
+        void OnAccountDeleting();
+    }
+
+    public class TestService : ITestService
+    {
+        public void OnAccountDeleting() { }
+    }
+}";
+
+        var source = TestFixtures.GetCompleteSource(TestFixtures.AccountEntity, pluginSource);
+
+        // Act
+        var result = GeneratorTestHelper.RunGenerator(
+            CompilationHelper.CreateCompilation(source));
+
+        // Assert - should generate ActionWrapper that calls OnAccountDeleting
+        result.GeneratedTrees.Should().NotBeEmpty();
+        var generatedSource = result.GeneratedTrees[0].GetText().ToString();
+
+        // Verify the custom method name was extracted correctly
+        generatedSource.Should().Contain("service.OnAccountDeleting()");
+
+        // Verify correct namespace with Delete operation and PreOperation stage
+        generatedSource.Should().Contain("namespace TestNamespace.PluginRegistrations.TestPlugin.AccountDeletePreOperation");
+    }
 }
