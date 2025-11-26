@@ -48,18 +48,20 @@ internal static class HandlerMethodValidator
 		}
 	}
 
-	private static IEnumerable<IMethodSymbol> GetAllMethodsIncludingInherited(ITypeSymbol type, string methodName)
+	private static IReadOnlyList<IMethodSymbol> GetAllMethodsIncludingInherited(ITypeSymbol type, string methodName)
 	{
+		var methods = new List<IMethodSymbol>();
 		var currentType = type;
 		while (currentType is not null)
 		{
 			foreach (var member in currentType.GetMembers(methodName))
 			{
 				if (member is IMethodSymbol method)
-					yield return method;
+					methods.Add(method);
 			}
 			currentType = currentType.BaseType;
 		}
+		return methods;
 	}
 
 	private static bool SignatureMatches(IMethodSymbol method, bool hasPreImage, bool hasPostImage)
