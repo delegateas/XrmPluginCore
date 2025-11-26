@@ -255,7 +255,7 @@ $$"""
 
 	private static string GetContextRetrieval() =>
 """
-                var context = serviceProvider.GetService<IPluginExecutionContext>();
+                var context = serviceProvider.GetRequiredService<IPluginExecutionContext>();
 """;
 
 	private static string GetPreImageRetrieval() =>
