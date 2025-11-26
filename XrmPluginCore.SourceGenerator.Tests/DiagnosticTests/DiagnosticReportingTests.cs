@@ -11,7 +11,7 @@ namespace XrmPluginCore.SourceGenerator.Tests.DiagnosticTests;
 public class DiagnosticReportingTests
 {
     [Fact]
-    public void Should_Report_XPC1000_Success_Diagnostic_On_Successful_Generation()
+    public void Should_Not_Report_XPC1000_Success_Diagnostic_On_Successful_Generation()
     {
         // Arrange
         var source = TestFixtures.GetCompleteSource(
@@ -22,13 +22,12 @@ public class DiagnosticReportingTests
         var result = GeneratorTestHelper.RunGenerator(
             CompilationHelper.CreateCompilation(source));
 
-        // Assert
+        // Assert - XPC1000 is no longer reported to avoid spamming the user
         var successDiagnostics = result.GeneratorDiagnostics
             .Where(d => d.Id == "XPC1000")
             .ToArray();
 
-        successDiagnostics.Should().NotBeEmpty("XPC1000 should be reported on successful generation");
-        successDiagnostics.Should().OnlyContain(d => d.Severity == DiagnosticSeverity.Info);
+        successDiagnostics.Should().BeEmpty("XPC1000 success diagnostic should not be reported to avoid spam");
     }
 
     [Fact]

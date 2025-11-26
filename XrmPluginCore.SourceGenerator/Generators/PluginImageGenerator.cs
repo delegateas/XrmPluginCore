@@ -155,9 +155,6 @@ public class PluginImageGenerator : IIncrementalGenerator
 			// Add the source to the compilation
 			// Use SourceText.From() to ensure language-agnostic parsing (Roslyn will use compilation's ParseOptions)
 			context.AddSource(hintName, SourceText.From(sourceCode, Encoding.UTF8));
-
-			// Report diagnostic for successful generation (optional, for debugging)
-			ReportGenerationSuccess(context, metadata);
 		}
 		catch (System.Exception ex)
 		{
