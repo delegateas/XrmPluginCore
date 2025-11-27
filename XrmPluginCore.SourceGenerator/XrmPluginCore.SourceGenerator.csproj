@@ -5,6 +5,7 @@
     <LangVersion>14</LangVersion>
     <IsRoslynComponent>true</IsRoslynComponent>
     <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
+    <IsPackable>false</IsPackable>
 		<Version>1.0.0-local</Version>
   </PropertyGroup>
 
