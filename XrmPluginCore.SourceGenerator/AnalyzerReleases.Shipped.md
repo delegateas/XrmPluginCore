@@ -12,3 +12,11 @@ XPC4002 | XrmPluginCore.SourceGenerator | Error    | XPC4002 Handler method not 
 XPC4003 | XrmPluginCore.SourceGenerator | Error    | XPC4003 Handler signature does not match registered images
 XPC4004 | XrmPluginCore.SourceGenerator | Warning  | XPC4004 Image registration without method reference
 XPC5000 | XrmPluginCore.SourceGenerator | Error    | XPC5000 Failed to generate wrapper classes
+
+## Release 1.2.1
+
+### New Rules
+
+Rule ID | Category | Severity | Notes
+--------|----------|----------|-------
+XPC4005 | XrmPluginCore.SourceGenerator | Info     | XPC4005 Consider using modern image registration API

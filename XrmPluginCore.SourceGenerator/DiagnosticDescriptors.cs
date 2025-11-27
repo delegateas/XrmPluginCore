@@ -71,6 +71,15 @@ internal static class DiagnosticDescriptors
 		isEnabledByDefault: true,
 		helpLinkUri: "https://github.com/delegateas/XrmPluginCore/blob/main/XrmPluginCore.SourceGenerator/rules/XPC4004.md");
 
+	public static readonly DiagnosticDescriptor LegacyImageRegistration = new(
+		id: "XPC4005",
+		title: "Consider using modern image registration API",
+		messageFormat: "Consider using WithPreImage/WithPostImage with nameof() instead of AddImage for type-safe image wrappers",
+		category: Category,
+		defaultSeverity: DiagnosticSeverity.Info,
+		isEnabledByDefault: true,
+		helpLinkUri: "https://github.com/delegateas/XrmPluginCore/blob/main/XrmPluginCore.SourceGenerator/rules/XPC4005.md");
+
 	public static readonly DiagnosticDescriptor GenerationError = new(
 		id: "XPC5000",
 		title: "Failed to generate wrapper classes",

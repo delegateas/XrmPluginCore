@@ -14,8 +14,17 @@ namespace XrmPluginCore.SourceGenerator.Analyzers;
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public class ImageWithoutMethodReferenceAnalyzer : DiagnosticAnalyzer
 {
+	private enum ImageRegistrationType
+	{
+		None,
+		Modern,  // WithPreImage, WithPostImage
+		Legacy   // AddImage
+	}
+
 	public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics =>
-		ImmutableArray.Create(DiagnosticDescriptors.ImageWithoutMethodReference);
+		ImmutableArray.Create(
+			DiagnosticDescriptors.ImageWithoutMethodReference,
+			DiagnosticDescriptors.LegacyImageRegistration);
 
 	public override void Initialize(AnalysisContext context)
 	{
@@ -50,13 +59,14 @@ public class ImageWithoutMethodReferenceAnalyzer : DiagnosticAnalyzer
 		var handlerArgument = arguments[2].Expression;
 
 		// Check if the 3rd argument is a lambda with an invocation body (s => s.Method())
-		if (!IsLambdaWithInvocation(handlerArgument, out var methodName))
+		if (!IsLambdaWithInvocation(handlerArgument, out var methodName, out var hasArguments))
 		{
 			return;
 		}
 
-		// Check if the call chain has WithPreImage or WithPostImage
-		if (!HasImageRegistration(invocation))
+		// Check if the call chain has image registration and which type
+		var imageType = GetImageRegistrationType(invocation);
+		if (imageType == ImageRegistrationType.None)
 		{
 			return;
 		}
@@ -68,18 +78,25 @@ public class ImageWithoutMethodReferenceAnalyzer : DiagnosticAnalyzer
 		var properties = ImmutableDictionary.CreateBuilder<string, string>();
 		properties.Add("ServiceType", serviceType);
 		properties.Add("MethodName", methodName);
+		properties.Add("HasArguments", hasArguments.ToString());
+
+		// Select appropriate diagnostic based on API type
+		var descriptor = imageType == ImageRegistrationType.Modern
+			? DiagnosticDescriptors.ImageWithoutMethodReference
+			: DiagnosticDescriptors.LegacyImageRegistration;
 
 		var diagnostic = Diagnostic.Create(
-			DiagnosticDescriptors.ImageWithoutMethodReference,
+			descriptor,
 			handlerArgument.GetLocation(),
 			properties.ToImmutable());
 
 		context.ReportDiagnostic(diagnostic);
 	}
 
-	private static bool IsLambdaWithInvocation(ExpressionSyntax expression, out string methodName)
+	private static bool IsLambdaWithInvocation(ExpressionSyntax expression, out string methodName, out bool hasArguments)
 	{
 		methodName = null;
+		hasArguments = false;
 
 		// Check for simple lambda: s => s.Method()
 		if (expression is SimpleLambdaExpressionSyntax simpleLambda)
@@ -88,6 +105,7 @@ public class ImageWithoutMethodReferenceAnalyzer : DiagnosticAnalyzer
 				invocation.Expression is MemberAccessExpressionSyntax memberAccess)
 			{
 				methodName = memberAccess.Name.Identifier.Text;
+				hasArguments = invocation.ArgumentList.Arguments.Count > 0;
 				return true;
 			}
 		}
@@ -99,6 +117,7 @@ public class ImageWithoutMethodReferenceAnalyzer : DiagnosticAnalyzer
 				invocation.Expression is MemberAccessExpressionSyntax memberAccess)
 			{
 				methodName = memberAccess.Name.Identifier.Text;
+				hasArguments = invocation.ArgumentList.Arguments.Count > 0;
 				return true;
 			}
 		}
@@ -106,10 +125,11 @@ public class ImageWithoutMethodReferenceAnalyzer : DiagnosticAnalyzer
 		return false;
 	}
 
-	private static bool HasImageRegistration(InvocationExpressionSyntax registerStepInvocation)
+	private static ImageRegistrationType GetImageRegistrationType(InvocationExpressionSyntax registerStepInvocation)
 	{
 		// Walk up to find the full fluent call chain
 		var current = registerStepInvocation.Parent;
+		var result = ImageRegistrationType.None;
 
 		while (current != null)
 		{
@@ -118,10 +138,16 @@ public class ImageWithoutMethodReferenceAnalyzer : DiagnosticAnalyzer
 			{
 				var methodName = memberAccess.Name.Identifier.Text;
 				if (methodName == Constants.WithPreImageMethodName ||
-					methodName == Constants.WithPostImageMethodName ||
-					methodName == Constants.AddImageMethodName)
+					methodName == Constants.WithPostImageMethodName)
 				{
-					return true;
+					// Modern API takes precedence
+					return ImageRegistrationType.Modern;
+				}
+
+				if (methodName == Constants.AddImageMethodName)
+				{
+					// Track legacy, but keep looking for modern
+					result = ImageRegistrationType.Legacy;
 				}
 			}
 
@@ -129,6 +155,6 @@ public class ImageWithoutMethodReferenceAnalyzer : DiagnosticAnalyzer
 			current = current.Parent;
 		}
 
-		return false;
+		return result;
 	}
 }

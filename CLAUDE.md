@@ -400,3 +400,7 @@ Version numbers are managed through CHANGELOG.md files:
 - `XrmPluginCore.Abstractions/CHANGELOG.md` for abstractions
 
 The `Set-VersionFromChangelog.ps1` script updates .csproj files from CHANGELOG during CI/CD.
+
+## Analyzer Rules
+- Headers for violation examples for analyzer rules should be prefixed with ❌
+- Headers for violation fixes for analyzer rules should be prefixed with ✅

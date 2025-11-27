@@ -1,7 +1,6 @@
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
-using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using System.Collections.Immutable;
 using System.Composition;
@@ -20,7 +19,7 @@ namespace XrmPluginCore.SourceGenerator.CodeFixes;
 public class ImageWithoutMethodReferenceCodeFixProvider : CodeFixProvider
 {
 	public sealed override ImmutableArray<string> FixableDiagnosticIds =>
-		ImmutableArray.Create("XPC4004");
+		ImmutableArray.Create("XPC4004", "XPC4005");
 
 	public sealed override FixAllProvider GetFixAllProvider() =>
 		WellKnownFixAllProviders.BatchFixer;
@@ -40,6 +39,14 @@ public class ImageWithoutMethodReferenceCodeFixProvider : CodeFixProvider
 		// Get service type and method name from diagnostic properties
 		if (!diagnostic.Properties.TryGetValue("ServiceType", out var serviceType) ||
 			!diagnostic.Properties.TryGetValue("MethodName", out var methodName))
+		{
+			return;
+		}
+
+		// Only offer fix if the invocation has no arguments
+		// Converting s => s.Method(arg1, arg2) to nameof() would lose the arguments
+		if (diagnostic.Properties.TryGetValue("HasArguments", out var hasArgs) &&
+			hasArgs == "True")
 		{
 			return;
 		}

@@ -594,6 +594,124 @@ public class DiagnosticReportingTests
         warningDiagnostics.Should().BeEmpty("XPC4004 should NOT be reported when old API is used without images");
     }
 
+    [Fact]
+    public async Task Should_Report_XPC4005_When_AddImage_Used_With_Invocation_Syntax()
+    {
+		// Arrange - AddImage (legacy API) used with s => s.DoSomething() (invocation)
+		const string pluginSource = """
+
+			using XrmPluginCore;
+			using XrmPluginCore.Enums;
+			using Microsoft.Extensions.DependencyInjection;
+			using TestNamespace;
+
+			namespace TestNamespace
+			{
+			    public class TestPlugin : Plugin
+			    {
+			        public TestPlugin()
+			        {
+			            RegisterStep<Account, ITestService>(EventOperation.Update, ExecutionStage.PostOperation,
+			                s => s.DoSomething())  // Invocation syntax with legacy AddImage
+			                .AddImage(ImageType.PreImage, x => x.Name);
+			        }
+
+			        protected override IServiceCollection OnBeforeBuildServiceProvider(IServiceCollection services)
+			        {
+			            return services.AddScoped<ITestService, TestService>();
+			        }
+			    }
+
+			    public interface ITestService
+			    {
+			        void DoSomething();
+			    }
+
+			    public class TestService : ITestService
+			    {
+			        public void DoSomething() { }
+			    }
+			}
+			""";
+
+        var source = TestFixtures.GetCompleteSource(pluginSource);
+
+        // Act - Run analyzer instead of generator
+        var diagnostics = await GetAnalyzerDiagnosticsAsync(source, new ImageWithoutMethodReferenceAnalyzer());
+
+        // Assert - Should report XPC4005 (Info) NOT XPC4004 (Warning)
+        var xpc4005Diagnostics = diagnostics
+            .Where(d => d.Id == "XPC4005")
+            .ToArray();
+
+        var xpc4004Diagnostics = diagnostics
+            .Where(d => d.Id == "XPC4004")
+            .ToArray();
+
+        xpc4005Diagnostics.Should().NotBeEmpty("XPC4005 should be reported when AddImage is used with invocation syntax");
+        xpc4005Diagnostics.Should().OnlyContain(d => d.Severity == DiagnosticSeverity.Info);
+        xpc4004Diagnostics.Should().BeEmpty("XPC4004 should NOT be reported for legacy AddImage API");
+    }
+
+    [Fact]
+    public async Task Should_Report_XPC4004_Not_XPC4005_When_WithPreImage_Used_Even_With_AddImage()
+    {
+		// Arrange - Both WithPreImage (modern) and AddImage (legacy) used - should report XPC4004 since modern takes precedence
+		const string pluginSource = """
+
+			using XrmPluginCore;
+			using XrmPluginCore.Enums;
+			using Microsoft.Extensions.DependencyInjection;
+			using TestNamespace;
+
+			namespace TestNamespace
+			{
+			    public class TestPlugin : Plugin
+			    {
+			        public TestPlugin()
+			        {
+			            RegisterStep<Account, ITestService>(EventOperation.Update, ExecutionStage.PostOperation,
+			                s => s.DoSomething())
+			                .AddImage(ImageType.PostImage, x => x.AccountNumber)
+			                .WithPreImage(x => x.Name);
+			        }
+
+			        protected override IServiceCollection OnBeforeBuildServiceProvider(IServiceCollection services)
+			        {
+			            return services.AddScoped<ITestService, TestService>();
+			        }
+			    }
+
+			    public interface ITestService
+			    {
+			        void DoSomething();
+			    }
+
+			    public class TestService : ITestService
+			    {
+			        public void DoSomething() { }
+			    }
+			}
+			""";
+
+        var source = TestFixtures.GetCompleteSource(pluginSource);
+
+        // Act - Run analyzer instead of generator
+        var diagnostics = await GetAnalyzerDiagnosticsAsync(source, new ImageWithoutMethodReferenceAnalyzer());
+
+        // Assert - Should report XPC4004 (modern API takes precedence)
+        var xpc4004Diagnostics = diagnostics
+            .Where(d => d.Id == "XPC4004")
+            .ToArray();
+
+        var xpc4005Diagnostics = diagnostics
+            .Where(d => d.Id == "XPC4005")
+            .ToArray();
+
+        xpc4004Diagnostics.Should().NotBeEmpty("XPC4004 should be reported when modern API (WithPreImage) is used");
+        xpc4005Diagnostics.Should().BeEmpty("XPC4005 should NOT be reported when modern API is also present");
+    }
+
     private static async Task<ImmutableArray<Diagnostic>> GetAnalyzerDiagnosticsAsync(string source, DiagnosticAnalyzer analyzer)
     {
         var compilation = CompilationHelper.CreateCompilation(source);
