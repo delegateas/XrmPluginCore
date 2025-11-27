@@ -27,6 +27,10 @@ jobs:
       shell: pwsh
       run: ./scripts/Set-VersionFromChangelog.ps1 -ChangelogPath XrmPluginCore.Abstractions/CHANGELOG.md -CsprojPath XrmPluginCore.Abstractions/XrmPluginCore.Abstractions.csproj
 
+    - name: ✏️ Set source generator version from CHANGELOG.md
+      shell: pwsh
+      run: ./scripts/Set-VersionFromChangelog.ps1 -ChangelogPath XrmPluginCore.SourceGenerator/CHANGELOG.md -CsprojPath XrmPluginCore.SourceGenerator/XrmPluginCore.SourceGenerator.csproj
+
     - name: ✏️ Set implementations version from CHANGELOG.md
       shell: pwsh
       run: ./scripts/Set-VersionFromChangelog.ps1 -ChangelogPath XrmPluginCore/CHANGELOG.md -CsprojPath XrmPluginCore/XrmPluginCore.csproj
