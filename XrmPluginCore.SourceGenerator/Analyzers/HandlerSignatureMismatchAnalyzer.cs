@@ -9,13 +9,16 @@ using XrmPluginCore.SourceGenerator.Helpers;
 namespace XrmPluginCore.SourceGenerator.Analyzers;
 
 /// <summary>
-/// Analyzer that reports an error when a handler method signature does not match the registered images.
+/// Analyzer that reports when a handler method signature does not match the registered images.
+/// Reports XPC4003 (Warning) when generated types don't exist yet, XPC4006 (Error) when they do.
 /// </summary>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public class HandlerSignatureMismatchAnalyzer : DiagnosticAnalyzer
 {
 	public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics =>
-		ImmutableArray.Create(DiagnosticDescriptors.HandlerSignatureMismatch);
+		ImmutableArray.Create(
+			DiagnosticDescriptors.HandlerSignatureMismatch,
+			DiagnosticDescriptors.HandlerSignatureMismatchError);
 
 	public override void Initialize(AnalysisContext context)
 	{
@@ -92,6 +95,19 @@ public class HandlerSignatureMismatchAnalyzer : DiagnosticAnalyzer
 		// Build expected signature description
 		var expectedSignature = SyntaxFactoryHelper.BuildSignatureDescription(hasPreImage, hasPostImage);
 
+		// Determine if generated types exist to choose appropriate diagnostic severity
+		var generatedTypesExist = DoGeneratedTypesExist(
+			context,
+			invocation,
+			genericName,
+			hasPreImage,
+			hasPostImage);
+
+		// Choose diagnostic: XPC4006 (Error) if types exist, XPC4003 (Warning) if they don't
+		var descriptor = generatedTypesExist
+			? DiagnosticDescriptors.HandlerSignatureMismatchError
+			: DiagnosticDescriptors.HandlerSignatureMismatch;
+
 		// Create diagnostic properties for the code fix
 		var properties = ImmutableDictionary.CreateBuilder<string, string>();
 		properties.Add("ServiceType", serviceType.Name);
@@ -100,13 +116,104 @@ public class HandlerSignatureMismatchAnalyzer : DiagnosticAnalyzer
 		properties.Add("HasPostImage", hasPostImage.ToString());
 
 		var diagnostic = Diagnostic.Create(
-			DiagnosticDescriptors.HandlerSignatureMismatch,
+			descriptor,
 			handlerArgument.GetLocation(),
 			properties.ToImmutable(),
 			methodName,
 			expectedSignature);
 
 		context.ReportDiagnostic(diagnostic);
+	}
+
+	private static bool DoGeneratedTypesExist(
+		SyntaxNodeAnalysisContext context,
+		InvocationExpressionSyntax invocation,
+		GenericNameSyntax genericName,
+		bool hasPreImage,
+		bool hasPostImage)
+	{
+		// Get plugin class info
+		var pluginClass = invocation.Ancestors().OfType<ClassDeclarationSyntax>().FirstOrDefault();
+		if (pluginClass == null)
+		{
+			return false;
+		}
+
+		var pluginClassName = pluginClass.Identifier.Text;
+		var pluginNamespace = GetNamespace(pluginClass);
+
+		// Get entity type name
+		var entityTypeSyntax = genericName.TypeArgumentList.Arguments[0];
+		var entityTypeInfo = context.SemanticModel.GetTypeInfo(entityTypeSyntax);
+		var entityTypeName = entityTypeInfo.Type?.Name ?? "Unknown";
+
+		// Get operation and stage from arguments
+		var arguments = invocation.ArgumentList.Arguments;
+		var operation = ExtractEnumValue(arguments[0].Expression);
+		var stage = ExtractEnumValue(arguments[1].Expression);
+
+		// Build expected namespace: {Namespace}.PluginRegistrations.{PluginClass}.{Entity}{Op}{Stage}
+		var expectedNamespace = $"{pluginNamespace}.PluginRegistrations.{pluginClassName}.{entityTypeName}{operation}{stage}";
+
+		// Check if the required generated types exist
+		var compilation = context.SemanticModel.Compilation;
+
+		if (hasPreImage)
+		{
+			var preImageType = compilation.GetTypeByMetadataName($"{expectedNamespace}.PreImage");
+			if (preImageType == null)
+			{
+				return false;
+			}
+		}
+
+		if (hasPostImage)
+		{
+			var postImageType = compilation.GetTypeByMetadataName($"{expectedNamespace}.PostImage");
+			if (postImageType == null)
+			{
+				return false;
+			}
+		}
+
+		return true;
+	}
+
+	private static string GetNamespace(SyntaxNode node)
+	{
+		while (node != null)
+		{
+			if (node is NamespaceDeclarationSyntax namespaceDecl)
+			{
+				return namespaceDecl.Name.ToString();
+			}
+
+			if (node is FileScopedNamespaceDeclarationSyntax fileScopedNs)
+			{
+				return fileScopedNs.Name.ToString();
+			}
+
+			node = node.Parent;
+		}
+
+		return string.Empty;
+	}
+
+	private static string ExtractEnumValue(ExpressionSyntax expression)
+	{
+		// Handle direct enum access like EventOperation.Update
+		if (expression is MemberAccessExpressionSyntax memberAccess)
+		{
+			return memberAccess.Name.Identifier.Text;
+		}
+
+		// Handle string literal for custom messages
+		if (expression is LiteralExpressionSyntax literal)
+		{
+			return literal.Token.ValueText;
+		}
+
+		return "Unknown";
 	}
 
 	private static bool SignatureMatches(IMethodSymbol method, bool hasPreImage, bool hasPostImage)

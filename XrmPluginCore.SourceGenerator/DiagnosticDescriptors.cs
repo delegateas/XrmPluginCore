@@ -58,7 +58,7 @@ internal static class DiagnosticDescriptors
 		title: "Handler signature does not match registered images",
 		messageFormat: "Handler method '{0}' does not have expected signature. Expected parameters in order: {1}. PreImage must be the first parameter, followed by PostImage if both are used.",
 		category: Category,
-		defaultSeverity: DiagnosticSeverity.Error,
+		defaultSeverity: DiagnosticSeverity.Warning,
 		isEnabledByDefault: true,
 		helpLinkUri: "https://github.com/delegateas/XrmPluginCore/blob/main/XrmPluginCore.SourceGenerator/rules/XPC4003.md");
 
@@ -79,6 +79,15 @@ internal static class DiagnosticDescriptors
 		defaultSeverity: DiagnosticSeverity.Info,
 		isEnabledByDefault: true,
 		helpLinkUri: "https://github.com/delegateas/XrmPluginCore/blob/main/XrmPluginCore.SourceGenerator/rules/XPC4005.md");
+
+	public static readonly DiagnosticDescriptor HandlerSignatureMismatchError = new(
+		id: "XPC4006",
+		title: "Handler signature does not match registered images",
+		messageFormat: "Handler method '{0}' does not have expected signature. Expected parameters in order: {1}. PreImage must be the first parameter, followed by PostImage if both are used.",
+		category: Category,
+		defaultSeverity: DiagnosticSeverity.Error,
+		isEnabledByDefault: true,
+		helpLinkUri: "https://github.com/delegateas/XrmPluginCore/blob/main/XrmPluginCore.SourceGenerator/rules/XPC4006.md");
 
 	public static readonly DiagnosticDescriptor GenerationError = new(
 		id: "XPC5000",

@@ -211,7 +211,8 @@ public class DiagnosticReportingTests
             .ToArray();
 
         errorDiagnostics.Should().NotBeEmpty("XPC4003 should be reported when handler is missing PreImage parameter");
-        errorDiagnostics.Should().OnlyContain(d => d.Severity == DiagnosticSeverity.Error);
+        // XPC4003 is Warning when generated types don't exist yet (allows initial build to succeed)
+        errorDiagnostics.Should().OnlyContain(d => d.Severity == DiagnosticSeverity.Warning);
     }
 
     [Fact]
@@ -265,7 +266,8 @@ public class DiagnosticReportingTests
             .ToArray();
 
         errorDiagnostics.Should().NotBeEmpty("XPC4003 should be reported when handler is missing PostImage parameter");
-        errorDiagnostics.Should().OnlyContain(d => d.Severity == DiagnosticSeverity.Error);
+        // XPC4003 is Warning when generated types don't exist yet (allows initial build to succeed)
+        errorDiagnostics.Should().OnlyContain(d => d.Severity == DiagnosticSeverity.Warning);
     }
 
     [Fact]
@@ -320,7 +322,8 @@ public class DiagnosticReportingTests
             .ToArray();
 
         errorDiagnostics.Should().NotBeEmpty("XPC4003 should be reported when handler is missing both image parameters");
-        errorDiagnostics.Should().OnlyContain(d => d.Severity == DiagnosticSeverity.Error);
+        // XPC4003 is Warning when generated types don't exist yet (allows initial build to succeed)
+        errorDiagnostics.Should().OnlyContain(d => d.Severity == DiagnosticSeverity.Warning);
     }
 
     [Fact]
@@ -376,7 +379,8 @@ public class DiagnosticReportingTests
             .ToArray();
 
         errorDiagnostics.Should().NotBeEmpty("XPC4003 should be reported when handler has wrong parameter order");
-        errorDiagnostics.Should().OnlyContain(d => d.Severity == DiagnosticSeverity.Error);
+        // XPC4003 is Warning when generated types don't exist yet (allows initial build to succeed)
+        errorDiagnostics.Should().OnlyContain(d => d.Severity == DiagnosticSeverity.Warning);
     }
 
     [Fact]

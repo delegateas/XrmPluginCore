@@ -1,3 +1,7 @@
+### v1.2.2 - 27 November 2025
+* Fix: XPC4003 has been reduced to Warning to allow initial build to succeed
+* Add: New rule XPC4006 (Error) to enforce handler signature correctness once generated types exist
+
 ### v1.0.1 - 27 November 2025
 * Fix: Analyzer for XPC4005 to correctly identify lambda expressions in AddImage calls
 

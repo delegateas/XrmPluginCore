@@ -20,3 +20,17 @@ XPC5000 | XrmPluginCore.SourceGenerator | Error    | XPC5000 Failed to generate 
 Rule ID | Category | Severity | Notes
 --------|----------|----------|-------
 XPC4005 | XrmPluginCore.SourceGenerator | Info     | XPC4005 Consider using modern image registration API
+
+## Release 1.2.2
+
+### New Rules
+
+Rule ID | Category | Severity | Notes
+--------|----------|----------|-------
+XPC4006 | XrmPluginCore.SourceGenerator | Error    | XPC4006 Handler signature mismatch (generated types exist)
+
+### Changed Rules
+
+Rule ID | New Category | New Severity | Old Category | Old Severity | Notes
+--------|--------------|--------------|--------------|--------------|-------|-------
+XPC4003 | XrmPluginCore.SourceGenerator | Warning | XrmPluginCore.SourceGenerator | Error | Handler signature does not match registered images (generated types don't exist)
