@@ -24,7 +24,8 @@ internal static class DiagnosticDescriptors
 		category: Category,
 		defaultSeverity: DiagnosticSeverity.Warning,
 		isEnabledByDefault: true,
-		description: "Using nameof() provides compile-time verification that the method exists and enables refactoring support.");
+		description: "Using nameof() provides compile-time verification that the method exists and enables refactoring support.",
+		helpLinkUri: "https://github.com/delegateas/XrmPluginCore/blob/main/XrmPluginCore.SourceGenerator/rules/XPC3001.md");
 
 	public static readonly DiagnosticDescriptor SymbolResolutionFailed = new(
 		id: "XPC4000",
@@ -39,24 +40,27 @@ internal static class DiagnosticDescriptors
 		title: "No parameterless constructor found",
 		messageFormat: "Plugin class '{0}' has no parameterless constructor. Image wrappers will not be generated for this plugin.",
 		category: Category,
-		DiagnosticSeverity.Warning,
-		isEnabledByDefault: true);
+		defaultSeverity: DiagnosticSeverity.Warning,
+		isEnabledByDefault: true,
+		helpLinkUri: "https://github.com/delegateas/XrmPluginCore/blob/main/XrmPluginCore.SourceGenerator/rules/XPC4001.md");
 
 	public static readonly DiagnosticDescriptor HandlerMethodNotFound = new(
 		id: "XPC4002",
 		title: "Handler method not found",
 		messageFormat: "Method '{0}' not found on service type '{1}'",
 		category: Category,
-		DiagnosticSeverity.Error,
-		isEnabledByDefault: true);
+		defaultSeverity: DiagnosticSeverity.Error,
+		isEnabledByDefault: true,
+		helpLinkUri: "https://github.com/delegateas/XrmPluginCore/blob/main/XrmPluginCore.SourceGenerator/rules/XPC4002.md");
 
 	public static readonly DiagnosticDescriptor HandlerSignatureMismatch = new(
 		id: "XPC4003",
 		title: "Handler signature does not match registered images",
 		messageFormat: "Handler method '{0}' does not have expected signature. Expected parameters in order: {1}. PreImage must be the first parameter, followed by PostImage if both are used.",
 		category: Category,
-		DiagnosticSeverity.Error,
-		isEnabledByDefault: true);
+		defaultSeverity: DiagnosticSeverity.Error,
+		isEnabledByDefault: true,
+		helpLinkUri: "https://github.com/delegateas/XrmPluginCore/blob/main/XrmPluginCore.SourceGenerator/rules/XPC4003.md");
 
 	public static readonly DiagnosticDescriptor ImageWithoutMethodReference = new(
 		id: "XPC4004",
@@ -64,7 +68,8 @@ internal static class DiagnosticDescriptors
 		messageFormat: "WithPreImage/WithPostImage requires method reference syntax (e.g., 'service => service.HandleUpdate'). Using method invocation (e.g., 's => s.HandleUpdate()') will not generate type-safe wrappers.",
 		category: Category,
 		defaultSeverity: DiagnosticSeverity.Warning,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true,
+		helpLinkUri: "https://github.com/delegateas/XrmPluginCore/blob/main/XrmPluginCore.SourceGenerator/rules/XPC4004.md");
 
 	public static readonly DiagnosticDescriptor GenerationError = new(
 		id: "XPC5000",
