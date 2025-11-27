@@ -16,7 +16,10 @@ if ($versionLine -match $regex) {
     Write-Host "Detected version: $version"
     [xml]$xml = Get-Content $resolved
 
-    $propertyGroup = $xml.Project.PropertyGroup | Where-Object { $_.Version -or $_.OutputType }
+    $propertyGroup = $xml.Project.PropertyGroup | Where-Object { $_.Version -or $_.OutputType } | Select-Object -First 1
+    if (-not $propertyGroup) {
+        $propertyGroup = $xml.Project.PropertyGroup | Select-Object -First 1
+    }
     if (-not $propertyGroup.Version) {
         $versionElement = $xml.CreateElement('Version')
         $versionElement.InnerText = $version

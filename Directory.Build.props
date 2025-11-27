@@ -1,0 +1,39 @@
+<Project>
+  <PropertyGroup>
+    <!-- Common metadata for all projects -->
+    <Company>Context&amp; A/S</Company>
+    <Authors>Context&amp;</Authors>
+    <Copyright>Copyright (c) Context&amp; A/S</Copyright>
+    <RepositoryUrl>https://github.com/delegateas/XrmPluginCore</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+
+    <!-- Consistent language version (C# 14) -->
+    <LangVersion>14</LangVersion>
+  </PropertyGroup>
+
+  <!-- Assembly signing for non-test projects -->
+  <PropertyGroup Condition="!$(MSBuildProjectName.EndsWith('.Tests'))">
+    <SignAssembly>True</SignAssembly>
+    <AssemblyOriginatorKeyFile>$(MSBuildThisFileDirectory)resources\delegate.snk</AssemblyOriginatorKeyFile>
+  </PropertyGroup>
+
+  <!-- Package metadata for packable projects -->
+  <PropertyGroup Condition="'$(IsPackable)' != 'false'">
+    <PackageLicenseFile>LICENSE</PackageLicenseFile>
+    <PackageIcon>contextand.png</PackageIcon>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <Version>1.0.0-local</Version>
+  </PropertyGroup>
+
+  <!-- Test project defaults -->
+  <PropertyGroup Condition="$(MSBuildProjectName.EndsWith('.Tests'))">
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+
+  <!-- Centralized Dataverse SDK references for projects that need them -->
+  <ItemGroup Condition="'$(UseDataverseSdk)' == 'true'">
+    <PackageReference Include="Microsoft.CrmSdk.CoreAssemblies" Version="9.0.2.59" Condition="'$(TargetFramework)' == 'net462'" />
+    <PackageReference Include="Microsoft.PowerPlatform.Dataverse.Client" Version="1.2.3" Condition="'$(TargetFramework)' == 'net8.0' Or '$(TargetFramework)' == 'net8'" />
+  </ItemGroup>
+</Project>
