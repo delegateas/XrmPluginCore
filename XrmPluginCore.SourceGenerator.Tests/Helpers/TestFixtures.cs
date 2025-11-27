@@ -8,96 +8,100 @@ public static class TestFixtures
     /// <summary>
     /// Sample Account entity class with common attributes.
     /// </summary>
-    public const string AccountEntity = @"
+    public const string AccountEntity = """
+
 using System;
 using System.ComponentModel;
 using Microsoft.Xrm.Sdk;
 
 namespace TestNamespace
 {
-    [EntityLogicalName(""account"")]
+    [EntityLogicalName("account")]
     public class Account : Entity
     {
-        public const string EntityLogicalName = ""account"";
+        public const string EntityLogicalName = "account";
 
         public Account() : base(EntityLogicalName) { }
 
-        [AttributeLogicalName(""name"")]
+        [AttributeLogicalName("name")]
         public string Name
         {
-            get => GetAttributeValue<string>(""name"");
-            set => SetAttributeValue(""name"", value);
+            get => GetAttributeValue<string>("name");
+            set => SetAttributeValue("name", value);
         }
 
-        [AttributeLogicalName(""accountnumber"")]
+        [AttributeLogicalName("accountnumber")]
         public string AccountNumber
         {
-            get => GetAttributeValue<string>(""accountnumber"");
-            set => SetAttributeValue(""accountnumber"", value);
+            get => GetAttributeValue<string>("accountnumber");
+            set => SetAttributeValue("accountnumber", value);
         }
 
-        [AttributeLogicalName(""revenue"")]
+        [AttributeLogicalName("revenue")]
         public Money Revenue
         {
-            get => GetAttributeValue<Money>(""revenue"");
-            set => SetAttributeValue(""revenue"", value);
+            get => GetAttributeValue<Money>("revenue");
+            set => SetAttributeValue("revenue", value);
         }
 
-        [AttributeLogicalName(""industrycode"")]
+        [AttributeLogicalName("industrycode")]
         public OptionSetValue IndustryCode
         {
-            get => GetAttributeValue<OptionSetValue>(""industrycode"");
-            set => SetAttributeValue(""industrycode"", value);
+            get => GetAttributeValue<OptionSetValue>("industrycode");
+            set => SetAttributeValue("industrycode", value);
         }
 
-        [AttributeLogicalName(""primarycontactid"")]
+        [AttributeLogicalName("primarycontactid")]
         public EntityReference PrimaryContactId
         {
-            get => GetAttributeValue<EntityReference>(""primarycontactid"");
-            set => SetAttributeValue(""primarycontactid"", value);
+            get => GetAttributeValue<EntityReference>("primarycontactid");
+            set => SetAttributeValue("primarycontactid", value);
         }
     }
-}";
+}
+""";
 
     /// <summary>
     /// Sample Contact entity class with common attributes.
     /// </summary>
-    public const string ContactEntity = @"
+    public const string ContactEntity = """
+
 using System;
 using System.ComponentModel;
 using Microsoft.Xrm.Sdk;
 
 namespace TestNamespace
 {
-    [EntityLogicalName(""contact"")]
+    [EntityLogicalName("contact")]
     public class Contact : Entity
     {
-        public const string EntityLogicalName = ""contact"";
+        public const string EntityLogicalName = "contact";
 
         public Contact() : base(EntityLogicalName) { }
 
-        [AttributeLogicalName(""firstname"")]
+        [AttributeLogicalName("firstname")]
         public string FirstName
         {
-            get => GetAttributeValue<string>(""firstname"");
-            set => SetAttributeValue(""firstname"", value);
+            get => GetAttributeValue<string>("firstname");
+            set => SetAttributeValue("firstname", value);
         }
 
-        [AttributeLogicalName(""lastname"")]
+        [AttributeLogicalName("lastname")]
         public string LastName
         {
-            get => GetAttributeValue<string>(""lastname"");
-            set => SetAttributeValue(""lastname"", value);
+            get => GetAttributeValue<string>("lastname");
+            set => SetAttributeValue("lastname", value);
         }
 
-        [AttributeLogicalName(""emailaddress1"")]
+        [AttributeLogicalName("emailaddress1")]
         public string EmailAddress
         {
-            get => GetAttributeValue<string>(""emailaddress1"");
-            set => SetAttributeValue(""emailaddress1"", value);
+            get => GetAttributeValue<string>("emailaddress1");
+            set => SetAttributeValue("emailaddress1", value);
         }
     }
-}";
+}
+""";
 
     /// <summary>
     /// Plugin with PreImage only.
@@ -300,8 +304,8 @@ namespace TestNamespace
     /// <summary>
     /// Gets a complete compilable source with entity and plugin.
     /// </summary>
-    public static string GetCompleteSource(string entitySource, string pluginSource)
-    {
+    public static string GetCompleteSource(string pluginSource)
+	{
         // Determine which entity is being used by checking if pluginSource contains RegisterStep<Account or RegisterStep<Contact
         var usesAccount = pluginSource.Contains("RegisterStep<Account");
         var usesContact = pluginSource.Contains("RegisterStep<Contact");
@@ -330,83 +334,85 @@ namespace TestNamespace
         }
 
         // Properly combine sources by merging namespaces
-        return $@"{usingStatements}
+        return $$"""
+{{usingStatements}}
 namespace TestNamespace
-{{
-    [Microsoft.Xrm.Sdk.Client.EntityLogicalName(""account"")]
+{
+    [Microsoft.Xrm.Sdk.Client.EntityLogicalName("account")]
     public class Account : Entity
-    {{
-        public const string EntityLogicalName = ""account"";
+    {
+        public const string EntityLogicalName = "account";
 
-        public Account() : base(EntityLogicalName) {{ }}
+        public Account() : base(EntityLogicalName) { }
 
-        [AttributeLogicalName(""name"")]
+        [AttributeLogicalName("name")]
         public string Name
-        {{
-            get => GetAttributeValue<string>(""name"");
-            set => SetAttributeValue(""name"", value);
-        }}
+        {
+            get => GetAttributeValue<string>("name");
+            set => SetAttributeValue("name", value);
+        }
 
-        [AttributeLogicalName(""accountnumber"")]
+        [AttributeLogicalName("accountnumber")]
         public string AccountNumber
-        {{
-            get => GetAttributeValue<string>(""accountnumber"");
-            set => SetAttributeValue(""accountnumber"", value);
-        }}
+        {
+            get => GetAttributeValue<string>("accountnumber");
+            set => SetAttributeValue("accountnumber", value);
+        }
 
-        [AttributeLogicalName(""revenue"")]
+        [AttributeLogicalName("revenue")]
         public Money Revenue
-        {{
-            get => GetAttributeValue<Money>(""revenue"");
-            set => SetAttributeValue(""revenue"", value);
-        }}
+        {
+            get => GetAttributeValue<Money>("revenue");
+            set => SetAttributeValue("revenue", value);
+        }
 
-        [AttributeLogicalName(""industrycode"")]
+        [AttributeLogicalName("industrycode")]
         public OptionSetValue IndustryCode
-        {{
-            get => GetAttributeValue<OptionSetValue>(""industrycode"");
-            set => SetAttributeValue(""industrycode"", value);
-        }}
+        {
+            get => GetAttributeValue<OptionSetValue>("industrycode");
+            set => SetAttributeValue("industrycode", value);
+        }
 
-        [AttributeLogicalName(""primarycontactid"")]
+        [AttributeLogicalName("primarycontactid")]
         public EntityReference PrimaryContactId
-        {{
-            get => GetAttributeValue<EntityReference>(""primarycontactid"");
-            set => SetAttributeValue(""primarycontactid"", value);
-        }}
-    }}
+        {
+            get => GetAttributeValue<EntityReference>("primarycontactid");
+            set => SetAttributeValue("primarycontactid", value);
+        }
+    }
 
-    [Microsoft.Xrm.Sdk.Client.EntityLogicalName(""contact"")]
+    [Microsoft.Xrm.Sdk.Client.EntityLogicalName("contact")]
     public class Contact : Entity
-    {{
-        public const string EntityLogicalName = ""contact"";
+    {
+        public const string EntityLogicalName = "contact";
 
-        public Contact() : base(EntityLogicalName) {{ }}
+        public Contact() : base(EntityLogicalName) { }
 
-        [AttributeLogicalName(""firstname"")]
+        [AttributeLogicalName("firstname")]
         public string FirstName
-        {{
-            get => GetAttributeValue<string>(""firstname"");
-            set => SetAttributeValue(""firstname"", value);
-        }}
+        {
+            get => GetAttributeValue<string>("firstname");
+            set => SetAttributeValue("firstname", value);
+        }
 
-        [AttributeLogicalName(""lastname"")]
+        [AttributeLogicalName("lastname")]
         public string LastName
-        {{
-            get => GetAttributeValue<string>(""lastname"");
-            set => SetAttributeValue(""lastname"", value);
-        }}
+        {
+            get => GetAttributeValue<string>("lastname");
+            set => SetAttributeValue("lastname", value);
+        }
 
-        [AttributeLogicalName(""emailaddress1"")]
+        [AttributeLogicalName("emailaddress1")]
         public string EmailAddress
-        {{
-            get => GetAttributeValue<string>(""emailaddress1"");
-            set => SetAttributeValue(""emailaddress1"", value);
-        }}
-    }}
+        {
+            get => GetAttributeValue<string>("emailaddress1");
+            set => SetAttributeValue("emailaddress1", value);
+        }
+    }
 
-    {StripNamespaceAndUsings(pluginSource)}
-}}";
+    {{StripNamespaceAndUsings(pluginSource)}}
+}
+""";
     }
 
     /// <summary>

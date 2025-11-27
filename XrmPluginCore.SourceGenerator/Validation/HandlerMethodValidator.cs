@@ -18,7 +18,9 @@ internal static class HandlerMethodValidator
 	{
 		if (string.IsNullOrEmpty(metadata.HandlerMethodName) ||
 			string.IsNullOrEmpty(metadata.ServiceTypeFullName))
+		{
 			return;
+		}
 
 		var serviceType = compilation.GetTypeByMetadataName(metadata.ServiceTypeFullName);
 		if (serviceType is null)

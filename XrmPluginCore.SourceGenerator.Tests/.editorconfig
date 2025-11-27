@@ -3,3 +3,4 @@
 
 dotnet_diagnostic.CS0618.severity = none # Suppress 'obsolete' warnings for test project
 dotnet_diagnostic.CA1707.severity = none # Suppress 'identifiers should not contain underscores' warnings for test project
+dotnet_diagnostic.CA2007.severity = none # Suppress ConfigureAwait warnings for test project

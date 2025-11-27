@@ -24,7 +24,7 @@ public static class CompilationHelper
 
         return CSharpCompilation.Create(
             assemblyName ?? $"TestAssembly_{Guid.NewGuid():N}",
-            new[] { syntaxTree },
+            [syntaxTree],
             references,
             new CSharpCompilationOptions(
                 OutputKind.DynamicallyLinkedLibrary,

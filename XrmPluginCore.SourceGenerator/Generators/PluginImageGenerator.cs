@@ -163,25 +163,8 @@ public class PluginImageGenerator : IIncrementalGenerator
 		catch (System.Exception ex)
 		{
 			// Report diagnostic error
-			ReportGenerationError(context, metadata, ex);
+			ReportGenerationError(context, ex);
 		}
-	}
-
-	/// <summary>
-	/// Reports a diagnostic for successful code generation
-	/// </summary>
-	private void ReportGenerationSuccess(
-		SourceProductionContext context,
-		PluginStepMetadata metadata)
-	{
-		var diagnostic = Diagnostic.Create(
-			DiagnosticDescriptors.GenerationSuccess,
-			Location.None,
-			1, // wrapper class count
-			metadata.RegistrationNamespace);
-
-		// Uncomment to see generation info in build output
-		context.ReportDiagnostic(diagnostic);
 	}
 
 	/// <summary>
@@ -189,7 +172,6 @@ public class PluginImageGenerator : IIncrementalGenerator
 	/// </summary>
 	private void ReportGenerationError(
 		SourceProductionContext context,
-		PluginStepMetadata metadata,
 		System.Exception exception)
 	{
 		var diagnostic = Diagnostic.Create(

@@ -7,15 +7,14 @@ namespace XrmPluginCore.SourceGenerator.Tests.GenerationTests;
 /// <summary>
 /// Tests for verifying wrapper class code generation structure and content.
 /// </summary>
-public class WrapperClassGenerationTests
+public partial class WrapperClassGenerationTests
 {
     [Fact]
     public void Should_Generate_PreImage_Class_With_Properties()
     {
         // Arrange
         var source = TestFixtures.GetCompleteSource(
-            TestFixtures.AccountEntity,
-            TestFixtures.GetPluginWithPreImage());
+			TestFixtures.GetPluginWithPreImage());
 
         // Act
         var result = GeneratorTestHelper.RunGenerator(
@@ -43,8 +42,7 @@ public class WrapperClassGenerationTests
     {
         // Arrange
         var source = TestFixtures.GetCompleteSource(
-            TestFixtures.AccountEntity,
-            TestFixtures.GetPluginWithPostImage());
+			TestFixtures.GetPluginWithPostImage());
 
         // Act
         var result = GeneratorTestHelper.RunGenerator(
@@ -69,8 +67,7 @@ public class WrapperClassGenerationTests
     {
         // Arrange
         var source = TestFixtures.GetCompleteSource(
-            TestFixtures.AccountEntity,
-            TestFixtures.GetPluginWithBothImages());
+			TestFixtures.GetPluginWithBothImages());
 
         // Act
         var result = GeneratorTestHelper.RunGenerator(
@@ -81,9 +78,7 @@ public class WrapperClassGenerationTests
         var generatedSource = result.GeneratedTrees[0].GetText().ToString();
 
         // All classes should be in the same namespace
-        var namespaceCount = System.Text.RegularExpressions.Regex.Matches(
-            generatedSource,
-            @"namespace\s+TestNamespace\.PluginRegistrations\.TestPlugin\.AccountUpdatePostOperation").Count;
+        var namespaceCount = IsAccountUpdatePostOperationNamespace().Matches(generatedSource).Count;
 
         namespaceCount.Should().Be(1, "all classes should be in the same namespace");
 
@@ -96,37 +91,39 @@ public class WrapperClassGenerationTests
     [Fact]
     public void Should_Generate_Properties_With_Correct_Types()
     {
-        // Arrange
-        var pluginSource = @"
-using XrmPluginCore;
-using XrmPluginCore.Abstractions;
-using XrmPluginCore.Enums;
-using Microsoft.Extensions.DependencyInjection;
-using TestNamespace;
-using TestNamespace.PluginRegistrations.TestPlugin.AccountUpdatePostOperation;
+		// Arrange
+		const string pluginSource = """
 
-namespace TestNamespace
-{
-    public class TestPlugin : Plugin
-    {
-        public TestPlugin()
-        {
-            RegisterStep<Account, ITestService>(EventOperation.Update, ExecutionStage.PostOperation,
-                service => service.Process)
-                .AddImage(ImageType.PreImage, x => x.Name, x => x.Revenue, x => x.IndustryCode, x => x.PrimaryContactId);
-        }
+			using XrmPluginCore;
+			using XrmPluginCore.Abstractions;
+			using XrmPluginCore.Enums;
+			using Microsoft.Extensions.DependencyInjection;
+			using TestNamespace;
+			using TestNamespace.PluginRegistrations.TestPlugin.AccountUpdatePostOperation;
 
-        protected override IServiceCollection OnBeforeBuildServiceProvider(IServiceCollection services)
-        {
-            return services.AddScoped<ITestService, TestService>();
-        }
-    }
+			namespace TestNamespace
+			{
+			    public class TestPlugin : Plugin
+			    {
+			        public TestPlugin()
+			        {
+			            RegisterStep<Account, ITestService>(EventOperation.Update, ExecutionStage.PostOperation,
+			                service => service.Process)
+			                .AddImage(ImageType.PreImage, x => x.Name, x => x.Revenue, x => x.IndustryCode, x => x.PrimaryContactId);
+			        }
 
-    public interface ITestService { void Process(PreImage preImage); }
-    public class TestService : ITestService { public void Process(PreImage preImage) { } }
-}";
+			        protected override IServiceCollection OnBeforeBuildServiceProvider(IServiceCollection services)
+			        {
+			            return services.AddScoped<ITestService, TestService>();
+			        }
+			    }
 
-        var source = TestFixtures.GetCompleteSource(TestFixtures.AccountEntity, pluginSource);
+			    public interface ITestService { void Process(PreImage preImage); }
+			    public class TestService : ITestService { public void Process(PreImage preImage) { } }
+			}
+			""";
+
+        var source = TestFixtures.GetCompleteSource(pluginSource);
 
         // Act
         var result = GeneratorTestHelper.RunGenerator(
@@ -154,8 +151,7 @@ namespace TestNamespace
     {
         // Arrange
         var source = TestFixtures.GetCompleteSource(
-            TestFixtures.AccountEntity,
-            TestFixtures.GetPluginWithPreImage());
+			TestFixtures.GetPluginWithPreImage());
 
         // Act
         var result = GeneratorTestHelper.RunGenerator(
@@ -173,8 +169,7 @@ namespace TestNamespace
     {
         // Arrange
         var source = TestFixtures.GetCompleteSource(
-            TestFixtures.AccountEntity,
-            TestFixtures.GetPluginWithPreImage());
+			TestFixtures.GetPluginWithPreImage());
 
         // Act
         var result = GeneratorTestHelper.RunGenerator(
@@ -192,8 +187,7 @@ namespace TestNamespace
     {
         // Arrange
         var source = TestFixtures.GetCompleteSource(
-            TestFixtures.AccountEntity,
-            TestFixtures.GetPluginWithPreImage());
+			TestFixtures.GetPluginWithPreImage());
 
         // Act
         var result = GeneratorTestHelper.RunGenerator(
@@ -210,8 +204,7 @@ namespace TestNamespace
     {
         // Arrange
         var source = TestFixtures.GetCompleteSource(
-            TestFixtures.AccountEntity,
-            TestFixtures.GetPluginWithPreImage());
+			TestFixtures.GetPluginWithPreImage());
 
         // Act
         var result = GeneratorTestHelper.RunGenerator(
@@ -230,8 +223,7 @@ namespace TestNamespace
     {
         // Arrange
         var source = TestFixtures.GetCompleteSource(
-            TestFixtures.AccountEntity,
-            TestFixtures.GetPluginWithPreImage());
+			TestFixtures.GetPluginWithPreImage());
 
         // Act
         var result = GeneratorTestHelper.RunGenerator(
@@ -251,8 +243,7 @@ namespace TestNamespace
     {
         // Arrange
         var source = TestFixtures.GetCompleteSource(
-            TestFixtures.AccountEntity,
-            TestFixtures.GetPluginWithPostImage());
+			TestFixtures.GetPluginWithPostImage());
 
         // Act
         var result = GeneratorTestHelper.RunGenerator(
@@ -272,8 +263,7 @@ namespace TestNamespace
     {
         // Arrange
         var source = TestFixtures.GetCompleteSource(
-            TestFixtures.AccountEntity,
-            TestFixtures.GetPluginWithBothImages());
+			TestFixtures.GetPluginWithBothImages());
 
         // Act
         var result = GeneratorTestHelper.RunGenerator(
@@ -295,8 +285,7 @@ namespace TestNamespace
     {
         // Arrange
         var source = TestFixtures.GetCompleteSource(
-            TestFixtures.AccountEntity,
-            TestFixtures.GetPluginWithPreImage());
+			TestFixtures.GetPluginWithPreImage());
 
         // Act
         var result = GeneratorTestHelper.RunGenerator(
@@ -315,8 +304,7 @@ namespace TestNamespace
     {
         // Arrange - Plugin with method reference syntax but NO images
         var source = TestFixtures.GetCompleteSource(
-            TestFixtures.AccountEntity,
-            TestFixtures.GetPluginWithHandlerNoImages());
+			TestFixtures.GetPluginWithHandlerNoImages());
 
         // Act
         var result = GeneratorTestHelper.RunGenerator(
@@ -347,8 +335,7 @@ namespace TestNamespace
     {
         // Arrange - Plugin with PreImage only (no PostImage)
         var source = TestFixtures.GetCompleteSource(
-            TestFixtures.AccountEntity,
-            TestFixtures.GetPluginWithPreImage());
+			TestFixtures.GetPluginWithPreImage());
 
         // Act
         var result = GeneratorTestHelper.RunGenerator(
@@ -378,8 +365,7 @@ namespace TestNamespace
     {
         // Arrange - Plugin with PostImage only (no PreImage)
         var source = TestFixtures.GetCompleteSource(
-            TestFixtures.AccountEntity,
-            TestFixtures.GetPluginWithPostImage());
+			TestFixtures.GetPluginWithPostImage());
 
         // Act
         var result = GeneratorTestHelper.RunGenerator(
@@ -409,8 +395,7 @@ namespace TestNamespace
     {
         // Arrange - Plugin with both PreImage and PostImage
         var source = TestFixtures.GetCompleteSource(
-            TestFixtures.AccountEntity,
-            TestFixtures.GetPluginWithBothImages());
+			TestFixtures.GetPluginWithBothImages());
 
         // Act
         var result = GeneratorTestHelper.RunGenerator(
@@ -431,4 +416,7 @@ namespace TestNamespace
         generatedSource.Should().Contain("public class PreImage");
         generatedSource.Should().Contain("public class PostImage");
     }
+
+	[System.Text.RegularExpressions.GeneratedRegex(@"namespace\s+TestNamespace\.PluginRegistrations\.TestPlugin\.AccountUpdatePostOperation")]
+	private static partial System.Text.RegularExpressions.Regex IsAccountUpdatePostOperationNamespace();
 }

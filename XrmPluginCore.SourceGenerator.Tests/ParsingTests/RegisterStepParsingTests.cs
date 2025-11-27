@@ -14,8 +14,7 @@ public class RegisterStepParsingTests
     {
         // Arrange
         var source = TestFixtures.GetCompleteSource(
-            TestFixtures.AccountEntity,
-            TestFixtures.GetPluginWithPreImage());
+			TestFixtures.GetPluginWithPreImage());
 
         // Act
         var result = GeneratorTestHelper.RunGenerator(
@@ -34,8 +33,7 @@ public class RegisterStepParsingTests
     {
         // Arrange
         var source = TestFixtures.GetCompleteSource(
-            TestFixtures.AccountEntity,
-            TestFixtures.GetPluginWithPostImage());
+			TestFixtures.GetPluginWithPostImage());
 
         // Act
         var result = GeneratorTestHelper.RunGenerator(
@@ -54,8 +52,7 @@ public class RegisterStepParsingTests
     {
         // Arrange
         var source = TestFixtures.GetCompleteSource(
-            TestFixtures.AccountEntity,
-            TestFixtures.GetPluginWithBothImages());
+			TestFixtures.GetPluginWithBothImages());
 
         // Act
         var result = GeneratorTestHelper.RunGenerator(
@@ -83,8 +80,7 @@ public class RegisterStepParsingTests
         // Arrange - Old API uses service => service.Process() which is a method invocation,
         // not a method reference. The new generator requires a method reference.
         var source = TestFixtures.GetCompleteSource(
-            TestFixtures.AccountEntity,
-            TestFixtures.GetPluginWithOldImageApi());
+			TestFixtures.GetPluginWithOldImageApi());
 
         // Act
         var result = GeneratorTestHelper.RunGenerator(
@@ -99,8 +95,7 @@ public class RegisterStepParsingTests
     {
         // Arrange - GetPluginWithPreImage uses lambda syntax: x => x.Name
         var source = TestFixtures.GetCompleteSource(
-            TestFixtures.AccountEntity,
-            TestFixtures.GetPluginWithPreImage());
+			TestFixtures.GetPluginWithPreImage());
 
         // Act
         var result = GeneratorTestHelper.RunGenerator(
@@ -117,8 +112,7 @@ public class RegisterStepParsingTests
     {
         // Arrange
         var source = TestFixtures.GetCompleteSource(
-            TestFixtures.ContactEntity,
-            TestFixtures.GetPluginWithPreImage("Contact"));
+			TestFixtures.GetPluginWithPreImage("Contact"));
 
         // Act
         var result = GeneratorTestHelper.RunGenerator(
@@ -137,8 +131,7 @@ public class RegisterStepParsingTests
     {
         // Arrange
         var source = TestFixtures.GetCompleteSource(
-            TestFixtures.AccountEntity,
-            TestFixtures.GetPluginWithPreImage());
+			TestFixtures.GetPluginWithPreImage());
 
         // Act
         var result = GeneratorTestHelper.RunGenerator(
@@ -155,44 +148,46 @@ public class RegisterStepParsingTests
     [Fact]
     public void Should_Handle_Multiple_Attributes_In_Same_Image()
     {
-        // Arrange
-        var pluginSource = @"
-using XrmPluginCore;
-using XrmPluginCore.Abstractions;
-using XrmPluginCore.Enums;
-using Microsoft.Extensions.DependencyInjection;
-using TestNamespace;
-using TestNamespace.PluginRegistrations.TestPlugin.AccountUpdatePostOperation;
+		// Arrange
+		const string pluginSource = """
 
-namespace TestNamespace
-{
-    public class TestPlugin : Plugin
-    {
-        public TestPlugin()
-        {
-            RegisterStep<Account, ITestService>(EventOperation.Update, ExecutionStage.PostOperation,
-                service => service.Process)
-                .AddImage(ImageType.PreImage, x => x.Name, x => x.AccountNumber, x => x.Revenue, x => x.IndustryCode);
-        }
+			using XrmPluginCore;
+			using XrmPluginCore.Abstractions;
+			using XrmPluginCore.Enums;
+			using Microsoft.Extensions.DependencyInjection;
+			using TestNamespace;
+			using TestNamespace.PluginRegistrations.TestPlugin.AccountUpdatePostOperation;
 
-        protected override IServiceCollection OnBeforeBuildServiceProvider(IServiceCollection services)
-        {
-            return services.AddScoped<ITestService, TestService>();
-        }
-    }
+			namespace TestNamespace
+			{
+			    public class TestPlugin : Plugin
+			    {
+			        public TestPlugin()
+			        {
+			            RegisterStep<Account, ITestService>(EventOperation.Update, ExecutionStage.PostOperation,
+			                service => service.Process)
+			                .AddImage(ImageType.PreImage, x => x.Name, x => x.AccountNumber, x => x.Revenue, x => x.IndustryCode);
+			        }
 
-    public interface ITestService
-    {
-        void Process(PreImage preImage);
-    }
+			        protected override IServiceCollection OnBeforeBuildServiceProvider(IServiceCollection services)
+			        {
+			            return services.AddScoped<ITestService, TestService>();
+			        }
+			    }
 
-    public class TestService : ITestService
-    {
-        public void Process(PreImage preImage) { }
-    }
-}";
+			    public interface ITestService
+			    {
+			        void Process(PreImage preImage);
+			    }
 
-        var source = TestFixtures.GetCompleteSource(TestFixtures.AccountEntity, pluginSource);
+			    public class TestService : ITestService
+			    {
+			        public void Process(PreImage preImage) { }
+			    }
+			}
+			""";
+
+        var source = TestFixtures.GetCompleteSource(pluginSource);
 
         // Act
         var result = GeneratorTestHelper.RunGenerator(
@@ -211,44 +206,46 @@ namespace TestNamespace
     [Fact]
     public void Should_Parse_Handler_Method_Name()
     {
-        // Arrange - plugin with new API to verify method reference parsing
-        var pluginSource = @"
-using XrmPluginCore;
-using XrmPluginCore.Abstractions;
-using XrmPluginCore.Enums;
-using Microsoft.Extensions.DependencyInjection;
-using TestNamespace;
-using TestNamespace.PluginRegistrations.TestPlugin.AccountUpdatePostOperation;
+		// Arrange - plugin with new API to verify method reference parsing
+		const string pluginSource = """
 
-namespace TestNamespace
-{
-    public class TestPlugin : Plugin
-    {
-        public TestPlugin()
-        {
-            RegisterStep<Account, ITestService>(EventOperation.Update, ExecutionStage.PostOperation,
-                service => service.HandleAccountUpdate)
-                .AddImage(ImageType.PreImage, x => x.Name);
-        }
+			using XrmPluginCore;
+			using XrmPluginCore.Abstractions;
+			using XrmPluginCore.Enums;
+			using Microsoft.Extensions.DependencyInjection;
+			using TestNamespace;
+			using TestNamespace.PluginRegistrations.TestPlugin.AccountUpdatePostOperation;
 
-        protected override IServiceCollection OnBeforeBuildServiceProvider(IServiceCollection services)
-        {
-            return services.AddScoped<ITestService, TestService>();
-        }
-    }
+			namespace TestNamespace
+			{
+			    public class TestPlugin : Plugin
+			    {
+			        public TestPlugin()
+			        {
+			            RegisterStep<Account, ITestService>(EventOperation.Update, ExecutionStage.PostOperation,
+			                service => service.HandleAccountUpdate)
+			                .AddImage(ImageType.PreImage, x => x.Name);
+			        }
 
-    public interface ITestService
-    {
-        void HandleAccountUpdate(PreImage preImage);
-    }
+			        protected override IServiceCollection OnBeforeBuildServiceProvider(IServiceCollection services)
+			        {
+			            return services.AddScoped<ITestService, TestService>();
+			        }
+			    }
 
-    public class TestService : ITestService
-    {
-        public void HandleAccountUpdate(PreImage preImage) { }
-    }
-}";
+			    public interface ITestService
+			    {
+			        void HandleAccountUpdate(PreImage preImage);
+			    }
 
-        var source = TestFixtures.GetCompleteSource(TestFixtures.AccountEntity, pluginSource);
+			    public class TestService : ITestService
+			    {
+			        public void HandleAccountUpdate(PreImage preImage) { }
+			    }
+			}
+			""";
+
+        var source = TestFixtures.GetCompleteSource(pluginSource);
 
         // Act
         var result = GeneratorTestHelper.RunGenerator(
@@ -263,45 +260,47 @@ namespace TestNamespace
     [Fact]
     public void Should_Parse_Parameterless_Method_Reference()
     {
-        // Arrange - plugin with a parameterless handler method (no images)
-        // This tests the Expression<Func<TService, Action>> overload for parameterless methods
-        var pluginSource = @"
-using XrmPluginCore;
-using XrmPluginCore.Abstractions;
-using XrmPluginCore.Enums;
-using Microsoft.Extensions.DependencyInjection;
-using TestNamespace;
-using TestNamespace.PluginRegistrations.TestPlugin.AccountCreatePostOperation;
+		// Arrange - plugin with a parameterless handler method (no images)
+		// This tests the Expression<Func<TService, Action>> overload for parameterless methods
+		const string pluginSource = """
 
-namespace TestNamespace
-{
-    public class TestPlugin : Plugin
-    {
-        public TestPlugin()
-        {
-            RegisterStep<Account, ITestService>(EventOperation.Create, ExecutionStage.PostOperation,
-                service => service.HandleCreate)
-                .AddFilteredAttributes(x => x.Name);
-        }
+			using XrmPluginCore;
+			using XrmPluginCore.Abstractions;
+			using XrmPluginCore.Enums;
+			using Microsoft.Extensions.DependencyInjection;
+			using TestNamespace;
+			using TestNamespace.PluginRegistrations.TestPlugin.AccountCreatePostOperation;
 
-        protected override IServiceCollection OnBeforeBuildServiceProvider(IServiceCollection services)
-        {
-            return services.AddScoped<ITestService, TestService>();
-        }
-    }
+			namespace TestNamespace
+			{
+			    public class TestPlugin : Plugin
+			    {
+			        public TestPlugin()
+			        {
+			            RegisterStep<Account, ITestService>(EventOperation.Create, ExecutionStage.PostOperation,
+			                service => service.HandleCreate)
+			                .AddFilteredAttributes(x => x.Name);
+			        }
 
-    public interface ITestService
-    {
-        void HandleCreate();
-    }
+			        protected override IServiceCollection OnBeforeBuildServiceProvider(IServiceCollection services)
+			        {
+			            return services.AddScoped<ITestService, TestService>();
+			        }
+			    }
 
-    public class TestService : ITestService
-    {
-        public void HandleCreate() { }
-    }
-}";
+			    public interface ITestService
+			    {
+			        void HandleCreate();
+			    }
 
-        var source = TestFixtures.GetCompleteSource(TestFixtures.AccountEntity, pluginSource);
+			    public class TestService : ITestService
+			    {
+			        public void HandleCreate() { }
+			    }
+			}
+			""";
+
+        var source = TestFixtures.GetCompleteSource(pluginSource);
 
         // Act
         var result = GeneratorTestHelper.RunGenerator(
@@ -328,45 +327,47 @@ namespace TestNamespace
     [Fact]
     public void Should_Parse_Parameterless_Method_Reference_With_Custom_Method_Name()
     {
-        // Arrange - plugin with a parameterless handler method with a unique name
-        // This ensures the method name extraction works for various naming conventions
-        var pluginSource = @"
-using XrmPluginCore;
-using XrmPluginCore.Abstractions;
-using XrmPluginCore.Enums;
-using Microsoft.Extensions.DependencyInjection;
-using TestNamespace;
-using TestNamespace.PluginRegistrations.TestPlugin.AccountDeletePreOperation;
+		// Arrange - plugin with a parameterless handler method with a unique name
+		// This ensures the method name extraction works for various naming conventions
+		const string pluginSource = """
 
-namespace TestNamespace
-{
-    public class TestPlugin : Plugin
-    {
-        public TestPlugin()
-        {
-            RegisterStep<Account, ITestService>(EventOperation.Delete, ExecutionStage.PreOperation,
-                service => service.OnAccountDeleting)
-                .AddFilteredAttributes(x => x.Name);
-        }
+			using XrmPluginCore;
+			using XrmPluginCore.Abstractions;
+			using XrmPluginCore.Enums;
+			using Microsoft.Extensions.DependencyInjection;
+			using TestNamespace;
+			using TestNamespace.PluginRegistrations.TestPlugin.AccountDeletePreOperation;
 
-        protected override IServiceCollection OnBeforeBuildServiceProvider(IServiceCollection services)
-        {
-            return services.AddScoped<ITestService, TestService>();
-        }
-    }
+			namespace TestNamespace
+			{
+			    public class TestPlugin : Plugin
+			    {
+			        public TestPlugin()
+			        {
+			            RegisterStep<Account, ITestService>(EventOperation.Delete, ExecutionStage.PreOperation,
+			                service => service.OnAccountDeleting)
+			                .AddFilteredAttributes(x => x.Name);
+			        }
 
-    public interface ITestService
-    {
-        void OnAccountDeleting();
-    }
+			        protected override IServiceCollection OnBeforeBuildServiceProvider(IServiceCollection services)
+			        {
+			            return services.AddScoped<ITestService, TestService>();
+			        }
+			    }
 
-    public class TestService : ITestService
-    {
-        public void OnAccountDeleting() { }
-    }
-}";
+			    public interface ITestService
+			    {
+			        void OnAccountDeleting();
+			    }
 
-        var source = TestFixtures.GetCompleteSource(TestFixtures.AccountEntity, pluginSource);
+			    public class TestService : ITestService
+			    {
+			        public void OnAccountDeleting() { }
+			    }
+			}
+			""";
+
+        var source = TestFixtures.GetCompleteSource(pluginSource);
 
         // Act
         var result = GeneratorTestHelper.RunGenerator(

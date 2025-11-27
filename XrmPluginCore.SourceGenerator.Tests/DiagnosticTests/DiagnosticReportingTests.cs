@@ -18,8 +18,7 @@ public class DiagnosticReportingTests
     {
         // Arrange
         var source = TestFixtures.GetCompleteSource(
-            TestFixtures.AccountEntity,
-            TestFixtures.GetPluginWithPreImage());
+			TestFixtures.GetPluginWithPreImage());
 
         // Act
         var result = GeneratorTestHelper.RunGenerator(
@@ -36,37 +35,39 @@ public class DiagnosticReportingTests
     [Fact]
     public async Task Should_Report_XPC4001_When_Plugin_Has_No_Parameterless_Constructor()
     {
-        // Arrange - plugin class with only a parameterized constructor (no parameterless)
-        var pluginSource = @"
-using XrmPluginCore;
-using XrmPluginCore.Enums;
-using Microsoft.Extensions.DependencyInjection;
-using TestNamespace;
-using TestNamespace.PluginRegistrations.TestPlugin.AccountUpdatePostOperation;
+		// Arrange - plugin class with only a parameterized constructor (no parameterless)
+		const string pluginSource = """
 
-namespace TestNamespace
-{
-    public class TestPlugin : Plugin
-    {
-        // Only has a constructor WITH parameters - no parameterless constructor
-        public TestPlugin(string config)
-        {
-            RegisterStep<Account, ITestService>(EventOperation.Update, ExecutionStage.PostOperation,
-                service => service.Process)
-                .AddImage(ImageType.PreImage, x => x.Name);
-        }
+			using XrmPluginCore;
+			using XrmPluginCore.Enums;
+			using Microsoft.Extensions.DependencyInjection;
+			using TestNamespace;
+			using TestNamespace.PluginRegistrations.TestPlugin.AccountUpdatePostOperation;
 
-        protected override IServiceCollection OnBeforeBuildServiceProvider(IServiceCollection services)
-        {
-            return services.AddScoped<ITestService, TestService>();
-        }
-    }
+			namespace TestNamespace
+			{
+			    public class TestPlugin : Plugin
+			    {
+			        // Only has a constructor WITH parameters - no parameterless constructor
+			        public TestPlugin(string config)
+			        {
+			            RegisterStep<Account, ITestService>(EventOperation.Update, ExecutionStage.PostOperation,
+			                service => service.Process)
+			                .AddImage(ImageType.PreImage, x => x.Name);
+			        }
 
-    public interface ITestService { void Process(PreImage preImage); }
-    public class TestService : ITestService { public void Process(PreImage preImage) { } }
-}";
+			        protected override IServiceCollection OnBeforeBuildServiceProvider(IServiceCollection services)
+			        {
+			            return services.AddScoped<ITestService, TestService>();
+			        }
+			    }
 
-        var source = TestFixtures.GetCompleteSource(TestFixtures.AccountEntity, pluginSource);
+			    public interface ITestService { void Process(PreImage preImage); }
+			    public class TestService : ITestService { public void Process(PreImage preImage) { } }
+			}
+			""";
+
+        var source = TestFixtures.GetCompleteSource(pluginSource);
 
         // Act - Run analyzer instead of generator
         var diagnostics = await GetAnalyzerDiagnosticsAsync(source, new NoParameterlessConstructorAnalyzer());
@@ -88,8 +89,7 @@ namespace TestNamespace
 
         // Arrange - complex but valid source
         var source = TestFixtures.GetCompleteSource(
-            TestFixtures.AccountEntity,
-            TestFixtures.GetPluginWithBothImages());
+			TestFixtures.GetPluginWithBothImages());
 
         // Act
         var result = GeneratorTestHelper.RunGenerator(
@@ -109,42 +109,44 @@ namespace TestNamespace
     [Fact]
     public async Task Should_Report_XPC4002_When_Handler_Method_Not_Found()
     {
-        // Arrange - method reference points to NonExistentMethod but service has Process
-        var pluginSource = @"
-using XrmPluginCore;
-using XrmPluginCore.Enums;
-using Microsoft.Extensions.DependencyInjection;
-using TestNamespace;
+		// Arrange - method reference points to NonExistentMethod but service has Process
+		const string pluginSource = """
 
-namespace TestNamespace
-{
-    public class TestPlugin : Plugin
-    {
-        public TestPlugin()
-        {
-            RegisterStep<Account, ITestService>(EventOperation.Update, ExecutionStage.PostOperation,
-                service => service.NonExistentMethod)
-                .WithPreImage(x => x.Name);
-        }
+			using XrmPluginCore;
+			using XrmPluginCore.Enums;
+			using Microsoft.Extensions.DependencyInjection;
+			using TestNamespace;
 
-        protected override IServiceCollection OnBeforeBuildServiceProvider(IServiceCollection services)
-        {
-            return services.AddScoped<ITestService, TestService>();
-        }
-    }
+			namespace TestNamespace
+			{
+			    public class TestPlugin : Plugin
+			    {
+			        public TestPlugin()
+			        {
+			            RegisterStep<Account, ITestService>(EventOperation.Update, ExecutionStage.PostOperation,
+			                service => service.NonExistentMethod)
+			                .WithPreImage(x => x.Name);
+			        }
 
-    public interface ITestService
-    {
-        void Process();
-    }
+			        protected override IServiceCollection OnBeforeBuildServiceProvider(IServiceCollection services)
+			        {
+			            return services.AddScoped<ITestService, TestService>();
+			        }
+			    }
 
-    public class TestService : ITestService
-    {
-        public void Process() { }
-    }
-}";
+			    public interface ITestService
+			    {
+			        void Process();
+			    }
 
-        var source = TestFixtures.GetCompleteSource(TestFixtures.AccountEntity, pluginSource);
+			    public class TestService : ITestService
+			    {
+			        public void Process() { }
+			    }
+			}
+			""";
+
+        var source = TestFixtures.GetCompleteSource(pluginSource);
 
         // Act - Run analyzer instead of generator
         var diagnostics = await GetAnalyzerDiagnosticsAsync(source, new HandlerMethodNotFoundAnalyzer());
@@ -161,42 +163,44 @@ namespace TestNamespace
     [Fact]
     public async Task Should_Report_XPC4003_When_Handler_Missing_PreImage_Parameter()
     {
-        // Arrange - WithPreImage is registered but handler takes no parameters
-        var pluginSource = @"
-using XrmPluginCore;
-using XrmPluginCore.Enums;
-using Microsoft.Extensions.DependencyInjection;
-using TestNamespace;
+		// Arrange - WithPreImage is registered but handler takes no parameters
+		const string pluginSource = """
 
-namespace TestNamespace
-{
-    public class TestPlugin : Plugin
-    {
-        public TestPlugin()
-        {
-            RegisterStep<Account, ITestService>(EventOperation.Update, ExecutionStage.PostOperation,
-                service => service.Process)
-                .WithPreImage(x => x.Name);
-        }
+			using XrmPluginCore;
+			using XrmPluginCore.Enums;
+			using Microsoft.Extensions.DependencyInjection;
+			using TestNamespace;
 
-        protected override IServiceCollection OnBeforeBuildServiceProvider(IServiceCollection services)
-        {
-            return services.AddScoped<ITestService, TestService>();
-        }
-    }
+			namespace TestNamespace
+			{
+			    public class TestPlugin : Plugin
+			    {
+			        public TestPlugin()
+			        {
+			            RegisterStep<Account, ITestService>(EventOperation.Update, ExecutionStage.PostOperation,
+			                service => service.Process)
+			                .WithPreImage(x => x.Name);
+			        }
 
-    public interface ITestService
-    {
-        void Process();  // No PreImage parameter!
-    }
+			        protected override IServiceCollection OnBeforeBuildServiceProvider(IServiceCollection services)
+			        {
+			            return services.AddScoped<ITestService, TestService>();
+			        }
+			    }
 
-    public class TestService : ITestService
-    {
-        public void Process() { }
-    }
-}";
+			    public interface ITestService
+			    {
+			        void Process();  // No PreImage parameter!
+			    }
 
-        var source = TestFixtures.GetCompleteSource(TestFixtures.AccountEntity, pluginSource);
+			    public class TestService : ITestService
+			    {
+			        public void Process() { }
+			    }
+			}
+			""";
+
+        var source = TestFixtures.GetCompleteSource(pluginSource);
 
         // Act - Run analyzer instead of generator
         var diagnostics = await GetAnalyzerDiagnosticsAsync(source, new HandlerSignatureMismatchAnalyzer());
@@ -213,42 +217,44 @@ namespace TestNamespace
     [Fact]
     public async Task Should_Report_XPC4003_When_Handler_Missing_PostImage_Parameter()
     {
-        // Arrange - WithPostImage is registered but handler takes no parameters
-        var pluginSource = @"
-using XrmPluginCore;
-using XrmPluginCore.Enums;
-using Microsoft.Extensions.DependencyInjection;
-using TestNamespace;
+		// Arrange - WithPostImage is registered but handler takes no parameters
+		const string pluginSource = """
 
-namespace TestNamespace
-{
-    public class TestPlugin : Plugin
-    {
-        public TestPlugin()
-        {
-            RegisterStep<Account, ITestService>(EventOperation.Update, ExecutionStage.PostOperation,
-                service => service.Process)
-                .WithPostImage(x => x.Name);
-        }
+			using XrmPluginCore;
+			using XrmPluginCore.Enums;
+			using Microsoft.Extensions.DependencyInjection;
+			using TestNamespace;
 
-        protected override IServiceCollection OnBeforeBuildServiceProvider(IServiceCollection services)
-        {
-            return services.AddScoped<ITestService, TestService>();
-        }
-    }
+			namespace TestNamespace
+			{
+			    public class TestPlugin : Plugin
+			    {
+			        public TestPlugin()
+			        {
+			            RegisterStep<Account, ITestService>(EventOperation.Update, ExecutionStage.PostOperation,
+			                service => service.Process)
+			                .WithPostImage(x => x.Name);
+			        }
 
-    public interface ITestService
-    {
-        void Process();  // No PostImage parameter!
-    }
+			        protected override IServiceCollection OnBeforeBuildServiceProvider(IServiceCollection services)
+			        {
+			            return services.AddScoped<ITestService, TestService>();
+			        }
+			    }
 
-    public class TestService : ITestService
-    {
-        public void Process() { }
-    }
-}";
+			    public interface ITestService
+			    {
+			        void Process();  // No PostImage parameter!
+			    }
 
-        var source = TestFixtures.GetCompleteSource(TestFixtures.AccountEntity, pluginSource);
+			    public class TestService : ITestService
+			    {
+			        public void Process() { }
+			    }
+			}
+			""";
+
+        var source = TestFixtures.GetCompleteSource(pluginSource);
 
         // Act - Run analyzer instead of generator
         var diagnostics = await GetAnalyzerDiagnosticsAsync(source, new HandlerSignatureMismatchAnalyzer());
@@ -265,43 +271,45 @@ namespace TestNamespace
     [Fact]
     public async Task Should_Report_XPC4003_When_Handler_Missing_Both_Image_Parameters()
     {
-        // Arrange - Both WithPreImage and WithPostImage but handler takes no parameters
-        var pluginSource = @"
-using XrmPluginCore;
-using XrmPluginCore.Enums;
-using Microsoft.Extensions.DependencyInjection;
-using TestNamespace;
+		// Arrange - Both WithPreImage and WithPostImage but handler takes no parameters
+		const string pluginSource = """
 
-namespace TestNamespace
-{
-    public class TestPlugin : Plugin
-    {
-        public TestPlugin()
-        {
-            RegisterStep<Account, ITestService>(EventOperation.Update, ExecutionStage.PostOperation,
-                service => service.Process)
-                .WithPreImage(x => x.Name)
-                .WithPostImage(x => x.AccountNumber);
-        }
+			using XrmPluginCore;
+			using XrmPluginCore.Enums;
+			using Microsoft.Extensions.DependencyInjection;
+			using TestNamespace;
 
-        protected override IServiceCollection OnBeforeBuildServiceProvider(IServiceCollection services)
-        {
-            return services.AddScoped<ITestService, TestService>();
-        }
-    }
+			namespace TestNamespace
+			{
+			    public class TestPlugin : Plugin
+			    {
+			        public TestPlugin()
+			        {
+			            RegisterStep<Account, ITestService>(EventOperation.Update, ExecutionStage.PostOperation,
+			                service => service.Process)
+			                .WithPreImage(x => x.Name)
+			                .WithPostImage(x => x.AccountNumber);
+			        }
 
-    public interface ITestService
-    {
-        void Process();  // No parameters!
-    }
+			        protected override IServiceCollection OnBeforeBuildServiceProvider(IServiceCollection services)
+			        {
+			            return services.AddScoped<ITestService, TestService>();
+			        }
+			    }
 
-    public class TestService : ITestService
-    {
-        public void Process() { }
-    }
-}";
+			    public interface ITestService
+			    {
+			        void Process();  // No parameters!
+			    }
 
-        var source = TestFixtures.GetCompleteSource(TestFixtures.AccountEntity, pluginSource);
+			    public class TestService : ITestService
+			    {
+			        public void Process() { }
+			    }
+			}
+			""";
+
+        var source = TestFixtures.GetCompleteSource(pluginSource);
 
         // Act - Run analyzer instead of generator
         var diagnostics = await GetAnalyzerDiagnosticsAsync(source, new HandlerSignatureMismatchAnalyzer());
@@ -318,44 +326,46 @@ namespace TestNamespace
     [Fact]
     public async Task Should_Report_XPC4003_When_Handler_Has_Wrong_Parameter_Order()
     {
-        // Arrange - WithPreImage and WithPostImage but handler has parameters in wrong order
-        var pluginSource = @"
-using XrmPluginCore;
-using XrmPluginCore.Enums;
-using Microsoft.Extensions.DependencyInjection;
-using TestNamespace;
-using TestNamespace.PluginRegistrations.TestPlugin.AccountUpdatePostOperation;
+		// Arrange - WithPreImage and WithPostImage but handler has parameters in wrong order
+		const string pluginSource = """
 
-namespace TestNamespace
-{
-    public class TestPlugin : Plugin
-    {
-        public TestPlugin()
-        {
-            RegisterStep<Account, ITestService>(EventOperation.Update, ExecutionStage.PostOperation,
-                service => service.Process)
-                .WithPreImage(x => x.Name)
-                .WithPostImage(x => x.AccountNumber);
-        }
+			using XrmPluginCore;
+			using XrmPluginCore.Enums;
+			using Microsoft.Extensions.DependencyInjection;
+			using TestNamespace;
+			using TestNamespace.PluginRegistrations.TestPlugin.AccountUpdatePostOperation;
 
-        protected override IServiceCollection OnBeforeBuildServiceProvider(IServiceCollection services)
-        {
-            return services.AddScoped<ITestService, TestService>();
-        }
-    }
+			namespace TestNamespace
+			{
+			    public class TestPlugin : Plugin
+			    {
+			        public TestPlugin()
+			        {
+			            RegisterStep<Account, ITestService>(EventOperation.Update, ExecutionStage.PostOperation,
+			                service => service.Process)
+			                .WithPreImage(x => x.Name)
+			                .WithPostImage(x => x.AccountNumber);
+			        }
 
-    public interface ITestService
-    {
-        void Process(PostImage post, PreImage pre);  // Wrong order! Should be PreImage, PostImage
-    }
+			        protected override IServiceCollection OnBeforeBuildServiceProvider(IServiceCollection services)
+			        {
+			            return services.AddScoped<ITestService, TestService>();
+			        }
+			    }
 
-    public class TestService : ITestService
-    {
-        public void Process(PostImage post, PreImage pre) { }
-    }
-}";
+			    public interface ITestService
+			    {
+			        void Process(PostImage post, PreImage pre);  // Wrong order! Should be PreImage, PostImage
+			    }
 
-        var source = TestFixtures.GetCompleteSource(TestFixtures.AccountEntity, pluginSource);
+			    public class TestService : ITestService
+			    {
+			        public void Process(PostImage post, PreImage pre) { }
+			    }
+			}
+			""";
+
+        var source = TestFixtures.GetCompleteSource(pluginSource);
 
         // Act - Run analyzer instead of generator
         var diagnostics = await GetAnalyzerDiagnosticsAsync(source, new HandlerSignatureMismatchAnalyzer());
@@ -372,42 +382,44 @@ namespace TestNamespace
     [Fact]
     public async Task Should_Report_XPC4004_When_WithPreImage_Used_With_Invocation_Syntax()
     {
-        // Arrange - WithPreImage used with s => s.DoSomething() (invocation) instead of s => s.DoSomething (method reference)
-        var pluginSource = @"
-using XrmPluginCore;
-using XrmPluginCore.Enums;
-using Microsoft.Extensions.DependencyInjection;
-using TestNamespace;
+		// Arrange - WithPreImage used with s => s.DoSomething() (invocation) instead of s => s.DoSomething (method reference)
+		const string pluginSource = """
 
-namespace TestNamespace
-{
-    public class TestPlugin : Plugin
-    {
-        public TestPlugin()
-        {
-            RegisterStep<Account, ITestService>(EventOperation.Update, ExecutionStage.PostOperation,
-                s => s.DoSomething())  // Invocation syntax - NOT method reference
-                .WithPreImage(x => x.Name);
-        }
+			using XrmPluginCore;
+			using XrmPluginCore.Enums;
+			using Microsoft.Extensions.DependencyInjection;
+			using TestNamespace;
 
-        protected override IServiceCollection OnBeforeBuildServiceProvider(IServiceCollection services)
-        {
-            return services.AddScoped<ITestService, TestService>();
-        }
-    }
+			namespace TestNamespace
+			{
+			    public class TestPlugin : Plugin
+			    {
+			        public TestPlugin()
+			        {
+			            RegisterStep<Account, ITestService>(EventOperation.Update, ExecutionStage.PostOperation,
+			                s => s.DoSomething())  // Invocation syntax - NOT method reference
+			                .WithPreImage(x => x.Name);
+			        }
 
-    public interface ITestService
-    {
-        void DoSomething();
-    }
+			        protected override IServiceCollection OnBeforeBuildServiceProvider(IServiceCollection services)
+			        {
+			            return services.AddScoped<ITestService, TestService>();
+			        }
+			    }
 
-    public class TestService : ITestService
-    {
-        public void DoSomething() { }
-    }
-}";
+			    public interface ITestService
+			    {
+			        void DoSomething();
+			    }
 
-        var source = TestFixtures.GetCompleteSource(TestFixtures.AccountEntity, pluginSource);
+			    public class TestService : ITestService
+			    {
+			        public void DoSomething() { }
+			    }
+			}
+			""";
+
+        var source = TestFixtures.GetCompleteSource(pluginSource);
 
         // Act - Run analyzer instead of generator
         var diagnostics = await GetAnalyzerDiagnosticsAsync(source, new ImageWithoutMethodReferenceAnalyzer());
@@ -424,42 +436,44 @@ namespace TestNamespace
     [Fact]
     public async Task Should_Report_XPC4004_When_WithPostImage_Used_With_Invocation_Syntax()
     {
-        // Arrange - WithPostImage used with s => s.DoSomething() (invocation) instead of s => s.DoSomething (method reference)
-        var pluginSource = @"
-using XrmPluginCore;
-using XrmPluginCore.Enums;
-using Microsoft.Extensions.DependencyInjection;
-using TestNamespace;
+		// Arrange - WithPostImage used with s => s.DoSomething() (invocation) instead of s => s.DoSomething (method reference)
+		const string pluginSource = """
 
-namespace TestNamespace
-{
-    public class TestPlugin : Plugin
-    {
-        public TestPlugin()
-        {
-            RegisterStep<Account, ITestService>(EventOperation.Update, ExecutionStage.PostOperation,
-                s => s.DoSomething())  // Invocation syntax - NOT method reference
-                .WithPostImage(x => x.Name);
-        }
+			using XrmPluginCore;
+			using XrmPluginCore.Enums;
+			using Microsoft.Extensions.DependencyInjection;
+			using TestNamespace;
 
-        protected override IServiceCollection OnBeforeBuildServiceProvider(IServiceCollection services)
-        {
-            return services.AddScoped<ITestService, TestService>();
-        }
-    }
+			namespace TestNamespace
+			{
+			    public class TestPlugin : Plugin
+			    {
+			        public TestPlugin()
+			        {
+			            RegisterStep<Account, ITestService>(EventOperation.Update, ExecutionStage.PostOperation,
+			                s => s.DoSomething())  // Invocation syntax - NOT method reference
+			                .WithPostImage(x => x.Name);
+			        }
 
-    public interface ITestService
-    {
-        void DoSomething();
-    }
+			        protected override IServiceCollection OnBeforeBuildServiceProvider(IServiceCollection services)
+			        {
+			            return services.AddScoped<ITestService, TestService>();
+			        }
+			    }
 
-    public class TestService : ITestService
-    {
-        public void DoSomething() { }
-    }
-}";
+			    public interface ITestService
+			    {
+			        void DoSomething();
+			    }
 
-        var source = TestFixtures.GetCompleteSource(TestFixtures.AccountEntity, pluginSource);
+			    public class TestService : ITestService
+			    {
+			        public void DoSomething() { }
+			    }
+			}
+			""";
+
+        var source = TestFixtures.GetCompleteSource(pluginSource);
 
         // Act - Run analyzer instead of generator
         var diagnostics = await GetAnalyzerDiagnosticsAsync(source, new ImageWithoutMethodReferenceAnalyzer());
@@ -476,43 +490,45 @@ namespace TestNamespace
     [Fact]
     public async Task Should_Not_Report_XPC4004_When_Using_Method_Reference_Syntax()
     {
-        // Arrange - Method reference syntax (correct usage)
-        var pluginSource = @"
-using XrmPluginCore;
-using XrmPluginCore.Enums;
-using Microsoft.Extensions.DependencyInjection;
-using TestNamespace;
-using TestNamespace.PluginRegistrations.TestPlugin.AccountUpdatePostOperation;
+		// Arrange - Method reference syntax (correct usage)
+		const string pluginSource = """
 
-namespace TestNamespace
-{
-    public class TestPlugin : Plugin
-    {
-        public TestPlugin()
-        {
-            RegisterStep<Account, ITestService>(EventOperation.Update, ExecutionStage.PostOperation,
-                s => s.HandleUpdate)  // Method reference - correct syntax
-                .WithPreImage(x => x.Name);
-        }
+			using XrmPluginCore;
+			using XrmPluginCore.Enums;
+			using Microsoft.Extensions.DependencyInjection;
+			using TestNamespace;
+			using TestNamespace.PluginRegistrations.TestPlugin.AccountUpdatePostOperation;
 
-        protected override IServiceCollection OnBeforeBuildServiceProvider(IServiceCollection services)
-        {
-            return services.AddScoped<ITestService, TestService>();
-        }
-    }
+			namespace TestNamespace
+			{
+			    public class TestPlugin : Plugin
+			    {
+			        public TestPlugin()
+			        {
+			            RegisterStep<Account, ITestService>(EventOperation.Update, ExecutionStage.PostOperation,
+			                s => s.HandleUpdate)  // Method reference - correct syntax
+			                .WithPreImage(x => x.Name);
+			        }
 
-    public interface ITestService
-    {
-        void HandleUpdate(PreImage preImage);
-    }
+			        protected override IServiceCollection OnBeforeBuildServiceProvider(IServiceCollection services)
+			        {
+			            return services.AddScoped<ITestService, TestService>();
+			        }
+			    }
 
-    public class TestService : ITestService
-    {
-        public void HandleUpdate(PreImage preImage) { }
-    }
-}";
+			    public interface ITestService
+			    {
+			        void HandleUpdate(PreImage preImage);
+			    }
 
-        var source = TestFixtures.GetCompleteSource(TestFixtures.AccountEntity, pluginSource);
+			    public class TestService : ITestService
+			    {
+			        public void HandleUpdate(PreImage preImage) { }
+			    }
+			}
+			""";
+
+        var source = TestFixtures.GetCompleteSource(pluginSource);
 
         // Act - Run analyzer instead of generator
         var diagnostics = await GetAnalyzerDiagnosticsAsync(source, new ImageWithoutMethodReferenceAnalyzer());
@@ -528,42 +544,44 @@ namespace TestNamespace
     [Fact]
     public async Task Should_Not_Report_XPC4004_When_Old_Api_Used_Without_Images()
     {
-        // Arrange - Invocation syntax but without WithPreImage/WithPostImage (no images registered)
-        var pluginSource = @"
-using XrmPluginCore;
-using XrmPluginCore.Enums;
-using Microsoft.Extensions.DependencyInjection;
-using TestNamespace;
+		// Arrange - Invocation syntax but without WithPreImage/WithPostImage (no images registered)
+		const string pluginSource = """
 
-namespace TestNamespace
-{
-    public class TestPlugin : Plugin
-    {
-        public TestPlugin()
-        {
-            RegisterStep<Account, ITestService>(EventOperation.Update, ExecutionStage.PostOperation,
-                s => s.DoSomething())  // Invocation syntax - but no images
-                .AddFilteredAttributes(x => x.Name);
-        }
+			using XrmPluginCore;
+			using XrmPluginCore.Enums;
+			using Microsoft.Extensions.DependencyInjection;
+			using TestNamespace;
 
-        protected override IServiceCollection OnBeforeBuildServiceProvider(IServiceCollection services)
-        {
-            return services.AddScoped<ITestService, TestService>();
-        }
-    }
+			namespace TestNamespace
+			{
+			    public class TestPlugin : Plugin
+			    {
+			        public TestPlugin()
+			        {
+			            RegisterStep<Account, ITestService>(EventOperation.Update, ExecutionStage.PostOperation,
+			                s => s.DoSomething())  // Invocation syntax - but no images
+			                .AddFilteredAttributes(x => x.Name);
+			        }
 
-    public interface ITestService
-    {
-        void DoSomething();
-    }
+			        protected override IServiceCollection OnBeforeBuildServiceProvider(IServiceCollection services)
+			        {
+			            return services.AddScoped<ITestService, TestService>();
+			        }
+			    }
 
-    public class TestService : ITestService
-    {
-        public void DoSomething() { }
-    }
-}";
+			    public interface ITestService
+			    {
+			        void DoSomething();
+			    }
 
-        var source = TestFixtures.GetCompleteSource(TestFixtures.AccountEntity, pluginSource);
+			    public class TestService : ITestService
+			    {
+			        public void DoSomething() { }
+			    }
+			}
+			""";
+
+        var source = TestFixtures.GetCompleteSource(pluginSource);
 
         // Act - Run analyzer instead of generator
         var diagnostics = await GetAnalyzerDiagnosticsAsync(source, new ImageWithoutMethodReferenceAnalyzer());
@@ -581,7 +599,7 @@ namespace TestNamespace
         var compilation = CompilationHelper.CreateCompilation(source);
 
         var compilationWithAnalyzers = compilation.WithAnalyzers(
-            ImmutableArray.Create(analyzer));
+			[analyzer]);
 
         return await compilationWithAnalyzers.GetAnalyzerDiagnosticsAsync();
     }

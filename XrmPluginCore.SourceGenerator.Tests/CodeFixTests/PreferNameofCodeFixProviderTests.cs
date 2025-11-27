@@ -4,7 +4,6 @@ using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Diagnostics;
-using System.Collections.Immutable;
 using XrmPluginCore.SourceGenerator.Analyzers;
 using XrmPluginCore.SourceGenerator.CodeFixes;
 using XrmPluginCore.SourceGenerator.Tests.Helpers;
@@ -21,7 +20,7 @@ public class PreferNameofCodeFixProviderTests
 	public async Task Should_Convert_String_Literal_To_Nameof_With_Service_Type()
 	{
 		// Arrange
-		var pluginSource = @"
+		const string pluginSource = """
 using XrmPluginCore;
 using XrmPluginCore.Enums;
 using Microsoft.Extensions.DependencyInjection;
@@ -34,7 +33,7 @@ namespace TestNamespace
         public TestPlugin()
         {
             RegisterStep<Account, ITestService>(EventOperation.Update, ExecutionStage.PostOperation,
-                ""HandleUpdate"")
+                "HandleUpdate")
                 .AddFilteredAttributes(x => x.Name);
         }
 
@@ -53,9 +52,10 @@ namespace TestNamespace
     {
         public void HandleUpdate() { }
     }
-}";
+}
+""";
 
-		var source = TestFixtures.GetCompleteSource(TestFixtures.AccountEntity, pluginSource);
+		var source = TestFixtures.GetCompleteSource(pluginSource);
 
 		// Act
 		var fixedSource = await ApplyCodeFixAsync(source);
@@ -69,7 +69,7 @@ namespace TestNamespace
 	public async Task Should_Preserve_Surrounding_Code_Structure()
 	{
 		// Arrange
-		var pluginSource = @"
+		const string pluginSource = """
 using XrmPluginCore;
 using XrmPluginCore.Enums;
 using Microsoft.Extensions.DependencyInjection;
@@ -82,7 +82,7 @@ namespace TestNamespace
         public TestPlugin()
         {
             RegisterStep<Account, ITestService>(EventOperation.Update, ExecutionStage.PostOperation,
-                ""HandleUpdate"")
+                "HandleUpdate")
                 .AddFilteredAttributes(x => x.Name);
         }
 
@@ -101,9 +101,10 @@ namespace TestNamespace
     {
         public void HandleUpdate() { }
     }
-}";
+}
+""";
 
-		var source = TestFixtures.GetCompleteSource(TestFixtures.AccountEntity, pluginSource);
+		var source = TestFixtures.GetCompleteSource(pluginSource);
 
 		// Act
 		var fixedSource = await ApplyCodeFixAsync(source);
@@ -119,7 +120,7 @@ namespace TestNamespace
 	public async Task Should_Fix_Multiple_String_Literals_When_FixAll_Applied()
 	{
 		// Arrange - Two plugins with string literals
-		var pluginSource = @"
+		const string pluginSource = """
 using XrmPluginCore;
 using XrmPluginCore.Enums;
 using Microsoft.Extensions.DependencyInjection;
@@ -132,7 +133,7 @@ namespace TestNamespace
         public TestPlugin1()
         {
             RegisterStep<Account, ITestService>(EventOperation.Update, ExecutionStage.PostOperation,
-                ""HandleUpdate"")
+                "HandleUpdate")
                 .AddFilteredAttributes(x => x.Name);
         }
 
@@ -147,7 +148,7 @@ namespace TestNamespace
         public TestPlugin2()
         {
             RegisterStep<Account, ITestService>(EventOperation.Create, ExecutionStage.PreOperation,
-                ""HandleCreate"")
+                "HandleCreate")
                 .AddFilteredAttributes(x => x.Name);
         }
 
@@ -168,9 +169,10 @@ namespace TestNamespace
         public void HandleUpdate() { }
         public void HandleCreate() { }
     }
-}";
+}
+""";
 
-		var source = TestFixtures.GetCompleteSource(TestFixtures.AccountEntity, pluginSource);
+		var source = TestFixtures.GetCompleteSource(pluginSource);
 
 		// Act - Apply all fixes
 		var fixedSource = await ApplyAllCodeFixesAsync(source);
@@ -186,7 +188,7 @@ namespace TestNamespace
 	public async Task CodeFix_Should_Have_Correct_Title()
 	{
 		// Arrange
-		var pluginSource = @"
+		const string pluginSource = """
 using XrmPluginCore;
 using XrmPluginCore.Enums;
 using Microsoft.Extensions.DependencyInjection;
@@ -199,7 +201,7 @@ namespace TestNamespace
         public TestPlugin()
         {
             RegisterStep<Account, ITestService>(EventOperation.Update, ExecutionStage.PostOperation,
-                ""HandleUpdate"")
+                "HandleUpdate")
                 .AddFilteredAttributes(x => x.Name);
         }
 
@@ -218,9 +220,10 @@ namespace TestNamespace
     {
         public void HandleUpdate() { }
     }
-}";
+}
+""";
 
-		var source = TestFixtures.GetCompleteSource(TestFixtures.AccountEntity, pluginSource);
+		var source = TestFixtures.GetCompleteSource(pluginSource);
 
 		// Act
 		var codeActions = await GetCodeActionsAsync(source);
@@ -237,7 +240,7 @@ namespace TestNamespace
 		var codeFixProvider = new PreferNameofCodeFixProvider();
 
 		var compilationWithAnalyzers = compilation.WithAnalyzers(
-			ImmutableArray.Create<DiagnosticAnalyzer>(analyzer));
+			[analyzer]);
 
 		var diagnostics = await compilationWithAnalyzers.GetAnalyzerDiagnosticsAsync();
 		var diagnostic = diagnostics.FirstOrDefault(d => d.Id == "XPC3001");
@@ -293,14 +296,14 @@ namespace TestNamespace
 		var codeFixProvider = new PreferNameofCodeFixProvider();
 
 		var compilationWithAnalyzers = compilation.WithAnalyzers(
-			ImmutableArray.Create<DiagnosticAnalyzer>(analyzer));
+			[analyzer]);
 
 		var diagnostics = await compilationWithAnalyzers.GetAnalyzerDiagnosticsAsync();
 		var diagnostic = diagnostics.FirstOrDefault(d => d.Id == "XPC3001");
 
 		if (diagnostic == null)
 		{
-			return new List<CodeAction>();
+			return [];
 		}
 
 		var document = CreateDocument(source);

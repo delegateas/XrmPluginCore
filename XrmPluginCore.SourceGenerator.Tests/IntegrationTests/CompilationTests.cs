@@ -15,15 +15,14 @@ public class CompilationTests
     {
         // Arrange
         var source = TestFixtures.GetCompleteSource(
-            TestFixtures.AccountEntity,
-            TestFixtures.GetPluginWithPreImage());
+			TestFixtures.GetPluginWithPreImage());
 
         // Act
         var result = GeneratorTestHelper.RunGeneratorAndCompile(source);
 
         // Assert
         result.Success.Should().BeTrue(
-            because: $"compilation should succeed. Errors: {string.Join(", ", result.Errors ?? Array.Empty<string>())}");
+            because: $"compilation should succeed. Errors: {string.Join(", ", result.Errors ?? [])}");
         result.AssemblyBytes.Should().NotBeNull();
     }
 
@@ -32,8 +31,7 @@ public class CompilationTests
     {
         // Arrange
         var source = TestFixtures.GetCompleteSource(
-            TestFixtures.AccountEntity,
-            TestFixtures.GetPluginWithPreImage());
+			TestFixtures.GetPluginWithPreImage());
 
         var result = GeneratorTestHelper.RunGeneratorAndCompile(source);
         result.Success.Should().BeTrue();
@@ -74,8 +72,7 @@ public class CompilationTests
     {
         // Arrange
         var source = TestFixtures.GetCompleteSource(
-            TestFixtures.AccountEntity,
-            TestFixtures.GetPluginWithPostImage());
+			TestFixtures.GetPluginWithPostImage());
 
         var result = GeneratorTestHelper.RunGeneratorAndCompile(source);
         result.Success.Should().BeTrue();
@@ -106,8 +103,7 @@ public class CompilationTests
     {
         // Arrange
         var source = TestFixtures.GetCompleteSource(
-            TestFixtures.AccountEntity,
-            TestFixtures.GetPluginWithBothImages());
+			TestFixtures.GetPluginWithBothImages());
 
         var result = GeneratorTestHelper.RunGeneratorAndCompile(source);
         result.Success.Should().BeTrue();
@@ -126,7 +122,7 @@ public class CompilationTests
 
         // Act
         using var loadedAssembly = GeneratorTestHelper.LoadAssembly(result.AssemblyBytes!);
-        var baseNamespace = "TestNamespace.PluginRegistrations.TestPlugin.AccountUpdatePostOperation";
+		const string baseNamespace = "TestNamespace.PluginRegistrations.TestPlugin.AccountUpdatePostOperation";
 
         var preImageType = loadedAssembly.Assembly.GetType($"{baseNamespace}.PreImage");
         var postImageType = loadedAssembly.Assembly.GetType($"{baseNamespace}.PostImage");
@@ -149,8 +145,7 @@ public class CompilationTests
     {
         // Arrange
         var source = TestFixtures.GetCompleteSource(
-            TestFixtures.AccountEntity,
-            TestFixtures.GetPluginWithPreImage());
+			TestFixtures.GetPluginWithPreImage());
 
         var result = GeneratorTestHelper.RunGeneratorAndCompile(source);
         result.Success.Should().BeTrue();
@@ -180,8 +175,7 @@ public class CompilationTests
     {
         // Arrange
         var source = TestFixtures.GetCompleteSource(
-            TestFixtures.AccountEntity,
-            TestFixtures.GetPluginWithPreImage());
+			TestFixtures.GetPluginWithPreImage());
 
         var result = GeneratorTestHelper.RunGeneratorAndCompile(source);
         result.Success.Should().BeTrue();
@@ -189,8 +183,8 @@ public class CompilationTests
         // Act
         using var loadedAssembly = GeneratorTestHelper.LoadAssembly(result.AssemblyBytes!);
 
-        // Assert - namespace should follow pattern: {Namespace}.PluginRegistrations.{Plugin}.{Entity}{Operation}{Stage}
-        var expectedNamespace = "TestNamespace.PluginRegistrations.TestPlugin.AccountUpdatePostOperation";
+		// Assert - namespace should follow pattern: {Namespace}.PluginRegistrations.{Plugin}.{Entity}{Operation}{Stage}
+		const string expectedNamespace = "TestNamespace.PluginRegistrations.TestPlugin.AccountUpdatePostOperation";
         var preImageType = loadedAssembly.Assembly.GetType($"{expectedNamespace}.PreImage");
 
         preImageType.Should().NotBeNull("PreImage should be in the expected namespace");
@@ -202,15 +196,14 @@ public class CompilationTests
     {
         // Arrange
         var source = TestFixtures.GetCompleteSource(
-            TestFixtures.AccountEntity,
-            TestFixtures.GetPluginWithPreImage());
+			TestFixtures.GetPluginWithPreImage());
 
         var result = GeneratorTestHelper.RunGeneratorAndCompile(source);
         result.Success.Should().BeTrue();
 
         // Act
         using var loadedAssembly = GeneratorTestHelper.LoadAssembly(result.AssemblyBytes!);
-        var expectedNamespace = "TestNamespace.PluginRegistrations.TestPlugin.AccountUpdatePostOperation";
+		const string expectedNamespace = "TestNamespace.PluginRegistrations.TestPlugin.AccountUpdatePostOperation";
         var actionWrapperType = loadedAssembly.Assembly.GetType($"{expectedNamespace}.ActionWrapper");
 
         // Assert
@@ -232,14 +225,13 @@ public class CompilationTests
         // Arrange - Source code that mirrors XrmMockup's AccountPostImagePlugin pattern:
         // service => service.HandleDelete where HandleDelete(PostImage postImage)
         var source = TestFixtures.GetCompleteSource(
-            TestFixtures.AccountEntity,
-            TestFixtures.GetPluginWithMethodReferenceAndPostImage());
+			TestFixtures.GetPluginWithMethodReferenceAndPostImage());
 
         // Act
         var result = GeneratorTestHelper.RunGeneratorAndCompile(source);
 
         // Assert
         result.Success.Should().BeTrue(
-            because: $"method reference with image parameter should compile. Errors: {string.Join(", ", result.Errors ?? Array.Empty<string>())}");
+            because: $"method reference with image parameter should compile. Errors: {string.Join(", ", result.Errors ?? [])}");
     }
 }

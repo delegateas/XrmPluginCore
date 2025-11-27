@@ -52,7 +52,7 @@ namespace TestNamespace
     }
 }";
 
-		var source = TestFixtures.GetCompleteSource(TestFixtures.AccountEntity, pluginSource);
+		var source = TestFixtures.GetCompleteSource(pluginSource);
 		var diagnostics = await GetDiagnosticsAsync(source);
 
 		// Assert
@@ -101,7 +101,7 @@ namespace TestNamespace
     }
 }";
 
-		var source = TestFixtures.GetCompleteSource(TestFixtures.AccountEntity, pluginSource);
+		var source = TestFixtures.GetCompleteSource(pluginSource);
 		var diagnostics = await GetDiagnosticsAsync(source);
 
 		// Assert
@@ -117,7 +117,6 @@ namespace TestNamespace
 	{
 		// Arrange
 		var source = TestFixtures.GetCompleteSource(
-			TestFixtures.AccountEntity,
 			TestFixtures.GetPluginWithHandlerNoImages());
 
 		var diagnostics = await GetDiagnosticsAsync(source);
@@ -164,7 +163,7 @@ namespace TestNamespace
     }
 }";
 
-		var source = TestFixtures.GetCompleteSource(TestFixtures.AccountEntity, pluginSource);
+		var source = TestFixtures.GetCompleteSource(pluginSource);
 		var diagnostics = await GetDiagnosticsAsync(source);
 
 		// Assert
@@ -211,7 +210,7 @@ namespace TestNamespace
     }
 }";
 
-		var source = TestFixtures.GetCompleteSource(TestFixtures.AccountEntity, pluginSource);
+		var source = TestFixtures.GetCompleteSource(pluginSource);
 		var diagnostics = await GetDiagnosticsAsync(source);
 
 		// Assert

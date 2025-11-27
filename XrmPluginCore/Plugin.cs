@@ -44,10 +44,10 @@ namespace XrmPluginCore
         /// </summary>
         /// <param name="serviceProvider">The service provider.</param>
         /// <remarks>
-        /// For improved performance, Microsoft Dynamics CRM caches plug-in instances. 
-        /// The plug-in's Execute method should be written to be stateless as the constructor 
-        /// is not called for every invocation of the plug-in. Also, multiple system threads 
-        /// could execute the plug-in at the same time. All per invocation state information 
+        /// For improved performance, Microsoft Dynamics CRM caches plug-in instances.
+        /// The plug-in's Execute method should be written to be stateless as the constructor
+        /// is not called for every invocation of the plug-in. Also, multiple system threads
+        /// could execute the plug-in at the same time. All per invocation state information
         /// is stored in the context. This means that you should not use global variables in plug-ins.
         /// </remarks>
         public void Execute(IServiceProvider serviceProvider)
@@ -384,7 +384,7 @@ namespace XrmPluginCore
         {
             if (RegisteredCustomApi != null)
             {
-                throw new InvalidOperationException($"You cannot register multiple CustomAPIs in the same class");
+                throw new InvalidOperationException("You cannot register multiple CustomAPIs in the same class");
             }
 
             var configBuilder = new CustomApiConfigBuilder(name);

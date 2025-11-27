@@ -8,15 +8,14 @@ namespace XrmPluginCore.SourceGenerator.Tests.SnapshotTests;
 /// Snapshot tests that verify the exact structure of generated code.
 /// These tests ensure consistency in code generation patterns.
 /// </summary>
-public class GeneratedCodeSnapshotTests
+public partial class GeneratedCodeSnapshotTests
 {
     [Fact]
     public void Should_Generate_PreImage_Class_With_Expected_Structure()
     {
         // Arrange
         var source = TestFixtures.GetCompleteSource(
-            TestFixtures.AccountEntity,
-            TestFixtures.GetPluginWithPreImage());
+			TestFixtures.GetPluginWithPreImage());
 
         // Act
         var result = GeneratorTestHelper.RunGenerator(
@@ -51,8 +50,7 @@ public class GeneratedCodeSnapshotTests
     {
         // Arrange
         var source = TestFixtures.GetCompleteSource(
-            TestFixtures.AccountEntity,
-            TestFixtures.GetPluginWithPostImage());
+			TestFixtures.GetPluginWithPostImage());
 
         // Act
         var result = GeneratorTestHelper.RunGenerator(
@@ -85,8 +83,7 @@ public class GeneratedCodeSnapshotTests
     {
         // Arrange
         var source = TestFixtures.GetCompleteSource(
-            TestFixtures.AccountEntity,
-            TestFixtures.GetPluginWithPreImage());
+			TestFixtures.GetPluginWithPreImage());
 
         // Act
         var result = GeneratorTestHelper.RunGenerator(
@@ -109,15 +106,13 @@ public class GeneratedCodeSnapshotTests
             new
             {
                 Source = TestFixtures.GetCompleteSource(
-                    TestFixtures.AccountEntity,
-                    TestFixtures.GetPluginWithPreImage()),
+					TestFixtures.GetPluginWithPreImage()),
                 ExpectedNamespace = "TestNamespace.PluginRegistrations.TestPlugin.AccountUpdatePostOperation"
             },
             new
             {
                 Source = TestFixtures.GetCompleteSource(
-                    TestFixtures.ContactEntity,
-                    TestFixtures.GetPluginWithPreImage("Contact")),
+					TestFixtures.GetPluginWithPreImage("Contact")),
                 ExpectedNamespace = "TestNamespace.PluginRegistrations.TestPlugin.ContactUpdatePostOperation"
             }
         };
@@ -131,7 +126,7 @@ public class GeneratedCodeSnapshotTests
             // Assert
             var generatedSource = result.GeneratedTrees[0].GetText().ToString();
             generatedSource.Should().Contain($"namespace {testCase.ExpectedNamespace}",
-                $"namespace should follow pattern: {{Namespace}}.PluginRegistrations.{{Plugin}}.{{Entity}}{{Operation}}{{Stage}}");
+                "namespace should follow pattern: {Namespace}.PluginRegistrations.{Plugin}.{Entity}{Operation}{Stage}");
         }
     }
 
@@ -140,8 +135,7 @@ public class GeneratedCodeSnapshotTests
     {
         // Arrange
         var source = TestFixtures.GetCompleteSource(
-            TestFixtures.AccountEntity,
-            TestFixtures.GetPluginWithBothImages());
+			TestFixtures.GetPluginWithBothImages());
 
         // Act
         var result = GeneratorTestHelper.RunGenerator(
@@ -157,7 +151,7 @@ public class GeneratedCodeSnapshotTests
         generatedSource.Should().Contain("[CompilerGenerated]");
 
         // Count occurrences - should be at least 3 (PreImage, PostImage, and ActionWrapper)
-        var matches = System.Text.RegularExpressions.Regex.Matches(generatedSource, @"\[CompilerGenerated\]");
+        var matches = IsCompilerGenerated().Matches(generatedSource);
         matches.Count.Should().BeGreaterOrEqualTo(3, "PreImage, PostImage, and ActionWrapper classes should be marked");
     }
 
@@ -166,8 +160,7 @@ public class GeneratedCodeSnapshotTests
     {
         // Arrange
         var source = TestFixtures.GetCompleteSource(
-            TestFixtures.AccountEntity,
-            TestFixtures.GetPluginWithPreImage());
+			TestFixtures.GetPluginWithPreImage());
 
         // Act
         var result = GeneratorTestHelper.RunGenerator(
@@ -199,8 +192,7 @@ public class GeneratedCodeSnapshotTests
     {
         // Arrange
         var source = TestFixtures.GetCompleteSource(
-            TestFixtures.AccountEntity,
-            TestFixtures.GetPluginWithBothImages());
+			TestFixtures.GetPluginWithBothImages());
 
         // Act
         var result = GeneratorTestHelper.RunGenerator(
@@ -216,4 +208,7 @@ public class GeneratedCodeSnapshotTests
         generatedSource.Should().Contain("var postImage = postImageEntity != null ? new PostImage(postImageEntity) : null;");
         generatedSource.Should().Contain("service.Process(preImage, postImage)");
     }
+
+	[System.Text.RegularExpressions.GeneratedRegex(@"\[CompilerGenerated\]")]
+	private static partial System.Text.RegularExpressions.Regex IsCompilerGenerated();
 }

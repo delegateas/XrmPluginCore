@@ -19,7 +19,7 @@ public static class GeneratorTestHelper
         var generator = new PluginImageGenerator();
         // Pass the compilation's parse options to the driver so generated syntax trees use the same language version
         var driver = CSharpGeneratorDriver.Create(
-            generators: new[] { generator.AsSourceGenerator() },
+            generators: [generator.AsSourceGenerator()],
             parseOptions: (CSharpParseOptions?)compilation.SyntaxTrees.FirstOrDefault()?.Options);
 
         driver = (CSharpGeneratorDriver)driver.RunGeneratorsAndUpdateCompilation(
@@ -38,10 +38,10 @@ public static class GeneratorTestHelper
         return new GeneratorRunResult
         {
             OutputCompilation = (CSharpCompilation)outputCompilation,
-            Diagnostics = diagnostics.ToArray(),
+            Diagnostics = [.. diagnostics],
             GeneratedTrees = generatedTrees,
-            GeneratorDiagnostics = runResult.Results[0].Diagnostics.ToArray()
-        };
+            GeneratorDiagnostics = [.. runResult.Results[0].Diagnostics]
+		};
     }
 
     /// <summary>

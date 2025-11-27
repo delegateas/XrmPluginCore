@@ -74,7 +74,7 @@ namespace XrmPluginCore.Plugins
         public bool Matches(IPluginExecutionContext pluginExecutionContext)
         {
             return (int)ExecutionStage == pluginExecutionContext.Stage &&
-                EventOperation.ToString() == pluginExecutionContext.MessageName &&
+                EventOperation == pluginExecutionContext.MessageName &&
                 (string.IsNullOrWhiteSpace(EntityLogicalName) || EntityLogicalName == pluginExecutionContext.PrimaryEntityName);
         }
 
