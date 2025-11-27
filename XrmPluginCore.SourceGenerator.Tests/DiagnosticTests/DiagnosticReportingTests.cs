@@ -1,12 +1,15 @@
 using FluentAssertions;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.Diagnostics;
+using System.Collections.Immutable;
+using XrmPluginCore.SourceGenerator.Analyzers;
 using XrmPluginCore.SourceGenerator.Tests.Helpers;
 using Xunit;
 
 namespace XrmPluginCore.SourceGenerator.Tests.DiagnosticTests;
 
 /// <summary>
-/// Tests for verifying diagnostic reporting from the source generator.
+/// Tests for verifying diagnostic reporting from the source generator and analyzers.
 /// </summary>
 public class DiagnosticReportingTests
 {
@@ -31,7 +34,7 @@ public class DiagnosticReportingTests
     }
 
     [Fact]
-    public void Should_Report_XPC4001_When_Plugin_Has_No_Parameterless_Constructor()
+    public async Task Should_Report_XPC4001_When_Plugin_Has_No_Parameterless_Constructor()
     {
         // Arrange - plugin class with only a parameterized constructor (no parameterless)
         var pluginSource = @"
@@ -65,12 +68,11 @@ namespace TestNamespace
 
         var source = TestFixtures.GetCompleteSource(TestFixtures.AccountEntity, pluginSource);
 
-        // Act
-        var result = GeneratorTestHelper.RunGenerator(
-            CompilationHelper.CreateCompilation(source));
+        // Act - Run analyzer instead of generator
+        var diagnostics = await GetAnalyzerDiagnosticsAsync(source, new NoParameterlessConstructorAnalyzer());
 
         // Assert - should report XPC4001
-        var errorDiagnostics = result.GeneratorDiagnostics
+        var errorDiagnostics = diagnostics
             .Where(d => d.Id == "XPC4001")
             .ToArray();
 
@@ -105,7 +107,7 @@ namespace TestNamespace
     }
 
     [Fact]
-    public void Should_Report_XPC4002_When_Handler_Method_Not_Found()
+    public async Task Should_Report_XPC4002_When_Handler_Method_Not_Found()
     {
         // Arrange - method reference points to NonExistentMethod but service has Process
         var pluginSource = @"
@@ -144,12 +146,11 @@ namespace TestNamespace
 
         var source = TestFixtures.GetCompleteSource(TestFixtures.AccountEntity, pluginSource);
 
-        // Act
-        var result = GeneratorTestHelper.RunGenerator(
-            CompilationHelper.CreateCompilation(source));
+        // Act - Run analyzer instead of generator
+        var diagnostics = await GetAnalyzerDiagnosticsAsync(source, new HandlerMethodNotFoundAnalyzer());
 
         // Assert
-        var errorDiagnostics = result.GeneratorDiagnostics
+        var errorDiagnostics = diagnostics
             .Where(d => d.Id == "XPC4002")
             .ToArray();
 
@@ -158,7 +159,7 @@ namespace TestNamespace
     }
 
     [Fact]
-    public void Should_Report_XPC4003_When_Handler_Missing_PreImage_Parameter()
+    public async Task Should_Report_XPC4003_When_Handler_Missing_PreImage_Parameter()
     {
         // Arrange - WithPreImage is registered but handler takes no parameters
         var pluginSource = @"
@@ -197,12 +198,11 @@ namespace TestNamespace
 
         var source = TestFixtures.GetCompleteSource(TestFixtures.AccountEntity, pluginSource);
 
-        // Act
-        var result = GeneratorTestHelper.RunGenerator(
-            CompilationHelper.CreateCompilation(source));
+        // Act - Run analyzer instead of generator
+        var diagnostics = await GetAnalyzerDiagnosticsAsync(source, new HandlerSignatureMismatchAnalyzer());
 
         // Assert
-        var errorDiagnostics = result.GeneratorDiagnostics
+        var errorDiagnostics = diagnostics
             .Where(d => d.Id == "XPC4003")
             .ToArray();
 
@@ -211,7 +211,7 @@ namespace TestNamespace
     }
 
     [Fact]
-    public void Should_Report_XPC4003_When_Handler_Missing_PostImage_Parameter()
+    public async Task Should_Report_XPC4003_When_Handler_Missing_PostImage_Parameter()
     {
         // Arrange - WithPostImage is registered but handler takes no parameters
         var pluginSource = @"
@@ -250,12 +250,11 @@ namespace TestNamespace
 
         var source = TestFixtures.GetCompleteSource(TestFixtures.AccountEntity, pluginSource);
 
-        // Act
-        var result = GeneratorTestHelper.RunGenerator(
-            CompilationHelper.CreateCompilation(source));
+        // Act - Run analyzer instead of generator
+        var diagnostics = await GetAnalyzerDiagnosticsAsync(source, new HandlerSignatureMismatchAnalyzer());
 
         // Assert
-        var errorDiagnostics = result.GeneratorDiagnostics
+        var errorDiagnostics = diagnostics
             .Where(d => d.Id == "XPC4003")
             .ToArray();
 
@@ -264,7 +263,7 @@ namespace TestNamespace
     }
 
     [Fact]
-    public void Should_Report_XPC4003_When_Handler_Missing_Both_Image_Parameters()
+    public async Task Should_Report_XPC4003_When_Handler_Missing_Both_Image_Parameters()
     {
         // Arrange - Both WithPreImage and WithPostImage but handler takes no parameters
         var pluginSource = @"
@@ -304,12 +303,11 @@ namespace TestNamespace
 
         var source = TestFixtures.GetCompleteSource(TestFixtures.AccountEntity, pluginSource);
 
-        // Act
-        var result = GeneratorTestHelper.RunGenerator(
-            CompilationHelper.CreateCompilation(source));
+        // Act - Run analyzer instead of generator
+        var diagnostics = await GetAnalyzerDiagnosticsAsync(source, new HandlerSignatureMismatchAnalyzer());
 
         // Assert
-        var errorDiagnostics = result.GeneratorDiagnostics
+        var errorDiagnostics = diagnostics
             .Where(d => d.Id == "XPC4003")
             .ToArray();
 
@@ -318,7 +316,7 @@ namespace TestNamespace
     }
 
     [Fact]
-    public void Should_Report_XPC4003_When_Handler_Has_Wrong_Parameter_Order()
+    public async Task Should_Report_XPC4003_When_Handler_Has_Wrong_Parameter_Order()
     {
         // Arrange - WithPreImage and WithPostImage but handler has parameters in wrong order
         var pluginSource = @"
@@ -359,12 +357,11 @@ namespace TestNamespace
 
         var source = TestFixtures.GetCompleteSource(TestFixtures.AccountEntity, pluginSource);
 
-        // Act
-        var result = GeneratorTestHelper.RunGenerator(
-            CompilationHelper.CreateCompilation(source));
+        // Act - Run analyzer instead of generator
+        var diagnostics = await GetAnalyzerDiagnosticsAsync(source, new HandlerSignatureMismatchAnalyzer());
 
         // Assert
-        var errorDiagnostics = result.GeneratorDiagnostics
+        var errorDiagnostics = diagnostics
             .Where(d => d.Id == "XPC4003")
             .ToArray();
 
@@ -373,7 +370,7 @@ namespace TestNamespace
     }
 
     [Fact]
-    public void Should_Report_XPC4004_When_WithPreImage_Used_With_Invocation_Syntax()
+    public async Task Should_Report_XPC4004_When_WithPreImage_Used_With_Invocation_Syntax()
     {
         // Arrange - WithPreImage used with s => s.DoSomething() (invocation) instead of s => s.DoSomething (method reference)
         var pluginSource = @"
@@ -412,12 +409,11 @@ namespace TestNamespace
 
         var source = TestFixtures.GetCompleteSource(TestFixtures.AccountEntity, pluginSource);
 
-        // Act
-        var result = GeneratorTestHelper.RunGenerator(
-            CompilationHelper.CreateCompilation(source));
+        // Act - Run analyzer instead of generator
+        var diagnostics = await GetAnalyzerDiagnosticsAsync(source, new ImageWithoutMethodReferenceAnalyzer());
 
         // Assert
-        var warningDiagnostics = result.GeneratorDiagnostics
+        var warningDiagnostics = diagnostics
             .Where(d => d.Id == "XPC4004")
             .ToArray();
 
@@ -426,7 +422,7 @@ namespace TestNamespace
     }
 
     [Fact]
-    public void Should_Report_XPC4004_When_WithPostImage_Used_With_Invocation_Syntax()
+    public async Task Should_Report_XPC4004_When_WithPostImage_Used_With_Invocation_Syntax()
     {
         // Arrange - WithPostImage used with s => s.DoSomething() (invocation) instead of s => s.DoSomething (method reference)
         var pluginSource = @"
@@ -465,12 +461,11 @@ namespace TestNamespace
 
         var source = TestFixtures.GetCompleteSource(TestFixtures.AccountEntity, pluginSource);
 
-        // Act
-        var result = GeneratorTestHelper.RunGenerator(
-            CompilationHelper.CreateCompilation(source));
+        // Act - Run analyzer instead of generator
+        var diagnostics = await GetAnalyzerDiagnosticsAsync(source, new ImageWithoutMethodReferenceAnalyzer());
 
         // Assert
-        var warningDiagnostics = result.GeneratorDiagnostics
+        var warningDiagnostics = diagnostics
             .Where(d => d.Id == "XPC4004")
             .ToArray();
 
@@ -479,7 +474,7 @@ namespace TestNamespace
     }
 
     [Fact]
-    public void Should_Not_Report_XPC4004_When_Using_Method_Reference_Syntax()
+    public async Task Should_Not_Report_XPC4004_When_Using_Method_Reference_Syntax()
     {
         // Arrange - Method reference syntax (correct usage)
         var pluginSource = @"
@@ -519,12 +514,11 @@ namespace TestNamespace
 
         var source = TestFixtures.GetCompleteSource(TestFixtures.AccountEntity, pluginSource);
 
-        // Act
-        var result = GeneratorTestHelper.RunGenerator(
-            CompilationHelper.CreateCompilation(source));
+        // Act - Run analyzer instead of generator
+        var diagnostics = await GetAnalyzerDiagnosticsAsync(source, new ImageWithoutMethodReferenceAnalyzer());
 
         // Assert
-        var warningDiagnostics = result.GeneratorDiagnostics
+        var warningDiagnostics = diagnostics
             .Where(d => d.Id == "XPC4004")
             .ToArray();
 
@@ -532,7 +526,7 @@ namespace TestNamespace
     }
 
     [Fact]
-    public void Should_Not_Report_XPC4004_When_Old_Api_Used_Without_Images()
+    public async Task Should_Not_Report_XPC4004_When_Old_Api_Used_Without_Images()
     {
         // Arrange - Invocation syntax but without WithPreImage/WithPostImage (no images registered)
         var pluginSource = @"
@@ -571,15 +565,24 @@ namespace TestNamespace
 
         var source = TestFixtures.GetCompleteSource(TestFixtures.AccountEntity, pluginSource);
 
-        // Act
-        var result = GeneratorTestHelper.RunGenerator(
-            CompilationHelper.CreateCompilation(source));
+        // Act - Run analyzer instead of generator
+        var diagnostics = await GetAnalyzerDiagnosticsAsync(source, new ImageWithoutMethodReferenceAnalyzer());
 
         // Assert
-        var warningDiagnostics = result.GeneratorDiagnostics
+        var warningDiagnostics = diagnostics
             .Where(d => d.Id == "XPC4004")
             .ToArray();
 
         warningDiagnostics.Should().BeEmpty("XPC4004 should NOT be reported when old API is used without images");
+    }
+
+    private static async Task<ImmutableArray<Diagnostic>> GetAnalyzerDiagnosticsAsync(string source, DiagnosticAnalyzer analyzer)
+    {
+        var compilation = CompilationHelper.CreateCompilation(source);
+
+        var compilationWithAnalyzers = compilation.WithAnalyzers(
+            ImmutableArray.Create(analyzer));
+
+        return await compilationWithAnalyzers.GetAnalyzerDiagnosticsAsync();
     }
 }

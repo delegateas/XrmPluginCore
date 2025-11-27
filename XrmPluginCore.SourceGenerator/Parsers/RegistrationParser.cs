@@ -29,23 +29,10 @@ internal static class RegistrationParser
 			.OfType<ConstructorDeclarationSyntax>()
 			.Any();
 
-		// If class has explicit constructors but no parameterless one, report diagnostic
+		// If class has explicit constructors but no parameterless one, abort generation
+		// Note: XPC4001 (NoParameterlessConstructor) is handled by a separate analyzer
 		if (hasExplicitConstructors && !hasParameterlessConstructor)
 		{
-			var diagnosticMetadata = new PluginStepMetadata
-			{
-				PluginClassName = classDeclaration.Identifier.Text,
-				Namespace = classDeclaration.GetNamespace(),
-				Images = [] // Empty - no generation
-			};
-
-			diagnosticMetadata.Diagnostics.Add(new DiagnosticInfo
-			{
-				Descriptor = DiagnosticDescriptors.NoParameterlessConstructor,
-				MessageArgs = [classDeclaration.Identifier.Text]
-			});
-
-			yield return diagnosticMetadata;
 			yield break;
 		}
 
@@ -124,7 +111,7 @@ internal static class RegistrationParser
 		// Extract method reference from 3rd argument if present
 		if (arguments.Count >= 3)
 		{
-			metadata.HandlerMethodName = ParseMethodReference(arguments[2].Expression, semanticModel);
+			metadata.HandlerMethodName = RegisterStepHelper.GetMethodName(arguments[2].Expression);
 		}
 
 		// Find image calls
@@ -137,73 +124,10 @@ internal static class RegistrationParser
 			}
 		}
 
-		// After parsing images, check if we have images but no method reference
-		// This indicates using old API (s => s.Method()) with new image methods (WithPreImage/WithPostImage)
-		if (metadata.Images.Any() && string.IsNullOrEmpty(metadata.HandlerMethodName))
-		{
-			metadata.Diagnostics.Add(new DiagnosticInfo
-			{
-				Descriptor = DiagnosticDescriptors.ImageWithoutMethodReference,
-				MessageArgs = []
-			});
-		}
-
 		// Return metadata if we have a method reference (for code generation)
 		// OR if we have diagnostics to report
+		// Note: XPC4004 (ImageWithoutMethodReference) is handled by a separate analyzer
 		return !string.IsNullOrEmpty(metadata.HandlerMethodName) || metadata.Diagnostics.Any() ? metadata : null;
-	}
-
-	/// <summary>
-	/// Parses a method reference from various expression forms:
-	/// - nameof(IService.HandleUpdate)
-	/// - "HandleUpdate" (string literal)
-	/// - service => service.HandleUpdate (lambda - legacy support)
-	/// </summary>
-	private static string ParseMethodReference(ExpressionSyntax expression, SemanticModel semanticModel)
-	{
-		// Handle nameof(): nameof(IService.HandleDelete)
-		if (expression is InvocationExpressionSyntax invocation &&
-			invocation.Expression is IdentifierNameSyntax identifier &&
-			identifier.Identifier.Text == "nameof")
-		{
-			var argument = invocation.ArgumentList.Arguments.FirstOrDefault();
-			if (argument?.Expression is MemberAccessExpressionSyntax nameofMemberAccess)
-			{
-				return nameofMemberAccess.Name.Identifier.Text;
-			}
-			// Handle simple nameof: nameof(HandleDelete)
-			if (argument?.Expression is IdentifierNameSyntax simpleIdentifier)
-			{
-				return simpleIdentifier.Identifier.Text;
-			}
-		}
-
-		// Handle string literal: "HandleDelete"
-		if (expression is LiteralExpressionSyntax literal &&
-			literal.IsKind(Microsoft.CodeAnalysis.CSharp.SyntaxKind.StringLiteralExpression))
-		{
-			return literal.Token.ValueText;
-		}
-
-		// Handle lambda: service => service.HandleUpdate (legacy support)
-		if (expression is SimpleLambdaExpressionSyntax lambda)
-		{
-			if (lambda.Body is MemberAccessExpressionSyntax memberAccess)
-			{
-				return memberAccess.Name.Identifier.Text;
-			}
-		}
-
-		// Handle: (service) => service.HandleUpdate (legacy support)
-		if (expression is ParenthesizedLambdaExpressionSyntax parenLambda)
-		{
-			if (parenLambda.Body is MemberAccessExpressionSyntax memberAccess)
-			{
-				return memberAccess.Name.Identifier.Text;
-			}
-		}
-
-		return null;
 	}
 
 	/// <summary>

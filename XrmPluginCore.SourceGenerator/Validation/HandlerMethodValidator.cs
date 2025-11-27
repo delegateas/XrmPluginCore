@@ -1,12 +1,17 @@
 using Microsoft.CodeAnalysis;
-using System.Collections.Generic;
 using System.Linq;
+using XrmPluginCore.SourceGenerator.Helpers;
 using XrmPluginCore.SourceGenerator.Models;
 
 namespace XrmPluginCore.SourceGenerator.Validation;
 
 internal static class HandlerMethodValidator
 {
+	/// <summary>
+	/// Validates handler method existence and signature.
+	/// Sets HasValidationError on metadata if validation fails.
+	/// Note: XPC4002 and XPC4003 diagnostics are handled by separate analyzers.
+	/// </summary>
 	public static void ValidateHandlerMethod(
 		PluginStepMetadata metadata,
 		Compilation compilation)
@@ -19,46 +24,25 @@ internal static class HandlerMethodValidator
 		if (serviceType is null)
 			return;
 
-		var methods = GetAllMethodsIncludingInherited(serviceType, metadata.HandlerMethodName);
+		var methods = TypeHelper.GetAllMethodsIncludingInherited(serviceType, metadata.HandlerMethodName);
 		if (!methods.Any())
 		{
-			metadata.Diagnostics.Add(new DiagnosticInfo
-			{
-				Descriptor = DiagnosticDescriptors.HandlerMethodNotFound,
-				MessageArgs = [metadata.HandlerMethodName, metadata.ServiceTypeName]
-			});
+			// Method not found - abort generation for this registration
+			// XPC4002 diagnostic is handled by HandlerMethodNotFoundAnalyzer
+			metadata.HasValidationError = true;
 			return;
 		}
 
 		var hasPreImage = metadata.Images.Any(i => i.ImageType == Constants.PreImageTypeName);
 		var hasPostImage = metadata.Images.Any(i => i.ImageType == Constants.PostImageTypeName);
-		var expectedSignature = BuildExpectedSignature(hasPreImage, hasPostImage);
 
 		var hasMatchingOverload = methods.Any(method => SignatureMatches(method, hasPreImage, hasPostImage));
 		if (!hasMatchingOverload)
 		{
-			metadata.Diagnostics.Add(new DiagnosticInfo
-			{
-				Descriptor = DiagnosticDescriptors.HandlerSignatureMismatch,
-				MessageArgs = [metadata.HandlerMethodName, expectedSignature]
-			});
+			// Signature mismatch - abort generation for this registration
+			// XPC4003 diagnostic is handled by HandlerSignatureMismatchAnalyzer
+			metadata.HasValidationError = true;
 		}
-	}
-
-	private static IReadOnlyList<IMethodSymbol> GetAllMethodsIncludingInherited(ITypeSymbol type, string methodName)
-	{
-		var methods = new List<IMethodSymbol>();
-		var currentType = type;
-		while (currentType is not null)
-		{
-			foreach (var member in currentType.GetMembers(methodName))
-			{
-				if (member is IMethodSymbol method)
-					methods.Add(method);
-			}
-			currentType = currentType.BaseType;
-		}
-		return methods;
 	}
 
 	private static bool SignatureMatches(IMethodSymbol method, bool hasPreImage, bool hasPostImage)
@@ -75,7 +59,7 @@ internal static class HandlerMethodValidator
 		{
 			if (paramIndex >= parameters.Length)
 				return false;
-			if (!IsImageParameter(parameters[paramIndex], Constants.PreImageTypeName))
+			if (parameters[paramIndex].Type.Name != Constants.PreImageTypeName)
 				return false;
 			paramIndex++;
 		}
@@ -84,29 +68,10 @@ internal static class HandlerMethodValidator
 		{
 			if (paramIndex >= parameters.Length)
 				return false;
-			if (!IsImageParameter(parameters[paramIndex], Constants.PostImageTypeName))
+			if (parameters[paramIndex].Type.Name != Constants.PostImageTypeName)
 				return false;
 		}
 
 		return true;
-	}
-
-	private static bool IsImageParameter(IParameterSymbol parameter, string expectedImageType)
-	{
-		return parameter.Type.Name == expectedImageType;
-	}
-
-	private static string BuildExpectedSignature(bool hasPreImage, bool hasPostImage)
-	{
-		var parts = new List<string>();
-		if (hasPreImage)
-			parts.Add(Constants.PreImageTypeName);
-		if (hasPostImage)
-			parts.Add(Constants.PostImageTypeName);
-
-		if (parts.Count == 0)
-			return "no parameters";
-
-		return string.Join(", ", parts);
 	}
 }

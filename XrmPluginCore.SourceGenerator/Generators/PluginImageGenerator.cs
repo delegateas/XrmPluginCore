@@ -137,6 +137,10 @@ public class PluginImageGenerator : IIncrementalGenerator
 			}
 		}
 
+		// Skip generation if validation failed (analyzer will report the error)
+		if (metadata?.HasValidationError == true)
+			return;
+
 		// Generate code if we have a handler method reference (ActionWrapper always needed)
 		if (string.IsNullOrEmpty(metadata?.HandlerMethodName))
 			return;

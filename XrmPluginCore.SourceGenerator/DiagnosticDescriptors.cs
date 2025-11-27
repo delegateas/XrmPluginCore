@@ -17,13 +17,14 @@ internal static class DiagnosticDescriptors
 		DiagnosticSeverity.Info,
 		isEnabledByDefault: true);
 
-	public static readonly DiagnosticDescriptor GenerationError = new(
-		id: "XPC5000",
-		title: "Failed to generate wrapper classes",
-		messageFormat: "Exception during generation: {0}",
+	public static readonly DiagnosticDescriptor PreferNameofOverStringLiteral = new(
+		id: "XPC3001",
+		title: "Prefer nameof over string literal for handler method",
+		messageFormat: "Use 'nameof({0}.{1})' instead of string literal \"{1}\" for compile-time safety",
 		category: Category,
-		DiagnosticSeverity.Error,
-		isEnabledByDefault: true);
+		defaultSeverity: DiagnosticSeverity.Warning,
+		isEnabledByDefault: true,
+		description: "Using nameof() provides compile-time verification that the method exists and enables refactoring support.");
 
 	public static readonly DiagnosticDescriptor SymbolResolutionFailed = new(
 		id: "XPC4000",
@@ -63,5 +64,13 @@ internal static class DiagnosticDescriptors
 		messageFormat: "WithPreImage/WithPostImage requires method reference syntax (e.g., 'service => service.HandleUpdate'). Using method invocation (e.g., 's => s.HandleUpdate()') will not generate type-safe wrappers.",
 		category: Category,
 		defaultSeverity: DiagnosticSeverity.Warning,
+		isEnabledByDefault: true);
+
+	public static readonly DiagnosticDescriptor GenerationError = new(
+		id: "XPC5000",
+		title: "Failed to generate wrapper classes",
+		messageFormat: "Exception during generation: {0}",
+		category: Category,
+		DiagnosticSeverity.Error,
 		isEnabledByDefault: true);
 }

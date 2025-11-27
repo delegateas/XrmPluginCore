@@ -37,6 +37,12 @@ internal sealed class PluginStepMetadata
 	public List<DiagnosticInfo> Diagnostics { get; set; } = [];
 
 	/// <summary>
+	/// If true, generation should be skipped for this registration due to validation errors.
+	/// The analyzer will report the appropriate diagnostic. Not included in equality comparison.
+	/// </summary>
+	public bool HasValidationError { get; set; }
+
+	/// <summary>
 	/// Gets the namespace for generated wrapper classes.
 	/// Format: {OriginalNamespace}.PluginRegistrations.{PluginClassName}.{Entity}{Op}{Stage}
 	/// </summary>

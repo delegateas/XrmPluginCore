@@ -27,6 +27,10 @@
 
     <!-- For snapshot testing approach -->
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp.SourceGenerators.Testing.XUnit" Version="1.1.2" />
+
+    <!-- For analyzer and code fix testing -->
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Analyzer.Testing.XUnit" Version="1.1.2" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp.CodeFix.Testing.XUnit" Version="1.1.2" />
   </ItemGroup>
 
   <ItemGroup>
