@@ -1,3 +1,7 @@
+### v1.2.0 - 27 November 2025
+* Add: Type-Safe Images feature with compile-time enforcement via source generator
+* Add: Source analyzer rules with hotfixes and documentation to help use the Type-Safe Images feature correctly
+
 ### v1.1.1 - 14 November 2025
 * Add: IManagedIdentityService to service provider (#1)
 

@@ -49,5 +49,15 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\XrmPluginCore.Abstractions\XrmPluginCore.Abstractions.csproj" />
+    <ProjectReference Include="..\XrmPluginCore.SourceGenerator\XrmPluginCore.SourceGenerator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" PrivateAssets="all" />
+  </ItemGroup>
+
+  <!-- Bundle the source generator into this package's analyzers folder -->
+  <ItemGroup>
+    <None Include="..\XrmPluginCore.SourceGenerator\bin\$(Configuration)\netstandard2.0\XrmPluginCore.SourceGenerator.dll"
+          Pack="true"
+          PackagePath="analyzers/dotnet/cs"
+          Visible="false"
+          Link="analyzers\dotnet\cs\XrmPluginCore.SourceGenerator.dll" />
   </ItemGroup>
 </Project>

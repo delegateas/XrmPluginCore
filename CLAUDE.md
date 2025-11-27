@@ -9,6 +9,7 @@ XrmPluginCore is a NuGet library that provides base functionality for developing
 The project consists of:
 - **XrmPluginCore**: Main implementation library
 - **XrmPluginCore.Abstractions**: Interfaces and enums used for plugin/custom API registration
+- **XrmPluginCore.SourceGenerator**: Compile-time source generator for type-safe filtered attributes
 - **XrmPluginCore.Tests**: Unit and integration tests
 
 ## Build & Test Commands
@@ -43,14 +44,17 @@ dotnet pack --configuration Release --no-build --output ./nupkg
    - Invokes the appropriate registered action
 
 2. **Registration Pattern**: Plugins register their steps in the constructor using fluent builders:
-   - `RegisterStep<TEntity, TService>(EventOperation, ExecutionStage, Action<TService>)` - Modern DI-based approach
+   - `RegisterStep<TEntity, TService>(EventOperation, ExecutionStage, Action<TService>)` - Standard DI-based approach with optional type-safe wrappers
    - `RegisterPluginStep<T>(EventOperation, ExecutionStage, Action<LocalPluginContext>)` - Legacy approach (deprecated)
    - `RegisterAPI<TService>(string name, Action<TService>)` - For Custom APIs
+
+   When `AddImage()`, `WithPreImage()` or `WithPostImage()` are used, the source generator automatically creates wrapper classes that are discovered at runtime by naming convention.
 
 3. **Service Provider Pattern**:
    - `ExtendedServiceProvider` wraps the Dynamics SDK's IServiceProvider
    - `ServiceProviderExtensions.BuildServiceProvider()` creates a scoped DI container per execution
    - Built-in services injected: IPluginExecutionContext, IOrganizationServiceFactory, ITracingService (as ExtendedTracingService), ILogger
+   - Type-safe registrations automatically register generated wrapper classes (PreImage, PostImage) directly in DI
    - Custom services registered via `OnBeforeBuildServiceProvider()` override
 
 4. **Configuration Builders**:
@@ -76,20 +80,244 @@ dotnet pack --configuration Release --no-build --output ./nupkg
 - `IPluginDefinition.cs` - Interface for retrieving plugin step configurations
 - `ICustomApiDefinition.cs` - Interface for retrieving custom API configuration
 
-### Dependency Injection
+**XrmPluginCore.SourceGenerator/** (Compile-time code generation)
+- `Generators/PluginImageGenerator.cs` - Incremental source generator that scans for Plugin classes
+- `Parsers/RegistrationParser.cs` - Extracts metadata from RegisterStep invocations
+- `CodeGeneration/WrapperClassGenerator.cs` - Generates type-safe wrapper classes
+- `Helpers/SyntaxHelper.cs` - Roslyn syntax tree analysis utilities
+- `Models/PluginStepMetadata.cs` - Data models for storing registration metadata
 
-Override `OnBeforeBuildServiceProvider()` in your base plugin class to register services:
+### Type-Safe Images
+
+The source generator provides compile-time type safety for plugin images (PreImage/PostImage) with **compile-time enforcement** that prevents developers from accidentally ignoring registered images.
+
+#### API Design
+
+Use `WithPreImage`/`WithPostImage` (convenience methods for `AddImage`) to register images. The `nameof()` pattern enables the source generator to validate that your handler method signature matches the registered images:
 
 ```csharp
-protected override IServiceCollection OnBeforeBuildServiceProvider(IServiceCollection services)
+// Basic plugin (no images) - use lambda invocation syntax
+RegisterStep<Account, AccountService>(
+    EventOperation.Update,
+    ExecutionStage.PostOperation,
+    s => s.DoSomething())
+    .AddFilteredAttributes(x => x.Name);
+
+// PreImage only - handler method MUST accept PreImage parameter
+// Use nameof() for compile-time safety when images are registered
+RegisterStep<Account, AccountService>(
+    EventOperation.Update,
+    ExecutionStage.PostOperation,
+    nameof(AccountService.HandleUpdate))
+    .AddFilteredAttributes(x => x.Name, x => x.AccountNumber)
+    .WithPreImage(x => x.Name, x => x.Revenue);
+
+// PostImage only - handler method MUST accept PostImage parameter
+RegisterStep<Account, AccountService>(
+    EventOperation.Update,
+    ExecutionStage.PostOperation,
+    nameof(AccountService.HandleUpdate))
+    .AddFilteredAttributes(x => x.Name)
+    .WithPostImage(x => x.Name, x => x.AccountNumber);
+
+// Both images - handler method MUST accept both parameters
+RegisterStep<Account, AccountService>(
+    EventOperation.Update,
+    ExecutionStage.PostOperation,
+    nameof(AccountService.HandleUpdate))
+    .AddFilteredAttributes(x => x.Name, x => x.AccountNumber)
+    .WithPreImage(x => x.Name, x => x.Revenue)
+    .WithPostImage(x => x.Name, x => x.AccountNumber);
+```
+
+**Key benefit**: The source generator emits diagnostics if your handler method signature does not match the registered images. This prevents developers from accidentally ignoring registered images.
+
+#### How It Works
+
+1. **Compile-Time Analysis**: The source generator scans all classes that inherit from `Plugin` and finds `RegisterStep` calls that use `WithPreImage()`, `WithPostImage()`, or `AddImage()`.
+
+2. **Metadata Extraction**: For each registration, it extracts:
+   - Plugin class name
+   - Entity type (`TEntity`)
+   - Event operation and execution stage
+   - Filtered attributes from `AddFilteredAttributes()` calls
+   - Pre/Post image attributes from `WithPreImage()`/`WithPostImage()`/`AddImage()` calls
+   - Method reference from the action delegate
+
+3. **Code Generation**: Generates wrapper classes in isolated namespaces:
+   - Namespace: `{Namespace}.PluginRegistrations.{PluginClassName}.{Entity}{Operation}{Stage}`
+   - Classes: `PreImage`, `PostImage`, `ActionWrapper` (simple names, no prefixes)
+
+4. **Signature Validation**: The source generator validates that the handler method signature matches the registered images and emits compile-time diagnostics if there is a mismatch.
+
+5. **Runtime Execution**: When the plugin executes:
+   - Images are constructed from the execution context
+   - The handler method is invoked with strongly-typed image wrappers as parameters
+
+#### Example Usage
+
+```csharp
+using MyNamespace.PluginRegistrations.AccountPlugin.AccountUpdatePostOperation;
+
+public class AccountPlugin : Plugin
 {
-    return services
-        .AddScoped<IMyService, MyService>()
-        .AddSingleton<IConfiguration, Configuration>();
+    public AccountPlugin()
+    {
+        // Type-safe API with compile-time enforcement via nameof()
+        RegisterStep<Account, AccountService>(
+            EventOperation.Update,
+            ExecutionStage.PostOperation,
+            nameof(AccountService.HandleUpdate))
+            .AddFilteredAttributes(x => x.Name, x => x.AccountNumber)
+            .WithPreImage(x => x.Name, x => x.Revenue)
+            .WithPostImage(x => x.Name, x => x.AccountNumber);
+    }
+
+    protected override IServiceCollection OnBeforeBuildServiceProvider(IServiceCollection services)
+    {
+        return services.AddScoped<AccountService>();
+    }
+}
+
+public class AccountService
+{
+    // Handler signature MUST match registered images (enforced by source generator diagnostics)
+    public void HandleUpdate(PreImage preImage, PostImage postImage)
+    {
+        var previousName = preImage.Name;     // Type-safe, IntelliSense works
+        var previousRevenue = preImage.Revenue;
+        var newName = postImage.Name;
+    }
 }
 ```
 
-Services are scoped to the plugin execution and disposed automatically.
+#### Generated Code Example
+
+The source generator creates wrapper classes in isolated namespaces:
+
+```csharp
+// Generated in: {Namespace}.PluginRegistrations.AccountPlugin.AccountUpdatePostOperation
+namespace YourNamespace.PluginRegistrations.AccountPlugin.AccountUpdatePostOperation
+{
+    public sealed class PreImage
+    {
+        private readonly Entity entity;
+
+        public PreImage(Entity entity)
+        {
+            this.entity = entity ?? throw new ArgumentNullException(nameof(entity));
+        }
+
+        public string Name => entity.GetAttributeValue<string>("name");
+        public Money Revenue => entity.GetAttributeValue<Money>("revenue");
+
+        public T ToEntity<T>() where T : Entity => entity.ToEntity<T>();
+    }
+
+    public sealed class PostImage
+    {
+        private readonly Entity entity;
+
+        public PostImage(Entity entity)
+        {
+            this.entity = entity ?? throw new ArgumentNullException(nameof(entity));
+        }
+
+        public string Name => entity.GetAttributeValue<string>("name");
+        public string Accountnumber => entity.GetAttributeValue<string>("accountnumber");
+
+        public T ToEntity<T>() where T : Entity => entity.ToEntity<T>();
+    }
+}
+```
+
+#### Image Registration Methods
+
+The following methods are available for registering images:
+
+- `WithPreImage(params Expression<Func<TEntity, object>>[] attributes)` - Convenience method to register a PreImage with selected attributes
+- `WithPostImage(params Expression<Func<TEntity, object>>[] attributes)` - Convenience method to register a PostImage with selected attributes
+- `AddImage(ImageType imageType, params Expression<Func<TEntity, object>>[] attributes)` - General method to register any image type
+
+All three methods are valid and supported. `WithPreImage` and `WithPostImage` are convenience wrappers around `AddImage`.
+
+#### Benefits
+
+- **Compile-time enforcement**: Source generator diagnostics ensure handler signature matches registered images
+- **Type safety**: Wrong image types cause compile errors
+- **IntelliSense support**: Auto-completion for available image attributes
+- **No runtime overhead**: Simple property accessors, no reflection at access time
+- **Null safety**: Missing attributes return null instead of throwing exceptions
+- **Namespace isolation**: Each step gets its own namespace, preventing naming conflicts
+
+### Dependency Injection
+
+XrmPluginCore supports three patterns for registering custom services:
+
+#### Pattern 1: Direct Override (Simple, Single Plugin)
+
+Override `OnBeforeBuildServiceProvider()` directly in your plugin class:
+
+```csharp
+public class MyPlugin : Plugin
+{
+    protected override IServiceCollection OnBeforeBuildServiceProvider(IServiceCollection services)
+    {
+        return services.AddScoped<IMyService, MyService>();
+    }
+}
+```
+
+**Use when**: You have a single plugin class with unique services.
+
+#### Pattern 2: Base Class (Inheritance-based Sharing)
+
+Create a base plugin class that registers shared services, then inherit from it:
+
+```csharp
+public class BasePlugin : Plugin
+{
+    protected override IServiceCollection OnBeforeBuildServiceProvider(IServiceCollection services)
+    {
+        return services
+            .AddScoped<ISharedService, SharedService>()
+            .AddScoped<ILogger, Logger>();
+    }
+}
+
+public class AccountPlugin : BasePlugin { }
+public class ContactPlugin : BasePlugin { }
+```
+
+**Use when**: Multiple plugins need the same services and share a common inheritance hierarchy.
+
+#### Pattern 3: Extension Method (Composition-based Sharing)
+
+Create static extension methods to encapsulate service registration logic:
+
+```csharp
+public static class ServiceCollectionExtensions
+{
+    public static IServiceCollection AddSharedServices(this IServiceCollection services)
+    {
+        return services
+            .AddScoped<ISharedService, SharedService>()
+            .AddScoped<ILogger, Logger>();
+    }
+}
+
+public class AccountPlugin : Plugin
+{
+    protected override IServiceCollection OnBeforeBuildServiceProvider(IServiceCollection services)
+    {
+        return services.AddSharedServices();
+    }
+}
+```
+
+**Use when**: You want to share service registration logic across plugins that may not share inheritance, or when you need to compose multiple service registration modules.
+
+**Note**: Services are scoped to the plugin execution and disposed automatically.
 
 ### Multi-Targeting
 
@@ -116,12 +344,25 @@ RegisterStep<MyEntity>("custom_CustomMessage", ExecutionStage.PostOperation, s =
 
 ### Plugin Step Images
 
-Images are configured through the builder:
+Images are configured through the builder using `WithPreImage`, `WithPostImage`, or `AddImage`. Use `nameof()` for compile-time safety when registering images:
 ```csharp
-RegisterStep<Account, IAccountService>(EventOperation.Update, ExecutionStage.PostOperation, s => s.Process())
+// Using convenience methods (recommended)
+RegisterStep<Account, IAccountService>(
+    EventOperation.Update,
+    ExecutionStage.PostOperation,
+    nameof(IAccountService.HandleUpdate))
     .AddFilteredAttributes(x => x.Name, x => x.AccountNumber)
-    .AddPreImage("PreImage", x => x.Name, x => x.Revenue)
-    .AddPostImage("PostImage", x => x.Name, x => x.Revenue);
+    .WithPreImage(x => x.Name, x => x.Revenue)
+    .WithPostImage(x => x.Name, x => x.AccountNumber);
+
+// Using AddImage directly
+RegisterStep<Account, IAccountService>(
+    EventOperation.Update,
+    ExecutionStage.PostOperation,
+    nameof(IAccountService.HandleUpdate))
+    .AddFilteredAttributes(x => x.Name, x => x.AccountNumber)
+    .AddImage(ImageType.PreImage, x => x.Name, x => x.Revenue)
+    .AddImage(ImageType.PostImage, x => x.Name, x => x.AccountNumber);
 ```
 
 ### Custom APIs

@@ -1,23 +1,23 @@
-﻿# XrmPluginCore
-![XrmPluginCore NuGet Version](https://img.shields.io/nuget/v/XrmPluginCore?label=XrmPluginCore%20NuGet) ![XrmPluginCore.Abstractions NuGet Version](https://img.shields.io/nuget/v/XrmPluginCore.Abstractions?label=Abstractions%20NuGet)
+# XrmPluginCore
+![XrmPluginCore NuGet Version](https://img.shields.io/nuget/v/XrmPluginCore?label=XrmPluginCore%20NuGet)
+![XrmPluginCore.Abstractions NuGet Version](https://img.shields.io/nuget/v/XrmPluginCore.Abstractions?label=Abstractions%20NuGet)
+![.NET Framework 4.6.2](https://img.shields.io/badge/.NET-4.6.2-blue)
+![.NET 8](https://img.shields.io/badge/.NET-8-blue)
 
 XrmPluginCore provides base functionality for developing plugins and custom APIs in Dynamics 365. It includes context wrappers and registration utilities to streamline the development process.
 
 ## Features
 
-- **Context Wrappers**: Simplify access to plugin execution context.
-- **Registration Utilities**: Easily register plugins and custom APIs.
-- **Compatibility**: Supports .NET Standard 2.0, .NET Framework 4.6.2, and .NET 8.
+- **Dependency Injection**: Modern DI-based plugin architecture with built-in service registration
+- **Simple Plugin Creation**: Streamlined workflow for creating and registering plugins
+- **Context Wrappers**: Simplify access to plugin execution context
+- **Registration Utilities**: Easily register plugins and custom APIs
+- **Type-Safe Images**: Compile-time type safety for PreImages and PostImages via source generators
+- **Compatibility**: Supports .NET Framework 4.6.2 and .NET 8
 
 ## Usage
 
 ### Creating a Plugin
-
-1. Create a new class that inherits from `Plugin`.
-2. Register the plugin using the `RegisterStep` helper method.
-3. Implement the function in the custom action
-
-#### Using the a service
 
 Create a service interface and concrete implementation:
 
@@ -86,9 +86,88 @@ namespace Some.Namespace {
 }
 ```
 
-#### Using the LocalPluginContext wrapper
+### Type-Safe Images
 
-**NOTE**: This is only support to support legacy DAXIF/XrmFramework style plugins. It is recommended to use dependency injection based plugins instead.
+XrmPluginCore includes a source generator that creates type-safe wrapper classes for your plugin images (PreImage/PostImage), giving you compile-time safety and IntelliSense support.
+
+#### Quick Start
+
+```csharp
+using XrmPluginCore;
+using XrmPluginCore.Enums;
+using MyPlugin.PluginRegistrations.AccountUpdatePlugin.AccountUpdatePostOperation;
+
+namespace MyPlugin {
+    public class AccountUpdatePlugin : Plugin {
+        public AccountUpdatePlugin() {
+            // Type-safe API: method reference enables source generator validation
+            RegisterStep<Account, IAccountService>(
+				EventOperation.Update,
+				ExecutionStage.PostOperation,
+				service => service.Process)
+                .AddFilteredAttributes(x => x.Name, x => x.AccountNumber)
+                .WithPreImage(x => x.Name, x => x.Revenue);
+                // Source generator validates that Process accepts PreImage parameter
+        }
+    }
+
+    public interface IAccountService {
+        void Process(PreImage preImage);
+    }
+
+    public class AccountService : IAccountService {
+        public void Process(PreImage preImage) {
+            // Type-safe access to pre-image attributes!
+            var oldName = preImage.Name;        // IntelliSense works!
+            var oldRevenue = preImage.Revenue;  // Type-safe Money access
+        }
+    }
+}
+```
+
+**Benefits of type-safe images:**
+- **Compile-time enforcement** - Source generator diagnostics ensure handler signature matches registered images
+- **IntelliSense support** - Auto-completion for available attributes
+- **Null safety** - Proper handling of missing attributes
+- **No boilerplate** - Just add a `using` statement for the generated namespace
+
+#### Working with Both Images
+
+```csharp
+using MyPlugin.PluginRegistrations.AccountUpdatePlugin.AccountUpdatePostOperation;
+
+public class AccountUpdatePlugin : Plugin {
+    public AccountUpdatePlugin() {
+        RegisterStep<Account, IAccountService>(
+				EventOperation.Update,
+				ExecutionStage.PostOperation,
+				service => service.Process)
+            .AddFilteredAttributes(x => x.Name, x => x.AccountNumber)
+            .WithPreImage(x => x.Name, x => x.Revenue)
+            .WithPostImage(x => x.Name, x => x.AccountNumber);
+            // Handler method must accept both PreImage AND PostImage!
+    }
+}
+
+public class AccountService : IAccountService {
+    public void Process(PreImage preImage, PostImage postImage) {
+        var oldRevenue = preImage.Revenue;    // Type-safe pre-image access
+        var newAccountNum = postImage.Accountnumber;  // Type-safe post-image access
+    }
+}
+```
+
+**Generated Namespace Convention:**
+```
+{YourNamespace}.PluginRegistrations.{PluginClassName}.{Entity}{Operation}{Stage}
+```
+Example: `MyPlugin.PluginRegistrations.AccountUpdatePlugin.AccountUpdatePostOperation`
+
+Inside this namespace you'll find simple class names: `PreImage`, `PostImage`, and `ActionWrapper`
+
+### Using the LocalPluginContext wrapper (Legacy)
+
+**NOTE**: This is only supported for legacy DAXIF/XrmFramework style plugins. It is recommended to use dependency injection based plugins instead.
 
 ```csharp
 namespace Some.Namespace {
@@ -133,6 +212,7 @@ The following services are available for injection into your plugin or custom AP
 |---------|-------------|
 | [IExtendedTracingService](XrmPluginCore/IExtendedTracingService.cs) | Extension to ITracingService with additional helper methods. |
 | [ILogger 🔗](https://learn.microsoft.com/en-us/power-apps/developer/data-platform/application-insights-ilogger) | The Plugin Telemetry Service logger interface. |
+| [IManagedIdentityService 🔗](https://learn.microsoft.com/en-us/dotnet/api/microsoft.xrm.sdk.imanagedidentityservice) | Service to obtain access tokens for Azure resources using Managed Identity. |
 | [IOrganizationServiceFactory 🔗](https://learn.microsoft.com/en-us/dotnet/api/microsoft.xrm.sdk.iorganizationservicefactory) | Represents a factory for creating IOrganizationService instances. |
 | [IPluginExecutionContext 🔗](https://learn.microsoft.com/en-us/dotnet/api/microsoft.xrm.sdk.ipluginexecutioncontext) | The plugin execution context provides information about the current plugin execution, including input and output parameters, the message name, and the stage of execution. |
 | [IPluginExecutionContext2 🔗](https://learn.microsoft.com/en-us/dotnet/api/microsoft.xrm.sdk.ipluginexecutioncontext2) | Extension to IPluginExecutionContext with additional properties and methods. |
@@ -154,6 +234,9 @@ Use [XrmSync](https://github.com/delegateas/XrmSync) to automatically register r
 #### Including dependent assemblies
 
 XrmPluginCore and XrmSync does not currently support [Dependent Assemblies](https://learn.microsoft.com/en-us/power-apps/developer/data-platform/build-and-package). If your plugin depends on other assemblies, you can use ILRepack or a similar tool to merge the assemblies into a single DLL before deploying.
+
+> [!NOTE]
+> Microsoft does not officially support ILMerged assemblies for Dynamics 365 plugins.
 
 To ensure XrmPluginCore, and it's dependencies are included, you can use the following settings for ILRepack:
 ```xml

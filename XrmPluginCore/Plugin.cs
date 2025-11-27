@@ -20,12 +20,15 @@ namespace XrmPluginCore
     public abstract class Plugin : IPlugin, IPluginDefinition, ICustomApiDefinition
     {
         private string ChildClassName { get; }
+        private string ChildClassShortName { get; }
         private List<PluginStepRegistration> RegisteredPluginSteps { get; } = new List<PluginStepRegistration>();
         private CustomApiRegistration RegisteredCustomApi { get; set; }
 
         protected Plugin()
         {
-            ChildClassName = GetType().ToString();
+            var type = GetType();
+            ChildClassName = type.ToString();
+            ChildClassShortName = type.Name;
         }
 
         /// <summary>
@@ -41,10 +44,10 @@ namespace XrmPluginCore
         /// </summary>
         /// <param name="serviceProvider">The service provider.</param>
         /// <remarks>
-        /// For improved performance, Microsoft Dynamics CRM caches plug-in instances. 
-        /// The plug-in's Execute method should be written to be stateless as the constructor 
-        /// is not called for every invocation of the plug-in. Also, multiple system threads 
-        /// could execute the plug-in at the same time. All per invocation state information 
+        /// For improved performance, Microsoft Dynamics CRM caches plug-in instances.
+        /// The plug-in's Execute method should be written to be stateless as the constructor
+        /// is not called for every invocation of the plug-in. Also, multiple system threads
+        /// could execute the plug-in at the same time. All per invocation state information
         /// is stored in the context. This means that you should not use global variables in plug-ins.
         /// </remarks>
         public void Execute(IServiceProvider serviceProvider)
@@ -54,17 +57,43 @@ namespace XrmPluginCore
                 throw new ArgumentNullException(nameof(serviceProvider));
             }
 
-            // Build a local service provider to manage the lifetime of services for this execution
+            // Build a local service provider
             var localServiceProvider = serviceProvider.BuildServiceProvider(OnBeforeBuildServiceProvider);
 
             try
             {
                 localServiceProvider.Trace(string.Format(CultureInfo.InvariantCulture, "Entered {0}.Execute()", ChildClassName));
-                var context = localServiceProvider.GetService<IPluginExecutionContext>() ?? throw new Exception("Unable to get Plugin Execution Context");
-                var pluginAction = GetAction(context);
+				var context = localServiceProvider.GetService<IPluginExecutionContext>()
+					?? throw new Exception("Unable to get Plugin Execution Context");
+
+				// Find the matching registration to determine if we need to register IPluginContext
+				var matchingRegistration = GetMatchingRegistration(context);
+				var pluginAction = matchingRegistration?.Action;
+
+                // If action is null but we have a handler method name, try to discover generated action wrapper
+                if (pluginAction == null && matchingRegistration?.HandlerMethodName != null)
+                {
+                    pluginAction = DiscoverGeneratedAction(matchingRegistration);
+                }
 
                 if (pluginAction == null)
                 {
+                    // If we have a handler method but no generated wrapper, provide a clear error
+                    if (matchingRegistration?.HandlerMethodName != null)
+                    {
+                        throw new InvalidPluginExecutionException(
+                            OperationStatus.Failed,
+                            string.Format(
+                                CultureInfo.InvariantCulture,
+                                "Plugin step registration for Entity: {0}, Message: {1} in {2} uses method reference " +
+                                "'{3}' but no generated ActionWrapper was found. Ensure the source generator is running.",
+                                context.PrimaryEntityName,
+                                context.MessageName,
+                                ChildClassName,
+                                matchingRegistration.HandlerMethodName
+                            ));
+                    }
+
                     localServiceProvider.Trace(string.Format(
                         CultureInfo.InvariantCulture,
                         "No registered event found for Entity: {0}, Message: {1} in {2}",
@@ -229,8 +258,95 @@ namespace XrmPluginCore
             where T : Entity
         {
             var builder = new PluginStepConfigBuilder<T>(eventOperation, executionStage);
-            RegisteredPluginSteps.Add(new PluginStepRegistration(builder, action));
+            var registration = new PluginStepRegistration(builder, action)
+            {
+                // Store metadata for convention-based type-safe wrapper discovery
+                EntityTypeName = typeof(T).Name,
+                EventOperation = eventOperation,
+                ExecutionStage = executionStage.ToString(),
+                PluginClassName = ChildClassShortName
+            };
+            RegisteredPluginSteps.Add(registration);
             return builder;
+        }
+
+        /// <summary>
+        /// Register a plugin step for the given entity type with a handler method name.
+        /// The source generator will emit an ActionWrapper that calls the specified method.
+        /// Use WithPreImage/WithPostImage to add images - the method signature must match.
+        /// <br/>
+        /// Use <c>nameof(IService.MethodName)</c> for compile-time safety.
+        /// </summary>
+        /// <typeparam name="TEntity">The entity type to register the plugin for</typeparam>
+        /// <typeparam name="TService">The service type that contains the handler method</typeparam>
+        /// <param name="eventOperation">The event operation to register the plugin for</param>
+        /// <param name="executionStage">The execution stage of the plugin registration</param>
+        /// <param name="handlerMethodName">The name of the handler method (use nameof(IService.MethodName))</param>
+        /// <returns>A <see cref="PluginStepConfigBuilder{TEntity}"/> for configuring images and filtered attributes</returns>
+        protected PluginStepConfigBuilder<TEntity> RegisterStep<TEntity, TService>(
+            EventOperation eventOperation,
+            ExecutionStage executionStage,
+            string handlerMethodName)
+            where TEntity : Entity
+        {
+            return RegisterStep<TEntity, TService>(eventOperation.ToString(), executionStage, handlerMethodName);
+        }
+
+        /// <summary>
+        /// Register a plugin step for the given entity type with a handler method name.
+        /// The source generator will emit an ActionWrapper that calls the specified method.
+        /// Use WithPreImage/WithPostImage to add images - the method signature must match.
+        /// <br/>
+        /// Use <c>nameof(IService.MethodName)</c> for compile-time safety.
+        /// <br/>
+        /// <b>
+        /// NOTE: It is strongly advised to use the <see cref="RegisterStep{TEntity, TService}(EventOperation, ExecutionStage, string)"/> method instead if possible.<br/>
+        /// Only use this method if you are registering for a non-standard message.
+        /// </b>
+        /// </summary>
+        /// <typeparam name="TEntity">The entity type to register the plugin for</typeparam>
+        /// <typeparam name="TService">The service type that contains the handler method</typeparam>
+        /// <param name="eventOperation">The event operation to register the plugin for</param>
+        /// <param name="executionStage">The execution stage of the plugin registration</param>
+        /// <param name="handlerMethodName">The name of the handler method (use nameof(IService.MethodName))</param>
+        /// <returns>A <see cref="PluginStepConfigBuilder{TEntity}"/> for configuring images and filtered attributes</returns>
+        protected PluginStepConfigBuilder<TEntity> RegisterStep<TEntity, TService>(
+            string eventOperation,
+            ExecutionStage executionStage,
+            string handlerMethodName)
+            where TEntity : Entity
+        {
+            var builder = new PluginStepConfigBuilder<TEntity>(eventOperation, executionStage);
+
+            var registration = new PluginStepRegistration(builder, null)
+            {
+                EntityTypeName = typeof(TEntity).Name,
+                EventOperation = eventOperation,
+                ExecutionStage = executionStage.ToString(),
+                PluginClassName = ChildClassShortName,
+                ServiceTypeName = typeof(TService).Name,
+                ServiceTypeFullName = typeof(TService).FullName,
+                HandlerMethodName = handlerMethodName
+            };
+
+            RegisteredPluginSteps.Add(registration);
+            return builder;
+        }
+
+        private Action<IExtendedServiceProvider> DiscoverGeneratedAction(PluginStepRegistration registration)
+        {
+            // Build the wrapper type name using naming convention
+            // Format: {Namespace}.PluginRegistrations.{PluginClassName}.{Entity}{Operation}{Stage}.ActionWrapper
+            var wrapperTypeName = $"{GetType().Namespace}.PluginRegistrations.{registration.PluginClassName}." +
+                                  $"{registration.EntityTypeName}{registration.EventOperation}{registration.ExecutionStage}.ActionWrapper";
+
+            var wrapperType = GetType().Assembly.GetType(wrapperTypeName);
+            if (wrapperType == null)
+                return null;
+
+            // Use interface instead of reflection
+            var wrapper = (IActionWrapper)Activator.CreateInstance(wrapperType);
+            return wrapper.CreateAction();
         }
 
         /// <summary>
@@ -268,7 +384,7 @@ namespace XrmPluginCore
         {
             if (RegisteredCustomApi != null)
             {
-                throw new InvalidOperationException($"You cannot register multiple CustomAPIs in the same class");
+                throw new InvalidOperationException("You cannot register multiple CustomAPIs in the same class");
             }
 
             var configBuilder = new CustomApiConfigBuilder(name);
@@ -277,23 +393,20 @@ namespace XrmPluginCore
             return configBuilder;
         }
 
-        private Action<IExtendedServiceProvider> GetAction(IPluginExecutionContext context)
+        private PluginStepRegistration GetMatchingRegistration(IPluginExecutionContext context)
         {
             // Iterate over all of the expected registered events to ensure that the plugin
             // has been invoked by an expected event
             // For any given plug-in event at an instance in time, we would expect at most 1 result to match.
-            var pluginAction =
-                RegisteredPluginSteps
-                .FirstOrDefault(a => a.ConfigBuilder?.Matches(context) == true)?
-                .Action;
+            var pluginStepRegistration = RegisteredPluginSteps.FirstOrDefault(a => a.ConfigBuilder?.Matches(context) == true);
 
-            if (pluginAction != null)
+            // If no plugin step found and we have a CustomAPI, return a registration with that action
+            if (pluginStepRegistration == null && RegisteredCustomApi != null)
             {
-                return pluginAction;
+                return new PluginStepRegistration(null, RegisteredCustomApi.Action);
             }
 
-            // If no plugin step was found, check if this is a CustomAPI call
-            return RegisteredCustomApi?.Action;
+            return pluginStepRegistration;
         }
     }
 }

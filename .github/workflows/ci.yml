@@ -1,48 +1,52 @@
 name: Check PR
 
 on:
- pull_request:
- push:
-   branches:
-     - main
+  pull_request:
+  push:
+    branches:
+      - main
 
 jobs:
- run-ci:
-   env:
-     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-   runs-on: windows-latest
+  run-ci:
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    runs-on: windows-latest
 
-   steps:
-     - name: 🚚 Get latest code
-       uses: actions/checkout@v4
+    steps:
+      - name: 🚚 Get latest code
+        uses: actions/checkout@v4
 
-     - name: 🛠️ Setup .NET
-       uses: actions/setup-dotnet@v4
-       with:
-           dotnet-version: 8.x
+      - name: 🛠️ Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.x
 
-     - name: ✏️ Set abstractions version from CHANGELOG.md
-       shell: pwsh
-       run: ./scripts/Set-VersionFromChangelog.ps1 -ChangelogPath XrmPluginCore.Abstractions/CHANGELOG.md -CsprojPath XrmPluginCore.Abstractions/XrmPluginCore.Abstractions.csproj
+      - name: ✏️ Set abstractions version from CHANGELOG.md
+        shell: pwsh
+        run: ./scripts/Set-VersionFromChangelog.ps1 -ChangelogPath XrmPluginCore.Abstractions/CHANGELOG.md -CsprojPath XrmPluginCore.Abstractions/XrmPluginCore.Abstractions.csproj
 
-     - name: ✏️ Set implementations version from CHANGELOG.md
-       shell: pwsh
-       run: ./scripts/Set-VersionFromChangelog.ps1 -ChangelogPath XrmPluginCore/CHANGELOG.md -CsprojPath XrmPluginCore/XrmPluginCore.csproj
+      - name: ✏️ Set source generator version from CHANGELOG.md
+        shell: pwsh
+        run: ./scripts/Set-VersionFromChangelog.ps1 -ChangelogPath XrmPluginCore.SourceGenerator/CHANGELOG.md -CsprojPath XrmPluginCore.SourceGenerator/XrmPluginCore.SourceGenerator.csproj
 
-     - name: 📦 Install dependencies
-       run: dotnet restore
+      - name: ✏️ Set implementations version from CHANGELOG.md
+        shell: pwsh
+        run: ./scripts/Set-VersionFromChangelog.ps1 -ChangelogPath XrmPluginCore/CHANGELOG.md -CsprojPath XrmPluginCore/XrmPluginCore.csproj
 
-     - name: 🔨 Build solution
-       run: dotnet build --configuration Release --no-restore
+      - name: 📦 Install dependencies
+        run: dotnet restore
 
-     - name: ✅ Run tests
-       run: dotnet test --configuration Release --no-build --verbosity normal
+      - name: 🔨 Build solution
+        run: dotnet build --configuration Release --no-restore
 
-     - name: 📦 Pack
-       run: dotnet pack --configuration Release --no-build --output ./nupkg
+      - name: ✅ Run tests
+        run: dotnet test --configuration Release --no-build --verbosity normal
 
-     - name: 📤 Upload artifacts
-       uses: actions/upload-artifact@v4
-       with:
-         name: packages
-         path: ./nupkg
+      - name: 📦 Pack
+        run: dotnet pack --configuration Release --no-build --output ./nupkg
+
+      - name: 📤 Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: packages
+          path: ./nupkg
