@@ -11,6 +11,9 @@ internal static class HandlerMethodValidator
 	/// Validates handler method existence and signature.
 	/// Sets HasValidationError on metadata if validation fails.
 	/// Note: XPC4002 and XPC4003 diagnostics are handled by separate analyzers.
+	/// IMPORTANT: We only block generation for XPC4002 (method not found), NOT for XPC4003 (signature mismatch).
+	/// This is intentional - the generated types (PreImage/PostImage) must exist before the user can update
+	/// their handler signature to use them. This prevents a chicken-and-egg problem.
 	/// </summary>
 	public static void ValidateHandlerMethod(
 		PluginStepMetadata metadata,
@@ -35,16 +38,10 @@ internal static class HandlerMethodValidator
 			return;
 		}
 
-		var hasPreImage = metadata.Images.Any(i => i.ImageType == Constants.PreImageTypeName);
-		var hasPostImage = metadata.Images.Any(i => i.ImageType == Constants.PostImageTypeName);
-
-		var hasMatchingOverload = methods.Any(method => SignatureMatches(method, hasPreImage, hasPostImage));
-		if (!hasMatchingOverload)
-		{
-			// Signature mismatch - abort generation for this registration
-			// XPC4003 diagnostic is handled by HandlerSignatureMismatchAnalyzer
-			metadata.HasValidationError = true;
-		}
+		// NOTE: We intentionally do NOT set HasValidationError for signature mismatch (XPC4003).
+		// The PreImage/PostImage types must be generated first so the user can reference them
+		// in their handler method signature. The analyzer (XPC4003/XPC4006) will report if
+		// the signature doesn't match after the types are available.
 	}
 
 	private static bool SignatureMatches(IMethodSymbol method, bool hasPreImage, bool hasPostImage)

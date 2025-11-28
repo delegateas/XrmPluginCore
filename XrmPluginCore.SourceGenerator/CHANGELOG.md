@@ -1,3 +1,6 @@
+### v1.2.3 - 28 November 2025
+* Fix: Generate PreImage/PostImage types even when handler signature doesn't match (fixes chicken-and-egg problem where types couldn't be used until they existed)
+
 ### v1.2.2 - 27 November 2025
 * Fix: XPC4003 has been reduced to Warning to allow initial build to succeed
 * Add: New rule XPC4006 (Error) to enforce handler signature correctness once generated types exist

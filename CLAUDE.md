@@ -398,8 +398,70 @@ Registration is automated using XrmSync (https://github.com/delegateas/XrmSync),
 Version numbers are managed through CHANGELOG.md files:
 - `XrmPluginCore/CHANGELOG.md` for the main library
 - `XrmPluginCore.Abstractions/CHANGELOG.md` for abstractions
+- `XrmPluginCore.SourceGenerator/CHANGELOG.md` for the source generator. When updating the source generator version, the main library and version should also be updated to match.
 
 The `Set-VersionFromChangelog.ps1` script updates .csproj files from CHANGELOG during CI/CD.
+
+## Source Generator Development
+
+When developing or debugging the source generator, use the following workflow to test changes against a local project:
+
+### Development Loop
+
+1. **Update CHANGELOG versions** - Add a preview version to both:
+   - `XrmPluginCore/CHANGELOG.md`
+   - `XrmPluginCore.SourceGenerator/CHANGELOG.md`
+
+   Example: `### v1.2.3-preview.1 - 28 November 2025`
+
+2. **Pack the local NuGet package**:
+   ```bash
+   ./scripts/Pack-Local.ps1
+   ```
+   This builds Release configuration and creates packages in `XrmPluginCore/bin/Release/`.
+
+3. **Configure local NuGet source** in the test project's solution (e.g., XrmSync):
+
+   Create or update `NuGet.Config` at the solution root:
+   ```xml
+   <?xml version="1.0" encoding="utf-8"?>
+   <configuration>
+     <packageSources>
+       <!-- Replace with the absolute path to your local XrmPluginCore repository -->
+       <add key="Local-XrmPluginCore" value="C:\path\to\XrmPluginCore\XrmPluginCore\bin\Release" />
+       <add key="nuget.org" value="https://api.nuget.org/v3/index.json" />
+     </packageSources>
+   </configuration>
+   ```
+
+4. **Update project reference** to the preview version in the test project's .csproj:
+   ```xml
+   <PackageReference Include="XrmPluginCore" Version="1.2.3-preview.1" />
+   ```
+
+5. **Restore and build**:
+   ```bash
+   dotnet restore --force && dotnet build
+   ```
+
+### Inspecting Generated Output
+
+To see what the source generator produces, add these properties to the test project's .csproj:
+
+```xml
+<PropertyGroup>
+  <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
+  <CompilerGeneratedFilesOutputPath>$(BaseIntermediateOutputPath)Generated</CompilerGeneratedFilesOutputPath>
+</PropertyGroup>
+```
+
+Generated files appear in `obj/Generated/XrmPluginCore.SourceGenerator/`.
+
+### Important Notes
+
+- **Increment preview version** for each iteration (e.g., preview.1 → preview.2) to ensure NuGet picks up the new package
+- **Clear NuGet cache** if issues persist: `dotnet nuget locals all --clear`
+- **Visual Studio cache**: If VS shows stale analyzer output, close VS and delete `%LOCALAPPDATA%\Microsoft\VisualStudio\{version}\ComponentModelCache`
 
 ## Analyzer Rules
 - Headers for violation examples for analyzer rules should be prefixed with ❌
