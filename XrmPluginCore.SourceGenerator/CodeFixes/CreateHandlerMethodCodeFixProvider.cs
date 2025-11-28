@@ -19,7 +19,7 @@ namespace XrmPluginCore.SourceGenerator.CodeFixes;
 public class CreateHandlerMethodCodeFixProvider : CodeFixProvider
 {
 	public sealed override ImmutableArray<string> FixableDiagnosticIds =>
-		ImmutableArray.Create("XPC4002");
+		ImmutableArray.Create(DiagnosticDescriptors.HandlerMethodNotFound.Id);
 
 	public sealed override FixAllProvider GetFixAllProvider() =>
 		WellKnownFixAllProviders.BatchFixer;

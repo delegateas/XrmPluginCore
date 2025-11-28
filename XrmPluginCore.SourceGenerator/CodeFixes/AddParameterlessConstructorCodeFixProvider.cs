@@ -18,7 +18,7 @@ namespace XrmPluginCore.SourceGenerator.CodeFixes;
 public class AddParameterlessConstructorCodeFixProvider : CodeFixProvider
 {
 	public sealed override ImmutableArray<string> FixableDiagnosticIds =>
-		ImmutableArray.Create("XPC4001");
+		ImmutableArray.Create(DiagnosticDescriptors.NoParameterlessConstructor.Id);
 
 	public sealed override FixAllProvider GetFixAllProvider() =>
 		WellKnownFixAllProviders.BatchFixer;

@@ -19,7 +19,9 @@ namespace XrmPluginCore.SourceGenerator.CodeFixes;
 public class FixHandlerSignatureCodeFixProvider : CodeFixProvider
 {
 	public sealed override ImmutableArray<string> FixableDiagnosticIds =>
-		ImmutableArray.Create("XPC4003");
+		ImmutableArray.Create(
+			DiagnosticDescriptors.HandlerSignatureMismatch.Id,
+			DiagnosticDescriptors.HandlerSignatureMismatchError.Id);
 
 	public sealed override FixAllProvider GetFixAllProvider() =>
 		WellKnownFixAllProviders.BatchFixer;

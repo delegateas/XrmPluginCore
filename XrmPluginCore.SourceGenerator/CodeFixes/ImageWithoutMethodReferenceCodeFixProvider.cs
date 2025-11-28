@@ -19,7 +19,9 @@ namespace XrmPluginCore.SourceGenerator.CodeFixes;
 public class ImageWithoutMethodReferenceCodeFixProvider : CodeFixProvider
 {
 	public sealed override ImmutableArray<string> FixableDiagnosticIds =>
-		ImmutableArray.Create("XPC4004", "XPC4005");
+		ImmutableArray.Create(
+			DiagnosticDescriptors.LegacyImageRegistration.Id,
+			DiagnosticDescriptors.ImageWithoutMethodReference.Id);
 
 	public sealed override FixAllProvider GetFixAllProvider() =>
 		WellKnownFixAllProviders.BatchFixer;

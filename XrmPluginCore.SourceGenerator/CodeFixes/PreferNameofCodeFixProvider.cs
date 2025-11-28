@@ -19,7 +19,7 @@ namespace XrmPluginCore.SourceGenerator.CodeFixes;
 public class PreferNameofCodeFixProvider : CodeFixProvider
 {
 	public sealed override ImmutableArray<string> FixableDiagnosticIds =>
-		ImmutableArray.Create("XPC3001");
+		ImmutableArray.Create(DiagnosticDescriptors.PreferNameofOverStringLiteral.Id);
 
 	public sealed override FixAllProvider GetFixAllProvider() =>
 		WellKnownFixAllProviders.BatchFixer;

@@ -30,7 +30,7 @@ internal static class RegistrationParser
 			.Any();
 
 		// If class has explicit constructors but no parameterless one, abort generation
-		// Note: XPC4001 (NoParameterlessConstructor) is handled by a separate analyzer
+		// Note: XPC2001 (NoParameterlessConstructor) is handled by a separate analyzer
 		if (hasExplicitConstructors && !hasParameterlessConstructor)
 		{
 			yield break;
@@ -126,7 +126,7 @@ internal static class RegistrationParser
 
 		// Return metadata if we have a method reference (for code generation)
 		// OR if we have diagnostics to report
-		// Note: XPC4004 (ImageWithoutMethodReference) is handled by a separate analyzer
+		// Note: XPC3003 (ImageWithoutMethodReference) is handled by a separate analyzer
 		return !string.IsNullOrEmpty(metadata.HandlerMethodName) || metadata.Diagnostics.Any() ? metadata : null;
 	}
 

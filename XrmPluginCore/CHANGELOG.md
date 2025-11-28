@@ -1,5 +1,6 @@
 ### v1.2.3 - 28 November 2025
 * Fix: Generate PreImage/PostImage types even when handler signature doesn't match (fixes chicken-and-egg problem where types couldn't be used until they existed)
+* Breaking: Reorganized diagnostic IDs by category (XPC1xxx=Info, XPC2xxx=Plugin structure, XPC3xxx=Style, XPC4xxx=Handler methods, XPC5xxx=Internal errors)
 
 ### v1.2.2 - 27 November 2025
 * Fix: XPC4003 has been reduced to Warning to allow initial build to succeed

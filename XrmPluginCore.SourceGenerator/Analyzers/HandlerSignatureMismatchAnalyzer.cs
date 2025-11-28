@@ -1,16 +1,10 @@
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
-using Microsoft.CodeAnalysis.Diagnostics;
-using System.Collections.Immutable;
-using System.Linq;
 using XrmPluginCore.SourceGenerator.Helpers;
 
 namespace XrmPluginCore.SourceGenerator.Analyzers;
 
 /// <summary>
 /// Analyzer that reports when a handler method signature does not match the registered images.
-/// Reports XPC4003 (Warning) when generated types don't exist yet, XPC4006 (Error) when they do.
+/// Reports XPC4002 (Warning) when generated types don't exist yet, XPC4003 (Error) when they do.
 /// </summary>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public class HandlerSignatureMismatchAnalyzer : DiagnosticAnalyzer
@@ -73,7 +67,7 @@ public class HandlerSignatureMismatchAnalyzer : DiagnosticAnalyzer
 		var methods = TypeHelper.GetAllMethodsIncludingInherited(serviceType, methodName);
 		if (!methods.Any())
 		{
-			return; // Method doesn't exist - XPC4002 handles this
+			return; // Method doesn't exist - XPC4001 handles this
 		}
 
 		// Check for registered images
@@ -103,7 +97,7 @@ public class HandlerSignatureMismatchAnalyzer : DiagnosticAnalyzer
 			hasPreImage,
 			hasPostImage);
 
-		// Choose diagnostic: XPC4006 (Error) if types exist, XPC4003 (Warning) if they don't
+		// Choose diagnostic: XPC4003 (Error) if types exist, XPC4002 (Warning) if they don't
 		var descriptor = generatedTypesExist
 			? DiagnosticDescriptors.HandlerSignatureMismatchError
 			: DiagnosticDescriptors.HandlerSignatureMismatch;
