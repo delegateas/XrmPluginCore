@@ -11,6 +11,7 @@ using System.ServiceModel;
 using XrmPluginCore.Tests.TestPlugins.Bedrock;
 using Xunit;
 using XrmPluginCore.Extensions;
+using XrmPluginCore.Tests.Context.BusinessDomain;
 
 namespace XrmPluginCore.Tests
 {
@@ -334,9 +335,10 @@ namespace XrmPluginCore.Tests
             var inputParameters = new ParameterCollection { { "Target", account } };
             mockProvider.SetupInputParameters(inputParameters);
 
-            // Act & Assert - The GetEntity method should throw because ToEntity<T> requires EntityLogicalNameAttribute
-            Assert.Throws<NotSupportedException>(() => context.GetEntity<TestAccount>());
-        }
+			// Act & Assert
+			var acc = context.GetEntity<Account>();
+			acc.Id.Should().Be(account.Id);
+		}
 
         [Fact]
         public void GetEntityNoTargetShouldReturnNull()
@@ -350,7 +352,7 @@ namespace XrmPluginCore.Tests
             mockProvider.SetupInputParameters(inputParameters);
 
             // Act
-            var result = context.GetEntity<TestAccount>();
+            var result = context.GetEntity<Account>();
 
             // Assert
             result.Should().BeNull();
@@ -370,7 +372,7 @@ namespace XrmPluginCore.Tests
             mockProvider.SetupInputParameters(inputParameters);
 
             // Act
-            var result = context.GetEntity<TestAccount>();
+            var result = context.GetEntity<Account>();
 
             // Assert
             result.Should().BeNull();
@@ -389,9 +391,10 @@ namespace XrmPluginCore.Tests
             var preImages = new EntityImageCollection { { "PreImage", account } };
             mockProvider.SetupPreEntityImages(preImages);
 
-            // Act & Assert - Throws exception due to ToEntity<T> limitation in test framework
-            Assert.Throws<NotSupportedException>(() => context.GetPreImage<TestAccount>());
-        }
+			// Act & Assert - Throws exception due to ToEntity<T> limitation in test framework
+			var preImage = context.GetPreImage<Entity>();
+			preImage.Id.Should().Be(account.Id);
+		}
 
         [Fact]
         public void GetPostImageValidImageShouldReturnEntity()
@@ -406,8 +409,9 @@ namespace XrmPluginCore.Tests
             var postImages = new EntityImageCollection { { "PostImage", account } };
             mockProvider.SetupPostEntityImages(postImages);
 
-            // Act & Assert - Throws exception due to ToEntity<T> limitation in test framework
-            Assert.Throws<NotSupportedException>(() => context.GetPostImage<TestAccount>());
+			// Act & Assert
+			var postImage = context.GetPostImage<Account>();
+			postImage.Id.Should().Be(account.Id);
         }
 
         [Fact]
@@ -432,7 +436,7 @@ namespace XrmPluginCore.Tests
 
         public TestServiceProviderModificationPlugin()
         {
-            RegisterStep<TestAccount>(EventOperation.Create, ExecutionStage.PreOperation, ExecutePlugin);
+            RegisterStep<Account>(EventOperation.Create, ExecutionStage.PreOperation, ExecutePlugin);
         }
 
         protected override IServiceCollection OnBeforeBuildServiceProvider(IServiceCollection serviceProvider)
@@ -447,11 +451,5 @@ namespace XrmPluginCore.Tests
             var stringValue = context.GetService<string>();
             ModifiedServiceProviderUsed = stringValue == "Modified";
         }
-    }
-
-    // Add the TestAccount class
-    public class TestAccount : Entity
-    {
-        public TestAccount() : base("account") { }
     }
 }

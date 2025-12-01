@@ -1,6 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Xrm.Sdk;
 using XrmPluginCore.Enums;
+using XrmPluginCore.Tests.Context.BusinessDomain;
+
 
 // Import the generated PreImage/PostImage from the namespace
 using XrmPluginCore.Tests.TestPlugins.TypeSafe.PluginRegistrations.TypeSafeAccountPlugin.AccountUpdatePreOperation;
@@ -23,9 +24,9 @@ public class TypeSafeAccountPlugin : Plugin
 		// Type-safe API: Images are passed directly to the action via source-generated wrapper
 		RegisterStep<Account, TypeSafeAccountService>(EventOperation.Update, ExecutionStage.PreOperation,
 			nameof(TypeSafeAccountService.HandleUpdate))
-			.AddFilteredAttributes(x => x.Name, x => x.Accountnumber)
-			.WithPreImage(x => x.Name, x => x.Accountnumber, x => x.Revenue)
-			.WithPostImage(x => x.Name, x => x.Accountnumber);
+			.AddFilteredAttributes(x => x.Name, x => x.AccountNumber)
+			.WithPreImage(x => x.Name, x => x.AccountNumber, x => x.SharesOutstanding)
+			.WithPostImage(x => x.Name, x => x.AccountNumber);
 	}
 
 	protected override IServiceCollection OnBeforeBuildServiceProvider(IServiceCollection services)
@@ -39,35 +40,5 @@ public class TypeSafeAccountPlugin : Plugin
 		UpdateExecuted = true;
 		LastPreImage = preImage;
 		LastPostImage = postImage;
-	}
-}
-
-/// <summary>
-/// Simple Account entity class for testing
-/// </summary>
-[Microsoft.Xrm.Sdk.Client.EntityLogicalName("account")]
-public class Account : Entity
-{
-	public Account() : base("account") { }
-
-	[AttributeLogicalName("name")]
-	public string Name
-	{
-		get => GetAttributeValue<string>("name");
-		set => SetAttributeValue("name", value);
-	}
-
-	[AttributeLogicalName("accountnumber")]
-	public string Accountnumber
-	{
-		get => GetAttributeValue<string>("accountnumber");
-		set => SetAttributeValue("accountnumber", value);
-	}
-
-	[AttributeLogicalName("revenue")]
-	public Money Revenue
-	{
-		get => GetAttributeValue<Money>("revenue");
-		set => SetAttributeValue("revenue", value);
 	}
 }

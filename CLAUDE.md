@@ -209,7 +209,7 @@ namespace YourNamespace.PluginRegistrations.AccountPlugin.AccountUpdatePostOpera
         }
 
         public string Name => entity.GetAttributeValue<string>("name");
-        public Money Revenue => entity.GetAttributeValue<Money>("revenue");
+        public decimal? Revenue => entity.GetAttributeValue<decimal?>("revenue");
 
         public T ToEntity<T>() where T : Entity => entity.ToEntity<T>();
     }

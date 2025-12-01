@@ -22,8 +22,8 @@ public class TypeSafeAccountService
 		if (preImage != null)
 		{
 			_ = preImage.Name;
-			_ = preImage.Accountnumber;
-			_ = preImage.Revenue;
+			_ = preImage.AccountNumber;
+			_ = preImage.SharesOutstanding;
 		}
 
 		plugin.SetExecutionResult(preImage, postImage);

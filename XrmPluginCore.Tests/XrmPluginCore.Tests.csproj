@@ -25,6 +25,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\XrmPluginCore.Tests.Context\XrmPluginCore.Tests.Context.csproj" />
     <ProjectReference Include="..\XrmPluginCore\XrmPluginCore.csproj" />
     <ProjectReference Include="..\XrmPluginCore.Abstractions\XrmPluginCore.Abstractions.csproj" />
     <ProjectReference Include="..\XrmPluginCore.SourceGenerator\XrmPluginCore.SourceGenerator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />

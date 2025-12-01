@@ -1,6 +1,7 @@
 using XrmPluginCore.Enums;
 using Microsoft.Xrm.Sdk;
 using System;
+using XrmPluginCore.Tests.Context.BusinessDomain;
 
 namespace XrmPluginCore.Tests.TestPlugins
 {
@@ -12,8 +13,8 @@ namespace XrmPluginCore.Tests.TestPlugins
 
         public TestAccountPlugin()
         {
-            RegisterPluginStep<TestAccount>(EventOperation.Create, ExecutionStage.PreOperation, ExecuteCtx);
-            RegisterStep<TestAccount>(EventOperation.Create, ExecutionStage.PostOperation, ExecuteSP);
+            RegisterPluginStep<Account>(EventOperation.Create, ExecutionStage.PreOperation, ExecuteCtx);
+            RegisterStep<Account>(EventOperation.Create, ExecutionStage.PostOperation, ExecuteSP);
         }
 
         private void ExecuteCtx(LocalPluginContext context)
@@ -60,8 +61,8 @@ namespace XrmPluginCore.Tests.TestPlugins
 
         public TestMultipleRegistrationPlugin()
         {
-            RegisterPluginStep<TestAccount>(EventOperation.Create, ExecutionStage.PreOperation, OnCreate);
-            RegisterPluginStep<TestAccount>(EventOperation.Update, ExecutionStage.PostOperation, OnUpdate);
+            RegisterPluginStep<Account>(EventOperation.Create, ExecutionStage.PreOperation, OnCreate);
+            RegisterPluginStep<Account>(EventOperation.Update, ExecutionStage.PostOperation, OnUpdate);
         }
 
         private void OnCreate(LocalPluginContext context)
@@ -73,11 +74,5 @@ namespace XrmPluginCore.Tests.TestPlugins
         {
             UpdateExecuted = true;
         }
-    }
-
-    // Simple entity class for testing
-    public class TestAccount : Entity
-    {
-        public TestAccount() : base("account") { }
     }
 }

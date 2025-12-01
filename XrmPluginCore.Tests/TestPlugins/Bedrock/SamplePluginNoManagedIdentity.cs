@@ -1,7 +1,6 @@
-﻿using XrmPluginCore.Enums;
-using XrmPluginCore.Tests;
+using XrmPluginCore.Enums;
 using Microsoft.Extensions.DependencyInjection;
-using XrmPluginCore;
+using XrmPluginCore.Tests.Context.BusinessDomain;
 
 namespace XrmPluginCore.Tests.TestPlugins.Bedrock
 {
@@ -19,7 +18,7 @@ namespace XrmPluginCore.Tests.TestPlugins.Bedrock
 
         public SamplePluginNoManagedIdentity()
         {
-            RegisterStep<TestAccount, ISampleService>(
+            RegisterStep<Account, ISampleService>(
                 EventOperation.Create,
                 ExecutionStage.PreOperation,
                 s =>

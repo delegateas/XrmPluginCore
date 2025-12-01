@@ -6,6 +6,7 @@ using System;
 using System.Linq;
 using XrmPluginCore;
 using Xunit;
+using XrmPluginCore.Tests.Context.BusinessDomain;
 
 namespace XrmPluginCore.Tests.Integration
 {
@@ -141,7 +142,7 @@ namespace XrmPluginCore.Tests.Integration
         public BoundCustomAPI()
         {
             RegisterCustomAPI("bound_test_api", ExecuteAPI)
-                .Bind<CustomAPIAccount>(BindingType.Entity);
+                .Bind<Account>(BindingType.Entity);
         }
 
         private void ExecuteAPI(LocalPluginContext context)
@@ -162,10 +163,5 @@ namespace XrmPluginCore.Tests.Integration
         {
             // Implementation
         }
-    }
-
-    public class CustomAPIAccount : Entity
-    {
-        public CustomAPIAccount() : base("account") { }
     }
 }

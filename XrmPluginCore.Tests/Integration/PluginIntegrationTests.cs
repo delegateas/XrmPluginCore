@@ -6,6 +6,7 @@ using System;
 using System.Linq;
 using Xunit;
 using XrmPluginCore.Extensions;
+using XrmPluginCore.Tests.Context.BusinessDomain;
 
 namespace XrmPluginCore.Tests.Integration
 {
@@ -108,7 +109,7 @@ namespace XrmPluginCore.Tests.Integration
 
         public IntegrationTestPlugin()
         {
-            RegisterPluginStep<IntegrationAccount>(EventOperation.Update, ExecutionStage.PreOperation, ExecutePlugin);
+            RegisterPluginStep<Account>(EventOperation.Update, ExecutionStage.PreOperation, ExecutePlugin);
         }
 
         private void ExecutePlugin(LocalPluginContext context)
@@ -118,7 +119,7 @@ namespace XrmPluginCore.Tests.Integration
                 // Get target entity - This will throw NotSupportedException due to ToEntity<T> limitation
                 try
                 {
-                    TargetEntity = context.GetEntity<IntegrationAccount>();
+                    TargetEntity = context.GetEntity<Account>();
                 }
                 catch (NotSupportedException)
                 {
@@ -129,7 +130,7 @@ namespace XrmPluginCore.Tests.Integration
                 // Get pre-image - This will throw NotSupportedException due to ToEntity<T> limitation
                 try
                 {
-                    PreImageEntity = context.GetPreImage<IntegrationAccount>();
+                    PreImageEntity = context.GetPreImage<Account>();
                 }
                 catch (NotSupportedException)
                 {
@@ -160,7 +161,7 @@ namespace XrmPluginCore.Tests.Integration
 
         public MultipleImagesPlugin()
         {
-            RegisterPluginStep<IntegrationAccount>(EventOperation.Update, ExecutionStage.PostOperation, ExecutePlugin);
+            RegisterPluginStep<Account>(EventOperation.Update, ExecutionStage.PostOperation, ExecutePlugin);
         }
 
         private void ExecutePlugin(LocalPluginContext context)
@@ -168,30 +169,11 @@ namespace XrmPluginCore.Tests.Integration
             try
             {
                 // Get images using different methods - These will throw NotSupportedException due to ToEntity<T> limitation
-                Entity preImage = null;
-                Entity postImage = null;
+                Entity preImage = context.GetPreImage<Account>();
+				PreImageRetrieved = true;
 
-                try
-                {
-                    preImage = context.GetPreImage<IntegrationAccount>();
-                }
-                catch (NotSupportedException)
-                {
-                    // Expected in test framework
-                    context.Trace("GetPreImage threw NotSupportedException as expected in test framework");
-                    PreImageRetrieved = true; // Mark as successful for test purposes
-                }
-
-                try
-                {
-                    postImage = context.GetPostImage<IntegrationAccount>();
-                }
-                catch (NotSupportedException)
-                {
-                    // Expected in test framework
-                    context.Trace("GetPostImage threw NotSupportedException as expected in test framework");
-                    PostImageRetrieved = true; // Mark as successful for test purposes
-                }
+                Entity postImage = context.GetPostImage<Account>();
+				PostImageRetrieved = true;
 
                 if (preImage != null)
                 {
@@ -211,10 +193,5 @@ namespace XrmPluginCore.Tests.Integration
                 throw;
             }
         }
-    }
-
-    public class IntegrationAccount : Entity
-    {
-        public IntegrationAccount() : base("account") { }
     }
 }

@@ -1,5 +1,6 @@
 using XrmPluginCore.Enums;
 using Microsoft.Extensions.DependencyInjection;
+using XrmPluginCore.Tests.Context.BusinessDomain;
 
 namespace XrmPluginCore.Tests.TestPlugins.Bedrock
 {
@@ -17,7 +18,7 @@ namespace XrmPluginCore.Tests.TestPlugins.Bedrock
 
         public SamplePlugin()
         {
-            RegisterStep<TestAccount, ISampleService>(
+            RegisterStep<Account, ISampleService>(
                 EventOperation.Create,
                 ExecutionStage.PreOperation,
                 s =>

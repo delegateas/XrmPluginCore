@@ -5,6 +5,7 @@ using Xunit;
 using XrmPluginCore.Enums;
 using XrmPluginCore.Tests.Helpers;
 using XrmPluginCore.Tests.TestPlugins.TypeSafe;
+using XrmPluginCore.Tests.Context.BusinessDomain;
 
 namespace XrmPluginCore.Tests
 {
@@ -46,7 +47,7 @@ namespace XrmPluginCore.Tests
                 Id = targetEntity.Id,
                 ["name"] = "Old Account Name",
                 ["accountnumber"] = "ACC-OLD",
-                ["revenue"] = new Money(50000)
+                ["sharesoutstanding"] = 50000
             };
             mockProvider.SetupPreEntityImages(new EntityImageCollection { { "PreImage", preImageEntity } });
 
@@ -88,7 +89,7 @@ namespace XrmPluginCore.Tests
                 Id = targetEntity.Id,
                 ["name"] = "PreImage Name",
                 ["accountnumber"] = "PRE-001",
-                ["revenue"] = new Money(100000)
+                ["sharesoutstanding"] = 100000
             };
             mockProvider.SetupPreEntityImages(new EntityImageCollection { { "PreImage", preImageEntity } });
             mockProvider.SetupPostEntityImages(new EntityImageCollection());
@@ -99,8 +100,8 @@ namespace XrmPluginCore.Tests
             // Assert - Type-safe access to PreImage attributes
             plugin.LastPreImage.Should().NotBeNull();
             plugin.LastPreImage.Name.Should().Be("PreImage Name");
-            plugin.LastPreImage.Accountnumber.Should().Be("PRE-001");
-            plugin.LastPreImage.Revenue.Value.Should().Be(100000);
+            plugin.LastPreImage.AccountNumber.Should().Be("PRE-001");
+            plugin.LastPreImage.SharesOutstanding.Should().Be(100000);
         }
 
         [Fact]
@@ -333,7 +334,7 @@ namespace XrmPluginCore.Tests
                 Id = accountId,
                 ["name"] = "Test Account",
                 ["accountnumber"] = "ACC-001",
-                ["revenue"] = new Money(50000)
+                ["sharesoutstanding"] = 50000
             };
             mockProvider.SetupPreEntityImages(new EntityImageCollection { { "PreImage", preImageEntity } });
             mockProvider.SetupPostEntityImages(new EntityImageCollection());
@@ -348,8 +349,8 @@ namespace XrmPluginCore.Tests
             account.Should().NotBeNull();
             account.Should().BeOfType<Account>();
             account.Name.Should().Be("Test Account");
-            account.Accountnumber.Should().Be("ACC-001");
-            account.Revenue.Value.Should().Be(50000);
+            account.AccountNumber.Should().Be("ACC-001");
+            account.SharesOutstanding.Should().Be(50000);
         }
 
         #endregion
