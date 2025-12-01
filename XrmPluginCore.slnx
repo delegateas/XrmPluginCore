@@ -1,0 +1,22 @@
+<Solution>
+  <Configurations>
+    <Platform Name="Any CPU" />
+    <Platform Name="x64" />
+    <Platform Name="x86" />
+  </Configurations>
+  <Folder Name="/Solution Files/">
+    <File Path=".editorconfig" />
+    <File Path=".github/workflows/ci.yml" />
+    <File Path=".github/workflows/release.yml" />
+    <File Path="CLAUDE.md" />
+  </Folder>
+  <Folder Name="/Solution Files/Scripts/">
+    <File Path="scripts/Pack-Local.ps1" />
+    <File Path="scripts/Set-VersionFromChangelog.ps1" />
+  </Folder>
+  <Project Path="XrmPluginCore.Abstractions/XrmPluginCore.Abstractions.csproj" />
+  <Project Path="XrmPluginCore.SourceGenerator.Tests/XrmPluginCore.SourceGenerator.Tests.csproj" />
+  <Project Path="XrmPluginCore.SourceGenerator/XrmPluginCore.SourceGenerator.csproj" />
+  <Project Path="XrmPluginCore.Tests/XrmPluginCore.Tests.csproj" />
+  <Project Path="XrmPluginCore/XrmPluginCore.csproj" />
+</Solution>
