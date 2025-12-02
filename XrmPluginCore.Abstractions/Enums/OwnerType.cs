@@ -1,8 +1,8 @@
-﻿namespace XrmPluginCore.Enums
+namespace XrmPluginCore.Enums
 {
-    public enum OwnerType
-    {
-        SystemUser = 0,
-        Team = 1,
-    }
+	public enum OwnerType
+	{
+		SystemUser = 0,
+		Team = 1,
+	}
 }

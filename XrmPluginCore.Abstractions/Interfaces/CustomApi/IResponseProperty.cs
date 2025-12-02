@@ -1,6 +1,6 @@
-﻿namespace XrmPluginCore.Interfaces.CustomApi
+namespace XrmPluginCore.Interfaces.CustomApi
 {
-    public interface IResponseProperty : IParameter
-    {
-    }
+	public interface IResponseProperty : IParameter
+	{
+	}
 }

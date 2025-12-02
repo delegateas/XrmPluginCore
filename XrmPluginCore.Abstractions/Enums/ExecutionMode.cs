@@ -1,8 +1,8 @@
-﻿namespace XrmPluginCore.Enums
+namespace XrmPluginCore.Enums
 {
-    public enum ExecutionMode
-    {
-        Synchronous = 0,
-        Asynchronous = 1,
-    }
+	public enum ExecutionMode
+	{
+		Synchronous = 0,
+		Asynchronous = 1,
+	}
 }

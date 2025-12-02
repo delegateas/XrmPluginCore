@@ -1,7 +1,7 @@
-﻿namespace XrmPluginCore.Interfaces.CustomApi
+namespace XrmPluginCore.Interfaces.CustomApi
 {
-    public interface IRequestParameter : IParameter
-    {
-        bool IsOptional { get; }
-    }
+	public interface IRequestParameter : IParameter
+	{
+		bool IsOptional { get; }
+	}
 }

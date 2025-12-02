@@ -1,12 +1,12 @@
-﻿using XrmPluginCore.Interfaces.Plugin;
+using XrmPluginCore.Interfaces.Plugin;
 using Microsoft.Xrm.Sdk;
 
 namespace XrmPluginCore.Plugins
 {
-    public interface IPluginStepConfigBuilder
-    {
-        IPluginStepConfig Build();
+	public interface IPluginStepConfigBuilder
+	{
+		IPluginStepConfig Build();
 
-        bool Matches(IPluginExecutionContext pluginExecutionContext);
-    }
+		bool Matches(IPluginExecutionContext pluginExecutionContext);
+	}
 }

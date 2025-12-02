@@ -113,10 +113,10 @@ namespace TestNamespace
 		}
 		""";
 
-    /// <summary>
-    /// Plugin with both PreImage and PostImage using WithPreImage and WithPostImage.
-    /// </summary>
-    public const string PluginWithBothImages = """
+	/// <summary>
+	/// Plugin with both PreImage and PostImage using WithPreImage and WithPostImage.
+	/// </summary>
+	public const string PluginWithBothImages = """
 
 		using XrmPluginCore;
 		using XrmPluginCore.Abstractions;
@@ -156,11 +156,11 @@ namespace TestNamespace
 		}
 		""";
 
-    /// <summary>
-    /// Plugin with handler method reference but without any images.
-    /// Tests that ActionWrapper is generated even when no images are registered.
-    /// </summary>
-    public static string GetPluginWithoutImages(string action = "nameof(ITestService.HandleUpdate)") =>
+	/// <summary>
+	/// Plugin with handler method reference but without any images.
+	/// Tests that ActionWrapper is generated even when no images are registered.
+	/// </summary>
+	public static string GetPluginWithoutImages(string action = "nameof(ITestService.HandleUpdate)") =>
 		$$"""
 				using XrmPluginCore;
 				using XrmPluginCore.Abstractions;
@@ -198,10 +198,10 @@ namespace TestNamespace
 				}
 		""";
 
-    /// <summary>
-    /// Plugin using old AddImage API for backward compatibility testing.
-    /// </summary>
-    public const string PluginWithLegacyAddImage =
+	/// <summary>
+	/// Plugin using old AddImage API for backward compatibility testing.
+	/// </summary>
+	public const string PluginWithLegacyAddImage =
 		"""
 		using XrmPluginCore;
 		using XrmPluginCore.Abstractions;
@@ -237,15 +237,15 @@ namespace TestNamespace
 		}
 		""";
 
-    /// <summary>
-    /// Gets a complete compilable source with entity and plugin.
-    /// </summary>
-    public static string GetCompleteSource(string pluginSource)
-    {
+	/// <summary>
+	/// Gets a complete compilable source with entity and plugin.
+	/// </summary>
+	public static string GetCompleteSource(string pluginSource)
+	{
 		var entityName = pluginSource.Contains("RegisterStep<Account") ? "Account" : "Contact";
-        var operation = pluginSource.Contains("EventOperation.Delete") ? "Delete" : "Update";
+		var operation = pluginSource.Contains("EventOperation.Delete") ? "Delete" : "Update";
 
-        return $$"""
+		return $$"""
 			using System;
 			using System.ComponentModel;
 			using Microsoft.Xrm.Sdk;
@@ -260,52 +260,52 @@ namespace TestNamespace
 				{{StripNamespaceAndUsings(pluginSource)}}
 			}
 			""";
-    }
+	}
 
-    /// <summary>
-    /// Removes namespace declaration and using statements from source code.
-    /// </summary>
-    private static string StripNamespaceAndUsings(string source)
-    {
-        var lines = source.Split(["\r\n", "\r", "\n"], StringSplitOptions.None);
-        var result = new System.Text.StringBuilder();
-        bool inNamespace = false;
-        int braceCount = 0;
+	/// <summary>
+	/// Removes namespace declaration and using statements from source code.
+	/// </summary>
+	private static string StripNamespaceAndUsings(string source)
+	{
+		var lines = source.Split(["\r\n", "\r", "\n"], StringSplitOptions.None);
+		var result = new System.Text.StringBuilder();
+		bool inNamespace = false;
+		int braceCount = 0;
 
-        foreach (var line in lines)
-        {
-            var trimmed = line.Trim();
+		foreach (var line in lines)
+		{
+			var trimmed = line.Trim();
 
-            // Skip using statements
-            if (trimmed.StartsWith("using "))
-                continue;
+			// Skip using statements
+			if (trimmed.StartsWith("using "))
+				continue;
 
-            // Skip namespace declaration
-            if (trimmed.StartsWith("namespace "))
-            {
-                inNamespace = true;
-                continue;
-            }
+			// Skip namespace declaration
+			if (trimmed.StartsWith("namespace "))
+			{
+				inNamespace = true;
+				continue;
+			}
 
-            // Skip opening brace of namespace
-            if (inNamespace && trimmed == "{")
-            {
-                inNamespace = false;
-                braceCount++;
-                continue;
-            }
+			// Skip opening brace of namespace
+			if (inNamespace && trimmed == "{")
+			{
+				inNamespace = false;
+				braceCount++;
+				continue;
+			}
 
-            // Track braces
-            braceCount += line.Count(c => c == '{');
-            braceCount -= line.Count(c => c == '}');
+			// Track braces
+			braceCount += line.Count(c => c == '{');
+			braceCount -= line.Count(c => c == '}');
 
-            // Skip closing brace if it would close the namespace
-            if (braceCount == 0 && trimmed == "}")
-                continue;
+			// Skip closing brace if it would close the namespace
+			if (braceCount == 0 && trimmed == "}")
+				continue;
 
-            result.AppendLine(line);
-        }
+			result.AppendLine(line);
+		}
 
-        return result.ToString();
-    }
+		return result.ToString();
+	}
 }

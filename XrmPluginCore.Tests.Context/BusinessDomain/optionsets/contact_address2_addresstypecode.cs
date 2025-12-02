@@ -8,7 +8,7 @@ namespace XrmPluginCore.Tests.Context.BusinessDomain;
 public enum contact_address2_addresstypecode
 #pragma warning restore CS8981
 {
-    [EnumMember]
-    [OptionSetMetadata("Default Value", 1033)]
-    DefaultValue = 1,
+	[EnumMember]
+	[OptionSetMetadata("Default Value", 1033)]
+	DefaultValue = 1,
 }

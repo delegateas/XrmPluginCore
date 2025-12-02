@@ -8,11 +8,11 @@ namespace XrmPluginCore.Tests.Context.BusinessDomain;
 public enum account_statuscode
 #pragma warning restore CS8981
 {
-    [EnumMember]
-    [OptionSetMetadata("Active", 1033)]
-    Active = 1,
+	[EnumMember]
+	[OptionSetMetadata("Active", 1033)]
+	Active = 1,
 
-    [EnumMember]
-    [OptionSetMetadata("Inactive", 1033)]
-    Inactive = 2,
+	[EnumMember]
+	[OptionSetMetadata("Inactive", 1033)]
+	Inactive = 2,
 }

@@ -1,9 +1,9 @@
-﻿using XrmPluginCore.Interfaces.CustomApi;
+using XrmPluginCore.Interfaces.CustomApi;
 
 namespace XrmPluginCore
 {
-    public interface ICustomApiDefinition
-    {
-        ICustomApiConfig GetRegistration();
-    }
+	public interface ICustomApiDefinition
+	{
+		ICustomApiConfig GetRegistration();
+	}
 }

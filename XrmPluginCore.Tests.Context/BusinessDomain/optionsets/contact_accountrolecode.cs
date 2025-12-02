@@ -8,15 +8,15 @@ namespace XrmPluginCore.Tests.Context.BusinessDomain;
 public enum contact_accountrolecode
 #pragma warning restore CS8981
 {
-    [EnumMember]
-    [OptionSetMetadata("Decision Maker", 1033)]
-    DecisionMaker = 1,
+	[EnumMember]
+	[OptionSetMetadata("Decision Maker", 1033)]
+	DecisionMaker = 1,
 
-    [EnumMember]
-    [OptionSetMetadata("Employee", 1033)]
-    Employee = 2,
+	[EnumMember]
+	[OptionSetMetadata("Employee", 1033)]
+	Employee = 2,
 
-    [EnumMember]
-    [OptionSetMetadata("Influencer", 1033)]
-    Influencer = 3,
+	[EnumMember]
+	[OptionSetMetadata("Influencer", 1033)]
+	Influencer = 3,
 }

@@ -4,5 +4,5 @@ namespace XrmPluginCore;
 
 public interface IEntityImageWrapper<T> where T : Entity
 {
-    T Entity { get; }
+	T Entity { get; }
 }

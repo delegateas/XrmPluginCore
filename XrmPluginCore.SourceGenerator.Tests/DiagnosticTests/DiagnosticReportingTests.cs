@@ -13,28 +13,28 @@ namespace XrmPluginCore.SourceGenerator.Tests.DiagnosticTests;
 /// </summary>
 public class DiagnosticReportingTests
 {
-    [Fact]
-    public void Should_Not_Report_XPC1000_Success_Diagnostic_On_Successful_Generation()
-    {
-        // Arrange
-        var source = TestFixtures.GetCompleteSource(
+	[Fact]
+	public void Should_Not_Report_XPC1000_Success_Diagnostic_On_Successful_Generation()
+	{
+		// Arrange
+		var source = TestFixtures.GetCompleteSource(
 			TestFixtures.GetPluginWithPreImage());
 
-        // Act
-        var result = GeneratorTestHelper.RunGenerator(
-            CompilationHelper.CreateCompilation(source));
+		// Act
+		var result = GeneratorTestHelper.RunGenerator(
+			CompilationHelper.CreateCompilation(source));
 
-        // Assert - XPC1001 is no longer reported to avoid spamming the user
-        var successDiagnostics = result.GeneratorDiagnostics
-            .Where(d => d.Id == "XPC1001")
-            .ToArray();
+		// Assert - XPC1001 is no longer reported to avoid spamming the user
+		var successDiagnostics = result.GeneratorDiagnostics
+			.Where(d => d.Id == "XPC1001")
+			.ToArray();
 
-        successDiagnostics.Should().BeEmpty("XPC1001 success diagnostic should not be reported to avoid spam");
-    }
+		successDiagnostics.Should().BeEmpty("XPC1001 success diagnostic should not be reported to avoid spam");
+	}
 
-    [Fact]
-    public async Task Should_Report_XPC2001_When_Plugin_Has_No_Parameterless_Constructor()
-    {
+	[Fact]
+	public async Task Should_Report_XPC2001_When_Plugin_Has_No_Parameterless_Constructor()
+	{
 		// Arrange - plugin class with only a parameterized constructor (no parameterless)
 		const string pluginSource = """
 
@@ -67,48 +67,48 @@ public class DiagnosticReportingTests
 			}
 			""";
 
-        var source = TestFixtures.GetCompleteSource(pluginSource);
+		var source = TestFixtures.GetCompleteSource(pluginSource);
 
-        // Act - Run analyzer instead of generator
-        var diagnostics = await GetAnalyzerDiagnosticsAsync(source, new NoParameterlessConstructorAnalyzer());
+		// Act - Run analyzer instead of generator
+		var diagnostics = await GetAnalyzerDiagnosticsAsync(source, new NoParameterlessConstructorAnalyzer());
 
-        // Assert - should report XPC2001
-        var errorDiagnostics = diagnostics
-            .Where(d => d.Id == "XPC2001")
-            .ToArray();
+		// Assert - should report XPC2001
+		var errorDiagnostics = diagnostics
+			.Where(d => d.Id == "XPC2001")
+			.ToArray();
 
-        errorDiagnostics.Should().NotBeEmpty("XPC2001 should be reported when plugin class has no parameterless constructor");
-        errorDiagnostics.Should().OnlyContain(d => d.Severity == DiagnosticSeverity.Warning);
-    }
+		errorDiagnostics.Should().NotBeEmpty("XPC2001 should be reported when plugin class has no parameterless constructor");
+		errorDiagnostics.Should().OnlyContain(d => d.Severity == DiagnosticSeverity.Warning);
+	}
 
-    [Fact]
-    public void Should_Handle_XPC5000_Generation_Error_Gracefully()
-    {
-        // This test verifies that the generator doesn't crash on unexpected errors
-        // We can't easily force an XPC5000 error, but we verify the compilation doesn't fail
+	[Fact]
+	public void Should_Handle_XPC5000_Generation_Error_Gracefully()
+	{
+		// This test verifies that the generator doesn't crash on unexpected errors
+		// We can't easily force an XPC5000 error, but we verify the compilation doesn't fail
 
-        // Arrange - complex but valid source
-        var source = TestFixtures.GetCompleteSource(
+		// Arrange - complex but valid source
+		var source = TestFixtures.GetCompleteSource(
 			TestFixtures.PluginWithBothImages);
 
-        // Act
-        var result = GeneratorTestHelper.RunGenerator(
-            CompilationHelper.CreateCompilation(source));
+		// Act
+		var result = GeneratorTestHelper.RunGenerator(
+			CompilationHelper.CreateCompilation(source));
 
-        // Assert - should not have critical errors
-        var criticalErrors = result.GeneratorDiagnostics
-            .Where(d => d.Severity == DiagnosticSeverity.Error)
-            .ToArray();
+		// Assert - should not have critical errors
+		var criticalErrors = result.GeneratorDiagnostics
+			.Where(d => d.Severity == DiagnosticSeverity.Error)
+			.ToArray();
 
-        criticalErrors.Should().BeEmpty("generator should not produce critical errors for valid source");
+		criticalErrors.Should().BeEmpty("generator should not produce critical errors for valid source");
 
-        // Verify generation succeeded
-        result.GeneratedTrees.Should().NotBeEmpty("code should be generated");
-    }
+		// Verify generation succeeded
+		result.GeneratedTrees.Should().NotBeEmpty("code should be generated");
+	}
 
-    [Fact]
-    public async Task Should_Report_XPC4001_When_Handler_Method_Not_Found()
-    {
+	[Fact]
+	public async Task Should_Report_XPC4001_When_Handler_Method_Not_Found()
+	{
 		// Arrange - method reference points to NonExistentMethod but service has Process
 		const string pluginSource = """
 
@@ -146,23 +146,23 @@ public class DiagnosticReportingTests
 			}
 			""";
 
-        var source = TestFixtures.GetCompleteSource(pluginSource);
+		var source = TestFixtures.GetCompleteSource(pluginSource);
 
-        // Act - Run analyzer instead of generator
-        var diagnostics = await GetAnalyzerDiagnosticsAsync(source, new HandlerMethodNotFoundAnalyzer());
+		// Act - Run analyzer instead of generator
+		var diagnostics = await GetAnalyzerDiagnosticsAsync(source, new HandlerMethodNotFoundAnalyzer());
 
-        // Assert
-        var errorDiagnostics = diagnostics
-            .Where(d => d.Id == "XPC4001")
-            .ToArray();
+		// Assert
+		var errorDiagnostics = diagnostics
+			.Where(d => d.Id == "XPC4001")
+			.ToArray();
 
-        errorDiagnostics.Should().NotBeEmpty("XPC4001 should be reported when handler method is not found");
-        errorDiagnostics.Should().OnlyContain(d => d.Severity == DiagnosticSeverity.Error);
-    }
+		errorDiagnostics.Should().NotBeEmpty("XPC4001 should be reported when handler method is not found");
+		errorDiagnostics.Should().OnlyContain(d => d.Severity == DiagnosticSeverity.Error);
+	}
 
-    [Fact]
-    public async Task Should_Report_XPC4002_When_Handler_Missing_PreImage_Parameter()
-    {
+	[Fact]
+	public async Task Should_Report_XPC4002_When_Handler_Missing_PreImage_Parameter()
+	{
 		// Arrange - WithPreImage is registered but handler takes no parameters
 		const string pluginSource = """
 
@@ -200,24 +200,24 @@ public class DiagnosticReportingTests
 			}
 			""";
 
-        var source = TestFixtures.GetCompleteSource(pluginSource);
+		var source = TestFixtures.GetCompleteSource(pluginSource);
 
-        // Act - Run analyzer instead of generator
-        var diagnostics = await GetAnalyzerDiagnosticsAsync(source, new HandlerSignatureMismatchAnalyzer());
+		// Act - Run analyzer instead of generator
+		var diagnostics = await GetAnalyzerDiagnosticsAsync(source, new HandlerSignatureMismatchAnalyzer());
 
-        // Assert
-        var errorDiagnostics = diagnostics
-            .Where(d => d.Id == "XPC4002")
-            .ToArray();
+		// Assert
+		var errorDiagnostics = diagnostics
+			.Where(d => d.Id == "XPC4002")
+			.ToArray();
 
-        errorDiagnostics.Should().NotBeEmpty("XPC4002 should be reported when handler is missing PreImage parameter");
-        // XPC4002 is Warning when generated types don't exist yet (allows initial build to succeed)
-        errorDiagnostics.Should().OnlyContain(d => d.Severity == DiagnosticSeverity.Warning);
-    }
+		errorDiagnostics.Should().NotBeEmpty("XPC4002 should be reported when handler is missing PreImage parameter");
+		// XPC4002 is Warning when generated types don't exist yet (allows initial build to succeed)
+		errorDiagnostics.Should().OnlyContain(d => d.Severity == DiagnosticSeverity.Warning);
+	}
 
-    [Fact]
-    public async Task Should_Report_XPC4002_When_Handler_Missing_PostImage_Parameter()
-    {
+	[Fact]
+	public async Task Should_Report_XPC4002_When_Handler_Missing_PostImage_Parameter()
+	{
 		// Arrange - WithPostImage is registered but handler takes no parameters
 		const string pluginSource = """
 
@@ -255,24 +255,24 @@ public class DiagnosticReportingTests
 			}
 			""";
 
-        var source = TestFixtures.GetCompleteSource(pluginSource);
+		var source = TestFixtures.GetCompleteSource(pluginSource);
 
-        // Act - Run analyzer instead of generator
-        var diagnostics = await GetAnalyzerDiagnosticsAsync(source, new HandlerSignatureMismatchAnalyzer());
+		// Act - Run analyzer instead of generator
+		var diagnostics = await GetAnalyzerDiagnosticsAsync(source, new HandlerSignatureMismatchAnalyzer());
 
-        // Assert
-        var errorDiagnostics = diagnostics
-            .Where(d => d.Id == "XPC4002")
-            .ToArray();
+		// Assert
+		var errorDiagnostics = diagnostics
+			.Where(d => d.Id == "XPC4002")
+			.ToArray();
 
-        errorDiagnostics.Should().NotBeEmpty("XPC4002 should be reported when handler is missing PostImage parameter");
-        // XPC4002 is Warning when generated types don't exist yet (allows initial build to succeed)
-        errorDiagnostics.Should().OnlyContain(d => d.Severity == DiagnosticSeverity.Warning);
-    }
+		errorDiagnostics.Should().NotBeEmpty("XPC4002 should be reported when handler is missing PostImage parameter");
+		// XPC4002 is Warning when generated types don't exist yet (allows initial build to succeed)
+		errorDiagnostics.Should().OnlyContain(d => d.Severity == DiagnosticSeverity.Warning);
+	}
 
-    [Fact]
-    public async Task Should_Report_XPC4002_When_Handler_Missing_Both_Image_Parameters()
-    {
+	[Fact]
+	public async Task Should_Report_XPC4002_When_Handler_Missing_Both_Image_Parameters()
+	{
 		// Arrange - Both WithPreImage and WithPostImage but handler takes no parameters
 		const string pluginSource = """
 
@@ -311,24 +311,24 @@ public class DiagnosticReportingTests
 			}
 			""";
 
-        var source = TestFixtures.GetCompleteSource(pluginSource);
+		var source = TestFixtures.GetCompleteSource(pluginSource);
 
-        // Act - Run analyzer instead of generator
-        var diagnostics = await GetAnalyzerDiagnosticsAsync(source, new HandlerSignatureMismatchAnalyzer());
+		// Act - Run analyzer instead of generator
+		var diagnostics = await GetAnalyzerDiagnosticsAsync(source, new HandlerSignatureMismatchAnalyzer());
 
-        // Assert
-        var errorDiagnostics = diagnostics
-            .Where(d => d.Id == "XPC4002")
-            .ToArray();
+		// Assert
+		var errorDiagnostics = diagnostics
+			.Where(d => d.Id == "XPC4002")
+			.ToArray();
 
-        errorDiagnostics.Should().NotBeEmpty("XPC4002 should be reported when handler is missing both image parameters");
-        // XPC4002 is Warning when generated types don't exist yet (allows initial build to succeed)
-        errorDiagnostics.Should().OnlyContain(d => d.Severity == DiagnosticSeverity.Warning);
-    }
+		errorDiagnostics.Should().NotBeEmpty("XPC4002 should be reported when handler is missing both image parameters");
+		// XPC4002 is Warning when generated types don't exist yet (allows initial build to succeed)
+		errorDiagnostics.Should().OnlyContain(d => d.Severity == DiagnosticSeverity.Warning);
+	}
 
-    [Fact]
-    public async Task Should_Report_XPC4002_When_Handler_Has_Wrong_Parameter_Order()
-    {
+	[Fact]
+	public async Task Should_Report_XPC4002_When_Handler_Has_Wrong_Parameter_Order()
+	{
 		// Arrange - WithPreImage and WithPostImage but handler has parameters in wrong order
 		const string pluginSource = """
 
@@ -368,24 +368,24 @@ public class DiagnosticReportingTests
 			}
 			""";
 
-        var source = TestFixtures.GetCompleteSource(pluginSource);
+		var source = TestFixtures.GetCompleteSource(pluginSource);
 
-        // Act - Run analyzer instead of generator
-        var diagnostics = await GetAnalyzerDiagnosticsAsync(source, new HandlerSignatureMismatchAnalyzer());
+		// Act - Run analyzer instead of generator
+		var diagnostics = await GetAnalyzerDiagnosticsAsync(source, new HandlerSignatureMismatchAnalyzer());
 
-        // Assert
-        var errorDiagnostics = diagnostics
-            .Where(d => d.Id == "XPC4002")
-            .ToArray();
+		// Assert
+		var errorDiagnostics = diagnostics
+			.Where(d => d.Id == "XPC4002")
+			.ToArray();
 
-        errorDiagnostics.Should().NotBeEmpty("XPC4002 should be reported when handler has wrong parameter order");
-        // XPC4002 is Warning when generated types don't exist yet (allows initial build to succeed)
-        errorDiagnostics.Should().OnlyContain(d => d.Severity == DiagnosticSeverity.Warning);
-    }
+		errorDiagnostics.Should().NotBeEmpty("XPC4002 should be reported when handler has wrong parameter order");
+		// XPC4002 is Warning when generated types don't exist yet (allows initial build to succeed)
+		errorDiagnostics.Should().OnlyContain(d => d.Severity == DiagnosticSeverity.Warning);
+	}
 
-    [Fact]
-    public async Task Should_Report_XPC3003_When_WithPreImage_Used_With_Invocation_Syntax()
-    {
+	[Fact]
+	public async Task Should_Report_XPC3003_When_WithPreImage_Used_With_Invocation_Syntax()
+	{
 		// Arrange - WithPreImage used with s => s.DoSomething() (invocation) instead of s => s.DoSomething (method reference)
 		const string pluginSource = """
 
@@ -423,23 +423,23 @@ public class DiagnosticReportingTests
 			}
 			""";
 
-        var source = TestFixtures.GetCompleteSource(pluginSource);
+		var source = TestFixtures.GetCompleteSource(pluginSource);
 
-        // Act - Run analyzer instead of generator
-        var diagnostics = await GetAnalyzerDiagnosticsAsync(source, new ImageWithoutMethodReferenceAnalyzer());
+		// Act - Run analyzer instead of generator
+		var diagnostics = await GetAnalyzerDiagnosticsAsync(source, new ImageWithoutMethodReferenceAnalyzer());
 
-        // Assert
-        var warningDiagnostics = diagnostics
-            .Where(d => d.Id == "XPC3003")
-            .ToArray();
+		// Assert
+		var warningDiagnostics = diagnostics
+			.Where(d => d.Id == "XPC3003")
+			.ToArray();
 
-        warningDiagnostics.Should().NotBeEmpty("XPC3003 should be reported when WithPreImage is used with invocation syntax");
-        warningDiagnostics.Should().OnlyContain(d => d.Severity == DiagnosticSeverity.Warning);
-    }
+		warningDiagnostics.Should().NotBeEmpty("XPC3003 should be reported when WithPreImage is used with invocation syntax");
+		warningDiagnostics.Should().OnlyContain(d => d.Severity == DiagnosticSeverity.Warning);
+	}
 
-    [Fact]
-    public async Task Should_Report_XPC3003_When_WithPostImage_Used_With_Invocation_Syntax()
-    {
+	[Fact]
+	public async Task Should_Report_XPC3003_When_WithPostImage_Used_With_Invocation_Syntax()
+	{
 		// Arrange - WithPostImage used with s => s.DoSomething() (invocation) instead of s => s.DoSomething (method reference)
 		const string pluginSource = """
 
@@ -477,23 +477,23 @@ public class DiagnosticReportingTests
 			}
 			""";
 
-        var source = TestFixtures.GetCompleteSource(pluginSource);
+		var source = TestFixtures.GetCompleteSource(pluginSource);
 
-        // Act - Run analyzer instead of generator
-        var diagnostics = await GetAnalyzerDiagnosticsAsync(source, new ImageWithoutMethodReferenceAnalyzer());
+		// Act - Run analyzer instead of generator
+		var diagnostics = await GetAnalyzerDiagnosticsAsync(source, new ImageWithoutMethodReferenceAnalyzer());
 
-        // Assert
-        var warningDiagnostics = diagnostics
-            .Where(d => d.Id == "XPC3003")
-            .ToArray();
+		// Assert
+		var warningDiagnostics = diagnostics
+			.Where(d => d.Id == "XPC3003")
+			.ToArray();
 
-        warningDiagnostics.Should().NotBeEmpty("XPC3003 should be reported when WithPostImage is used with invocation syntax");
-        warningDiagnostics.Should().OnlyContain(d => d.Severity == DiagnosticSeverity.Warning);
-    }
+		warningDiagnostics.Should().NotBeEmpty("XPC3003 should be reported when WithPostImage is used with invocation syntax");
+		warningDiagnostics.Should().OnlyContain(d => d.Severity == DiagnosticSeverity.Warning);
+	}
 
-    [Fact]
-    public async Task Should_Not_Report_XPC3003_When_Using_Method_Reference_Syntax()
-    {
+	[Fact]
+	public async Task Should_Not_Report_XPC3003_When_Using_Method_Reference_Syntax()
+	{
 		// Arrange - Method reference syntax (correct usage)
 		const string pluginSource = """
 
@@ -532,22 +532,22 @@ public class DiagnosticReportingTests
 			}
 			""";
 
-        var source = TestFixtures.GetCompleteSource(pluginSource);
+		var source = TestFixtures.GetCompleteSource(pluginSource);
 
-        // Act - Run analyzer instead of generator
-        var diagnostics = await GetAnalyzerDiagnosticsAsync(source, new ImageWithoutMethodReferenceAnalyzer());
+		// Act - Run analyzer instead of generator
+		var diagnostics = await GetAnalyzerDiagnosticsAsync(source, new ImageWithoutMethodReferenceAnalyzer());
 
-        // Assert
-        var warningDiagnostics = diagnostics
-            .Where(d => d.Id == "XPC3003")
-            .ToArray();
+		// Assert
+		var warningDiagnostics = diagnostics
+			.Where(d => d.Id == "XPC3003")
+			.ToArray();
 
-        warningDiagnostics.Should().BeEmpty("XPC3003 should NOT be reported when using method reference syntax");
-    }
+		warningDiagnostics.Should().BeEmpty("XPC3003 should NOT be reported when using method reference syntax");
+	}
 
-    [Fact]
-    public async Task Should_Not_Report_XPC3003_When_Old_Api_Used_Without_Images()
-    {
+	[Fact]
+	public async Task Should_Not_Report_XPC3003_When_Old_Api_Used_Without_Images()
+	{
 		// Arrange - Invocation syntax but without WithPreImage/WithPostImage (no images registered)
 		const string pluginSource = """
 
@@ -585,22 +585,22 @@ public class DiagnosticReportingTests
 			}
 			""";
 
-        var source = TestFixtures.GetCompleteSource(pluginSource);
+		var source = TestFixtures.GetCompleteSource(pluginSource);
 
-        // Act - Run analyzer instead of generator
-        var diagnostics = await GetAnalyzerDiagnosticsAsync(source, new ImageWithoutMethodReferenceAnalyzer());
+		// Act - Run analyzer instead of generator
+		var diagnostics = await GetAnalyzerDiagnosticsAsync(source, new ImageWithoutMethodReferenceAnalyzer());
 
-        // Assert
-        var warningDiagnostics = diagnostics
-            .Where(d => d.Id == "XPC3003")
-            .ToArray();
+		// Assert
+		var warningDiagnostics = diagnostics
+			.Where(d => d.Id == "XPC3003")
+			.ToArray();
 
-        warningDiagnostics.Should().BeEmpty("XPC3003 should NOT be reported when old API is used without images");
-    }
+		warningDiagnostics.Should().BeEmpty("XPC3003 should NOT be reported when old API is used without images");
+	}
 
-    [Fact]
-    public async Task Should_Report_XPC3002_When_AddImage_Used_With_Invocation_Syntax()
-    {
+	[Fact]
+	public async Task Should_Report_XPC3002_When_AddImage_Used_With_Invocation_Syntax()
+	{
 		// Arrange - AddImage (legacy API) used with s => s.DoSomething() (invocation)
 		const string pluginSource = """
 
@@ -638,28 +638,28 @@ public class DiagnosticReportingTests
 			}
 			""";
 
-        var source = TestFixtures.GetCompleteSource(pluginSource);
+		var source = TestFixtures.GetCompleteSource(pluginSource);
 
-        // Act - Run analyzer instead of generator
-        var diagnostics = await GetAnalyzerDiagnosticsAsync(source, new ImageWithoutMethodReferenceAnalyzer());
+		// Act - Run analyzer instead of generator
+		var diagnostics = await GetAnalyzerDiagnosticsAsync(source, new ImageWithoutMethodReferenceAnalyzer());
 
-        // Assert - Should report XPC3002 (Info) NOT XPC3003 (Warning)
-        var xpc3002Diagnostics = diagnostics
-            .Where(d => d.Id == "XPC3002")
-            .ToArray();
+		// Assert - Should report XPC3002 (Info) NOT XPC3003 (Warning)
+		var xpc3002Diagnostics = diagnostics
+			.Where(d => d.Id == "XPC3002")
+			.ToArray();
 
-        var xpc3003Diagnostics = diagnostics
-            .Where(d => d.Id == "XPC3003")
-            .ToArray();
+		var xpc3003Diagnostics = diagnostics
+			.Where(d => d.Id == "XPC3003")
+			.ToArray();
 
-        xpc3002Diagnostics.Should().NotBeEmpty("XPC3002 should be reported when AddImage is used with invocation syntax");
-        xpc3002Diagnostics.Should().OnlyContain(d => d.Severity == DiagnosticSeverity.Info);
-        xpc3003Diagnostics.Should().BeEmpty("XPC3003 should NOT be reported for legacy AddImage API");
-    }
+		xpc3002Diagnostics.Should().NotBeEmpty("XPC3002 should be reported when AddImage is used with invocation syntax");
+		xpc3002Diagnostics.Should().OnlyContain(d => d.Severity == DiagnosticSeverity.Info);
+		xpc3003Diagnostics.Should().BeEmpty("XPC3003 should NOT be reported for legacy AddImage API");
+	}
 
-    [Fact]
-    public async Task Should_Report_XPC3003_Not_XPC3002_When_WithPreImage_Used_Even_With_AddImage()
-    {
+	[Fact]
+	public async Task Should_Report_XPC3003_Not_XPC3002_When_WithPreImage_Used_Even_With_AddImage()
+	{
 		// Arrange - Both WithPreImage (modern) and AddImage (legacy) used - should report XPC3003 since modern takes precedence
 		const string pluginSource = """
 
@@ -698,31 +698,31 @@ public class DiagnosticReportingTests
 			}
 			""";
 
-        var source = TestFixtures.GetCompleteSource(pluginSource);
+		var source = TestFixtures.GetCompleteSource(pluginSource);
 
-        // Act - Run analyzer instead of generator
-        var diagnostics = await GetAnalyzerDiagnosticsAsync(source, new ImageWithoutMethodReferenceAnalyzer());
+		// Act - Run analyzer instead of generator
+		var diagnostics = await GetAnalyzerDiagnosticsAsync(source, new ImageWithoutMethodReferenceAnalyzer());
 
-        // Assert - Should report XPC3003 (modern API takes precedence)
-        var xpc3003Diagnostics = diagnostics
-            .Where(d => d.Id == "XPC3003")
-            .ToArray();
+		// Assert - Should report XPC3003 (modern API takes precedence)
+		var xpc3003Diagnostics = diagnostics
+			.Where(d => d.Id == "XPC3003")
+			.ToArray();
 
-        var xpc3002Diagnostics = diagnostics
-            .Where(d => d.Id == "XPC3002")
-            .ToArray();
+		var xpc3002Diagnostics = diagnostics
+			.Where(d => d.Id == "XPC3002")
+			.ToArray();
 
-        xpc3003Diagnostics.Should().NotBeEmpty("XPC3003 should be reported when modern API (WithPreImage) is used");
-        xpc3002Diagnostics.Should().BeEmpty("XPC3002 should NOT be reported when modern API is also present");
-    }
+		xpc3003Diagnostics.Should().NotBeEmpty("XPC3003 should be reported when modern API (WithPreImage) is used");
+		xpc3002Diagnostics.Should().BeEmpty("XPC3002 should NOT be reported when modern API is also present");
+	}
 
-    private static async Task<ImmutableArray<Diagnostic>> GetAnalyzerDiagnosticsAsync(string source, DiagnosticAnalyzer analyzer)
-    {
-        var compilation = CompilationHelper.CreateCompilation(source);
+	private static async Task<ImmutableArray<Diagnostic>> GetAnalyzerDiagnosticsAsync(string source, DiagnosticAnalyzer analyzer)
+	{
+		var compilation = CompilationHelper.CreateCompilation(source);
 
-        var compilationWithAnalyzers = compilation.WithAnalyzers(
+		var compilationWithAnalyzers = compilation.WithAnalyzers(
 			[analyzer]);
 
-        return await compilationWithAnalyzers.GetAnalyzerDiagnosticsAsync();
-    }
+		return await compilationWithAnalyzers.GetAnalyzerDiagnosticsAsync();
+	}
 }
