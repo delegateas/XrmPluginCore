@@ -10,6 +10,7 @@
     <PackageTags>xrm,crm,dataverse,daxif,delegate,context&amp;,contextand,xrmmockup,xrmsync</PackageTags>
     <IncludeSymbols>True</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+		<TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
   <ItemGroup>
     <None Include="..\LICENSE">
