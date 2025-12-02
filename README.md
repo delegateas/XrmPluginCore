@@ -165,6 +165,31 @@ Example: `MyPlugin.PluginRegistrations.AccountUpdatePlugin.AccountUpdatePostOper
 
 Inside this namespace you'll find simple class names: `PreImage`, `PostImage`, and `ActionWrapper`
 
+#### XML Documentation (Optional)
+
+The source generator can include XML documentation from your entity properties in the generated wrapper classes, providing IntelliSense tooltips for image attributes.
+
+To enable this feature, add `GenerateDocumentationFile` to your entity project's `.csproj`:
+
+```xml
+<PropertyGroup>
+  <GenerateDocumentationFile>true</GenerateDocumentationFile>
+  <NoWarn>$(NoWarn);CS1591</NoWarn> <!-- Suppress missing XML doc warnings -->
+</PropertyGroup>
+```
+
+When enabled, generated properties will include the original XML documentation:
+
+```csharp
+/// <summary>
+/// <para>Type an ID number or code for the account...</para>
+/// <para>Display Name: Account Number</para>
+/// </summary>
+public string AccountNumber => Entity.AccountNumber;
+```
+
+**Note:** This is optional. Without it, wrapper properties work normally but won't have XML documentation tooltips.
+
 ### Using the LocalPluginContext wrapper (Legacy)
 
 **NOTE**: This is only supported for legacy DAXIF/XrmFramework style plugins. It is recommended to use dependency injection based plugins instead.

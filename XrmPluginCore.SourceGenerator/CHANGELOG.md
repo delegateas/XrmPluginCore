@@ -1,3 +1,6 @@
+### v1.2.4 - 2 December 2025
+* Fix: Image wrappers now forward to the underlying strongly-typed entity type instead of the base Entity type
+ 
 ### v1.2.3 - 28 November 2025
 * Fix: Generate PreImage/PostImage types even when handler signature doesn't match (fixes chicken-and-egg problem where types couldn't be used until they existed)
 * Breaking: Reorganized diagnostic IDs by category (XPC1xxx=Info, XPC2xxx=Plugin structure, XPC3xxx=Style, XPC4xxx=Handler methods, XPC5xxx=Internal errors)
