@@ -264,12 +264,53 @@ internal static class RegistrationParser
 		// Get the logical name from AttributeLogicalName attribute if present
 		var logicalName = GetLogicalNameFromAttribute(property) ?? propertyName.ToLowerInvariant();
 
+		// Get XML documentation from the property
+		var xmlDoc = GetFormattedXmlDocumentation(property);
+
 		return new AttributeMetadata
 		{
 			PropertyName = propertyName,
 			LogicalName = logicalName,
-			TypeName = property.Type.ToDisplayString()
+			TypeName = property.Type.ToDisplayString(),
+			XmlDocumentation = xmlDoc
 		};
+	}
+
+	/// <summary>
+	/// Extracts and formats XML documentation from a property symbol into /// comment format.
+	/// </summary>
+	private static string GetFormattedXmlDocumentation(IPropertySymbol property)
+	{
+		var xmlComment = property.GetDocumentationCommentXml();
+		if (string.IsNullOrWhiteSpace(xmlComment))
+			return null;
+
+		try
+		{
+			var doc = System.Xml.Linq.XDocument.Parse(xmlComment);
+			var member = doc.Root; // <member> element
+			if (member == null)
+				return null;
+
+			// Get inner XML (summary, remarks, etc.) and format as /// comments
+			var innerXml = string.Concat(member.Nodes());
+			if (string.IsNullOrWhiteSpace(innerXml))
+				return null;
+
+			// Split into lines, trim, and add /// prefix with indentation (8 spaces for class member)
+			var lines = innerXml
+				.Split(['\r', '\n'], System.StringSplitOptions.RemoveEmptyEntries)
+				.Select(line => line.Trim())
+				.Where(line => !string.IsNullOrEmpty(line))
+				.Select(line => $"        /// {line}");
+
+			var result = string.Join("\n", lines);
+			return string.IsNullOrWhiteSpace(result) ? null : result;
+		}
+		catch
+		{
+			return null;
+		}
 	}
 
 	/// <summary>

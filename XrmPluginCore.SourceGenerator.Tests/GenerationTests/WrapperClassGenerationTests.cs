@@ -63,7 +63,7 @@ public partial class WrapperClassGenerationTests
         // Verify properties forward to Entity
         generatedSource.Should().Contain("public string Name => Entity.Name;");
 
-		HasAccountNumberSummary().Matches(generatedSource).Count.Should().Be(1, "AccountNumber property should have correct XML summary");
+		HasAccountNumberSummary().Matches(generatedSource).Count.Should().Be(1, $"AccountNumber property should have correct XML summary. Generated source:\n{generatedSource}");
 
 		// Verify NO PreImage class is generated
 		generatedSource.Should().NotContain("public sealed class PreImage");
@@ -316,18 +316,18 @@ public partial class WrapperClassGenerationTests
 	public void Should_Parse_Parameterless_Method_Reference()
 	{
 		var source = TestFixtures.GetCompleteSource(
-			TestFixtures.GetPluginWithoutImages("service => service.OnAccountUpdate"));
+			TestFixtures.GetPluginWithoutImages("service => service.HandleUpdate"));
 
 		// Act
 		var result = GeneratorTestHelper.RunGenerator(
 			CompilationHelper.CreateCompilation(source));
 
-		// Assert - should generate ActionWrapper that calls OnAccountDeleting
+		// Assert - should generate ActionWrapper that calls HandleUpdate
 		result.GeneratedTrees.Should().NotBeEmpty();
 		var generatedSource = result.GeneratedTrees[0].GetText().ToString();
 
 		// Verify the custom method name was extracted correctly
-		generatedSource.Should().Contain("service.OnAccountUpdate()");
+		generatedSource.Should().Contain("service.HandleUpdate()");
 	}
 
 	[System.Text.RegularExpressions.GeneratedRegex(@"namespace\s+TestNamespace\.PluginRegistrations\.TestPlugin\.AccountUpdatePostOperation")]

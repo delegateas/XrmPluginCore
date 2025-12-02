@@ -112,13 +112,19 @@ internal sealed class AttributeMetadata
 	public string LogicalName { get; set; }
 	public string TypeName { get; set; }
 
+	/// <summary>
+	/// Gets or sets the XML documentation from the underlying entity property.
+	/// </summary>
+	public string XmlDocumentation { get; set; }
+
 	public override bool Equals(object obj)
 	{
 		if (obj is AttributeMetadata other)
 		{
 			return PropertyName == other.PropertyName
 				&& LogicalName == other.LogicalName
-				&& TypeName == other.TypeName;
+				&& TypeName == other.TypeName
+				&& XmlDocumentation == other.XmlDocumentation;
 		}
 		return false;
 	}
@@ -131,6 +137,7 @@ internal sealed class AttributeMetadata
 			hash = (hash * 31) + (PropertyName?.GetHashCode() ?? 0);
 			hash = (hash * 31) + (LogicalName?.GetHashCode() ?? 0);
 			hash = (hash * 31) + (TypeName?.GetHashCode() ?? 0);
+			hash = (hash * 31) + (XmlDocumentation?.GetHashCode() ?? 0);
 			return hash;
 		}
 	}

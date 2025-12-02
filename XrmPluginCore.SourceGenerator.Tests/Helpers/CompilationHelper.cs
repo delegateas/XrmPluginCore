@@ -2,6 +2,7 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using System.Reflection;
 using XrmPluginCore.Enums;
+using System.IO;
 
 namespace XrmPluginCore.SourceGenerator.Tests.Helpers;
 
@@ -60,6 +61,12 @@ public static class CompilationHelper
         yield return MetadataReference.CreateFromFile(typeof(Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions).Assembly.Location);
 
         // XrmPluginCore.Tests.Context (for realistic entity definitions)
-        yield return MetadataReference.CreateFromFile(typeof(XrmPluginCore.Tests.Context.BusinessDomain.Account).Assembly.Location);
+        // Include XML documentation file for XML doc extraction
+        var contextAssembly = typeof(XrmPluginCore.Tests.Context.BusinessDomain.Account).Assembly;
+        var contextXmlPath = Path.ChangeExtension(contextAssembly.Location, ".xml");
+        var contextDocProvider = File.Exists(contextXmlPath)
+            ? XmlDocumentationProvider.CreateFromFile(contextXmlPath)
+            : null;
+        yield return MetadataReference.CreateFromFile(contextAssembly.Location, documentation: contextDocProvider);
     }
 }

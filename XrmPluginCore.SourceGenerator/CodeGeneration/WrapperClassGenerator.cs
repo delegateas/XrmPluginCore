@@ -64,7 +64,7 @@ internal static class WrapperClassGenerator
 		// Generate properties for each image attribute
 		foreach (var attr in image.Attributes)
 		{
-			sb.Append(GetPropertyTemplate(attr.TypeName, attr.PropertyName));
+			sb.Append(GetPropertyTemplate(attr.TypeName, attr.PropertyName, attr.XmlDocumentation));
 		}
 
 		// Close class
@@ -209,11 +209,22 @@ $$"""
 
 """;
 
-	private static string GetPropertyTemplate(string propertyType, string propertyName) =>
-$$"""
+	private static string GetPropertyTemplate(string propertyType, string propertyName, string xmlDoc)
+	{
+		if (string.IsNullOrWhiteSpace(xmlDoc))
+		{
+			return $$"""
         public {{propertyType}} {{propertyName}} => Entity.{{propertyName}};
 
 """;
+		}
+
+		return $$"""
+{{xmlDoc}}
+        public {{propertyType}} {{propertyName}} => Entity.{{propertyName}};
+
+""";
+	}
 
 	private static string GetActionWrapperHeader(string serviceTypeName, string methodName, string serviceFullName) =>
 $$"""
