@@ -10,6 +10,7 @@
     <IncludeSymbols>True</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
     <RootNamespace>XrmPluginCore</RootNamespace>
+		<IsPackable>true</IsPackable>
   </PropertyGroup>
   <ItemGroup>
     <None Include="..\LICENSE">
