@@ -1,4 +1,3 @@
-using System.Text;
 using XrmPluginCore.Tests.Context.BusinessDomain;
 
 namespace XrmPluginCore.SourceGenerator.Tests.Helpers;
@@ -161,7 +160,8 @@ namespace TestNamespace
     /// Plugin with handler method reference but without any images.
     /// Tests that ActionWrapper is generated even when no images are registered.
     /// </summary>
-    public static string GetPluginWithoutImages(string action = "nameof(ITestService.HandleUpdate)") => $$"""
+    public static string GetPluginWithoutImages(string action = "nameof(ITestService.HandleUpdate)") =>
+		$$"""
 				using XrmPluginCore;
 				using XrmPluginCore.Abstractions;
 				using XrmPluginCore.Enums;
@@ -201,8 +201,8 @@ namespace TestNamespace
     /// <summary>
     /// Plugin using old AddImage API for backward compatibility testing.
     /// </summary>
-    public const string PluginWithLegacyAddImage = """
-
+    public const string PluginWithLegacyAddImage =
+		"""
 		using XrmPluginCore;
 		using XrmPluginCore.Abstractions;
 		using Microsoft.Extensions.DependencyInjection;

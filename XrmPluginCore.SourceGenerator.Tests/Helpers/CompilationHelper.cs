@@ -2,7 +2,6 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using System.Reflection;
 using XrmPluginCore.Enums;
-using System.IO;
 
 namespace XrmPluginCore.SourceGenerator.Tests.Helpers;
 
@@ -41,9 +40,9 @@ public static class CompilationHelper
         yield return MetadataReference.CreateFromFile(typeof(object).Assembly.Location);
         yield return MetadataReference.CreateFromFile(typeof(Enumerable).Assembly.Location);
         yield return MetadataReference.CreateFromFile(typeof(Console).Assembly.Location);
-        yield return MetadataReference.CreateFromFile(typeof(System.Linq.Expressions.Expression).Assembly.Location); // System.Linq.Expressions
-        yield return MetadataReference.CreateFromFile(typeof(System.ComponentModel.DescriptionAttribute).Assembly.Location); // System.ComponentModel
-        yield return MetadataReference.CreateFromFile(typeof(IServiceProvider).Assembly.Location); // IServiceProvider
+        yield return MetadataReference.CreateFromFile(typeof(System.Linq.Expressions.Expression).Assembly.Location);
+        yield return MetadataReference.CreateFromFile(typeof(System.ComponentModel.DescriptionAttribute).Assembly.Location);
+        yield return MetadataReference.CreateFromFile(typeof(IServiceProvider).Assembly.Location);
         yield return MetadataReference.CreateFromFile(Assembly.Load("System.Runtime").Location);
         yield return MetadataReference.CreateFromFile(Assembly.Load("System.Collections").Location);
         yield return MetadataReference.CreateFromFile(Assembly.Load("netstandard").Location);
@@ -60,7 +59,7 @@ public static class CompilationHelper
         yield return MetadataReference.CreateFromFile(typeof(Microsoft.Extensions.DependencyInjection.IServiceCollection).Assembly.Location);
         yield return MetadataReference.CreateFromFile(typeof(Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions).Assembly.Location);
 
-        // XrmPluginCore.Tests.Context (for realistic entity definitions)
+        // XrmPluginCore.Tests.Context
         // Include XML documentation file for XML doc extraction
         var contextAssembly = typeof(XrmPluginCore.Tests.Context.BusinessDomain.Account).Assembly;
         var contextXmlPath = Path.ChangeExtension(contextAssembly.Location, ".xml");

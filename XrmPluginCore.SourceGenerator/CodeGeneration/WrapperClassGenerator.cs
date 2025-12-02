@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using XrmPluginCore.SourceGenerator.Models;
+using static XrmPluginCore.SourceGenerator.CodeGeneration.Indent;
 
 namespace XrmPluginCore.SourceGenerator.CodeGeneration;
 
@@ -68,7 +69,7 @@ internal static class WrapperClassGenerator
 		}
 
 		// Close class
-		sb.Append("    }");
+		sb.Append(L1).Append("}");
 	}
 
 	/// <summary>
@@ -90,7 +91,7 @@ internal static class WrapperClassGenerator
 		if (hasPreImage || hasPostImage)
 		{
 			sb.AppendLine();
-			sb.AppendLine("                var context = serviceProvider.GetRequiredService<IPluginExecutionContext>();");
+			sb.AppendLine($"{L4}var context = serviceProvider.GetRequiredService<IPluginExecutionContext>();");
 		}
 
 		var args = new List<string>();
@@ -123,54 +124,6 @@ internal static class WrapperClassGenerator
 		return $"{metadata.UniqueId}.g.cs";
 	}
 
-	/// <summary>
-	/// Merges multiple metadata instances that represent the same registration but with different attributes
-	/// This handles the edge case where the same entity/operation/stage is registered multiple times
-	/// </summary>
-	public static PluginStepMetadata MergeMetadata(IEnumerable<PluginStepMetadata> metadataList)
-	{
-		var list = metadataList.ToList();
-		if (!list.Any())
-			return null;
-		if (list.Count == 1)
-			return list[0];
-
-		var merged = new PluginStepMetadata
-		{
-			EntityTypeName = list[0].EntityTypeName,
-			EntityTypeFullName = list[0].EntityTypeFullName,
-			EventOperation = list[0].EventOperation,
-			ExecutionStage = list[0].ExecutionStage,
-			Namespace = list[0].Namespace,
-			PluginClassName = list[0].PluginClassName,
-			ServiceTypeName = list[0].ServiceTypeName,
-			ServiceTypeFullName = list[0].ServiceTypeFullName,
-			HandlerMethodName = list[0].HandlerMethodName,
-			Images = []
-		};
-
-		// Merge all images (remove duplicates)
-		var allImages = list.SelectMany(m => m.Images)
-			.GroupBy(i => new { i.ImageType, i.ImageName })
-			.Select(g =>
-			{
-				var first = g.First();
-				return new ImageMetadata
-				{
-					ImageType = first.ImageType,
-					ImageName = first.ImageName,
-					Attributes = [.. g.SelectMany(i => i.Attributes)
-							.GroupBy(a => a.LogicalName)
-							.Select(ag => ag.First())]
-				};
-			})
-			.ToList();
-
-		merged.Images.AddRange(allImages);
-
-		return merged;
-	}
-
 	#region Template Methods
 
 	private static string GetFileHeader() =>
@@ -193,77 +146,57 @@ using XrmPluginCore;
 		string eventOperation,
 		string executionStage,
 		string imageType) =>
-$$"""
-    /// <summary>
-    /// Type-safe wrapper for {{entityTypeName}} {{eventOperation}} {{executionStage}} {{imageType}}
-    /// </summary>
-    [CompilerGenerated]
-    public sealed class {{className}} : IEntityImageWrapper<{{entityTypeFullName}}>
-    {
-        public {{className}}(Entity entity)
-        {
-            Entity = entity.ToEntity<{{entityTypeFullName}}>();
-        }
-
-        public {{entityTypeFullName}} Entity { get; }
-
-""";
+		$"{L1}/// <summary>\n" +
+		$"{L1}/// Type-safe wrapper for {entityTypeName} {eventOperation} {executionStage} {imageType}\n" +
+		$"{L1}/// </summary>\n" +
+		$"{L1}[CompilerGenerated]\n" +
+		$"{L1}public sealed class {className} : IEntityImageWrapper<{entityTypeFullName}>\n" +
+		$"{L1}{{\n" +
+		$"{L2}public {className}(Entity entity)\n" +
+		$"{L2}{{\n" +
+		$"{L3}Entity = entity.ToEntity<{entityTypeFullName}>();\n" +
+		$"{L2}}}\n\n" +
+		$"{L2}public {entityTypeFullName} Entity {{ get; }}\n\n";
 
 	private static string GetPropertyTemplate(string propertyType, string propertyName, string xmlDoc)
 	{
 		if (string.IsNullOrWhiteSpace(xmlDoc))
 		{
-			return $$"""
-        public {{propertyType}} {{propertyName}} => Entity.{{propertyName}};
-
-""";
+			return $"{L2}public {propertyType} {propertyName} => Entity.{propertyName};\n\n";
 		}
 
-		return $$"""
-{{xmlDoc}}
-        public {{propertyType}} {{propertyName}} => Entity.{{propertyName}};
-
-""";
+		return $"{xmlDoc}\n{L2}public {propertyType} {propertyName} => Entity.{propertyName};\n\n";
 	}
 
 	private static string GetActionWrapperHeader(string serviceTypeName, string methodName, string serviceFullName) =>
-$$"""
-    /// <summary>
-    /// Generated action wrapper for {{serviceTypeName}}.{{methodName}}
-    /// </summary>
-    [CompilerGenerated]
-    internal sealed class ActionWrapper : IActionWrapper
-    {
-        /// <summary>
-        /// Creates the action delegate that invokes the service method with appropriate images.
-        /// </summary>
-        public Action<IExtendedServiceProvider> CreateAction()
-        {
-            return serviceProvider =>
-            {
-                var service = serviceProvider.GetRequiredService<{{serviceFullName}}>();
-""";
+		$"{L1}/// <summary>\n" +
+		$"{L1}/// Generated action wrapper for {serviceTypeName}.{methodName}\n" +
+		$"{L1}/// </summary>\n" +
+		$"{L1}[CompilerGenerated]\n" +
+		$"{L1}internal sealed class ActionWrapper : IActionWrapper\n" +
+		$"{L1}{{\n" +
+		$"{L2}/// <summary>\n" +
+		$"{L2}/// Creates the action delegate that invokes the service method with appropriate images.\n" +
+		$"{L2}/// </summary>\n" +
+		$"{L2}public Action<IExtendedServiceProvider> CreateAction()\n" +
+		$"{L2}{{\n" +
+		$"{L3}return serviceProvider =>\n" +
+		$"{L3}{{\n" +
+		$"{L4}var service = serviceProvider.GetRequiredService<{serviceFullName}>();";
 
 	private static string GetPreImageRetrieval() =>
-"""
-                var preImageEntity = context?.PreEntityImages?.Values?.FirstOrDefault();
-                var preImage = preImageEntity != null ? new PreImage(preImageEntity) : null;
-""";
+		$"{L4}var preImageEntity = context?.PreEntityImages?.Values?.FirstOrDefault();\n" +
+		$"{L4}var preImage = preImageEntity != null ? new PreImage(preImageEntity) : null;";
 
 	private static string GetPostImageRetrieval() =>
-"""
-                var postImageEntity = context?.PostEntityImages?.Values?.FirstOrDefault();
-                var postImage = postImageEntity != null ? new PostImage(postImageEntity) : null;
-""";
+		$"{L4}var postImageEntity = context?.PostEntityImages?.Values?.FirstOrDefault();\n" +
+		$"{L4}var postImage = postImageEntity != null ? new PostImage(postImageEntity) : null;";
 
 	private static string GetActionWrapperFooter(string methodName, string argsString) =>
-$$"""
-                service.{{methodName}}({{argsString}});
-            };
-        }
-    }
-
-""";
+		$"{L4}service.{methodName}({argsString});\n" +
+		$"{L3}}};\n" +
+		$"{L2}}}\n" +
+		$"{L1}}}\n\n";
 
 	#endregion
 }

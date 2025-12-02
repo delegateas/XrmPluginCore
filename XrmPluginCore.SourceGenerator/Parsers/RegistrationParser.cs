@@ -2,6 +2,7 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using System.Collections.Generic;
 using System.Linq;
+using XrmPluginCore.SourceGenerator.CodeGeneration;
 using XrmPluginCore.SourceGenerator.Helpers;
 using XrmPluginCore.SourceGenerator.Models;
 
@@ -297,12 +298,12 @@ internal static class RegistrationParser
 			if (string.IsNullOrWhiteSpace(innerXml))
 				return null;
 
-			// Split into lines, trim, and add /// prefix with indentation (8 spaces for class member)
+			// Split into lines, trim, and add /// prefix with member-level indentation
 			var lines = innerXml
 				.Split(['\r', '\n'], System.StringSplitOptions.RemoveEmptyEntries)
 				.Select(line => line.Trim())
 				.Where(line => !string.IsNullOrEmpty(line))
-				.Select(line => $"        /// {line}");
+				.Select(line => $"{Indent.L2}/// {line}");
 
 			var result = string.Join("\n", lines);
 			return string.IsNullOrWhiteSpace(result) ? null : result;

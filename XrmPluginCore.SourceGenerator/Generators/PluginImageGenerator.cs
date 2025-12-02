@@ -89,7 +89,7 @@ public class PluginImageGenerator : IIncrementalGenerator
 				return null;
 
 			// Merge multiple registrations for the same entity/operation/stage
-			var mergedMetadata = WrapperClassGenerator.MergeMetadata(group);
+			var mergedMetadata = MergeMetadata(group);
 
 			if (mergedMetadata is null)
 				continue;
@@ -112,6 +112,54 @@ public class PluginImageGenerator : IIncrementalGenerator
 		}
 
 		return results;
+	}
+
+	/// <summary>
+	/// Merges multiple metadata instances that represent the same registration but with different attributes
+	/// This handles the edge case where the same entity/operation/stage is registered multiple times
+	/// </summary>
+	private static PluginStepMetadata MergeMetadata(IEnumerable<PluginStepMetadata> metadataList)
+	{
+		var list = metadataList.ToList();
+		if (!list.Any())
+			return null;
+		if (list.Count == 1)
+			return list[0];
+
+		var merged = new PluginStepMetadata
+		{
+			EntityTypeName = list[0].EntityTypeName,
+			EntityTypeFullName = list[0].EntityTypeFullName,
+			EventOperation = list[0].EventOperation,
+			ExecutionStage = list[0].ExecutionStage,
+			Namespace = list[0].Namespace,
+			PluginClassName = list[0].PluginClassName,
+			ServiceTypeName = list[0].ServiceTypeName,
+			ServiceTypeFullName = list[0].ServiceTypeFullName,
+			HandlerMethodName = list[0].HandlerMethodName,
+			Images = []
+		};
+
+		// Merge all images (remove duplicates)
+		var allImages = list.SelectMany(m => m.Images)
+			.GroupBy(i => new { i.ImageType, i.ImageName })
+			.Select(g =>
+			{
+				var first = g.First();
+				return new ImageMetadata
+				{
+					ImageType = first.ImageType,
+					ImageName = first.ImageName,
+					Attributes = [.. g.SelectMany(i => i.Attributes)
+							.GroupBy(a => a.LogicalName)
+							.Select(ag => ag.First())]
+				};
+			})
+			.ToList();
+
+		merged.Images.AddRange(allImages);
+
+		return merged;
 	}
 
 	/// <summary>
