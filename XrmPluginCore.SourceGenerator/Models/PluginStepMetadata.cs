@@ -10,6 +10,12 @@ namespace XrmPluginCore.SourceGenerator.Models;
 internal sealed class PluginStepMetadata
 {
 	public string EntityTypeName { get; set; }
+
+	/// <summary>
+	/// Gets or sets the fully qualified entity type name for typed entity wrapper generation.
+	/// </summary>
+	public string EntityTypeFullName { get; set; }
+
 	public string EventOperation { get; set; }
 	public string ExecutionStage { get; set; }
 	public List<ImageMetadata> Images { get; set; } = [];
@@ -62,6 +68,7 @@ internal sealed class PluginStepMetadata
 		{
 			return PluginClassName == other.PluginClassName
 				&& EntityTypeName == other.EntityTypeName
+				&& EntityTypeFullName == other.EntityTypeFullName
 				&& EventOperation == other.EventOperation
 				&& ExecutionStage == other.ExecutionStage
 				&& Images.SequenceEqual(other.Images)
@@ -80,6 +87,7 @@ internal sealed class PluginStepMetadata
 			var hash = 17;
 			hash = (hash * 31) + (PluginClassName?.GetHashCode() ?? 0);
 			hash = (hash * 31) + (EntityTypeName?.GetHashCode() ?? 0);
+			hash = (hash * 31) + (EntityTypeFullName?.GetHashCode() ?? 0);
 			hash = (hash * 31) + (EventOperation?.GetHashCode() ?? 0);
 			hash = (hash * 31) + (ExecutionStage?.GetHashCode() ?? 0);
 			hash = (hash * 31) + (Namespace?.GetHashCode() ?? 0);

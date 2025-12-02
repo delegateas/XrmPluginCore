@@ -89,7 +89,7 @@ public class DiagnosticReportingTests
 
         // Arrange - complex but valid source
         var source = TestFixtures.GetCompleteSource(
-			TestFixtures.GetPluginWithBothImages());
+			TestFixtures.PluginWithBothImages);
 
         // Act
         var result = GeneratorTestHelper.RunGenerator(

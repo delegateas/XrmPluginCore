@@ -88,6 +88,7 @@ internal static class RegistrationParser
 		var metadata = new PluginStepMetadata
 		{
 			EntityTypeName = entityType.Name,
+			EntityTypeFullName = entityType.ToDisplayString(),
 			Namespace = classDeclaration.GetNamespace(),
 			PluginClassName = classDeclaration.Identifier.Text
 		};

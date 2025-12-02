@@ -56,6 +56,7 @@ internal static class WrapperClassGenerator
 		sb.Append(GetImageClassHeader(
 			className,
 			metadata.EntityTypeName,
+			metadata.EntityTypeFullName,
 			metadata.EventOperation,
 			metadata.ExecutionStage,
 			image.ImageType));
@@ -63,11 +64,11 @@ internal static class WrapperClassGenerator
 		// Generate properties for each image attribute
 		foreach (var attr in image.Attributes)
 		{
-			sb.Append(GetPropertyTemplate(attr.TypeName, attr.PropertyName, attr.LogicalName));
+			sb.Append(GetPropertyTemplate(attr.TypeName, attr.PropertyName));
 		}
 
-		// Class footer with ToEntity and GetUnderlyingEntity methods
-		sb.Append(GetImageClassFooter());
+		// Close class
+		sb.Append("    }");
 	}
 
 	/// <summary>
@@ -89,7 +90,7 @@ internal static class WrapperClassGenerator
 		if (hasPreImage || hasPostImage)
 		{
 			sb.AppendLine();
-			sb.Append(GetContextRetrieval());
+			sb.AppendLine("                var context = serviceProvider.GetRequiredService<IPluginExecutionContext>();");
 		}
 
 		var args = new List<string>();
@@ -137,6 +138,7 @@ internal static class WrapperClassGenerator
 		var merged = new PluginStepMetadata
 		{
 			EntityTypeName = list[0].EntityTypeName,
+			EntityTypeFullName = list[0].EntityTypeFullName,
 			EventOperation = list[0].EventOperation,
 			ExecutionStage = list[0].ExecutionStage,
 			Namespace = list[0].Namespace,
@@ -187,6 +189,7 @@ using XrmPluginCore;
 	private static string GetImageClassHeader(
 		string className,
 		string entityTypeName,
+		string entityTypeFullName,
 		string eventOperation,
 		string executionStage,
 		string imageType) =>
@@ -195,43 +198,20 @@ $$"""
     /// Type-safe wrapper for {{entityTypeName}} {{eventOperation}} {{executionStage}} {{imageType}}
     /// </summary>
     [CompilerGenerated]
-    public class {{className}} : IEntityImageWrapper
+    public sealed class {{className}} : IEntityImageWrapper<{{entityTypeFullName}}>
     {
-        private readonly Entity entity;
-
-        /// <summary>
-        /// Initializes a new instance of {{className}}
-        /// </summary>
-        /// <param name="entity">The image entity</param>
         public {{className}}(Entity entity)
         {
-            this.entity = entity ?? throw new ArgumentNullException(nameof(entity));
+            Entity = entity.ToEntity<{{entityTypeFullName}}>();
         }
 
+        public {{entityTypeFullName}} Entity { get; }
+
 """;
 
-	private static string GetPropertyTemplate(string propertyType, string propertyName, string logicalName) =>
+	private static string GetPropertyTemplate(string propertyType, string propertyName) =>
 $$"""
-        /// <summary>
-        /// Gets the {{propertyName}} attribute
-        /// </summary>
-        public {{propertyType}} {{propertyName}} => entity.GetAttributeValue<{{propertyType}}>("{{logicalName}}");
-
-""";
-
-	private static string GetImageClassFooter() =>
-"""
-        /// <summary>
-        /// Converts the underlying Entity to an early-bound entity type
-        /// </summary>
-        /// <typeparam name="T">The early-bound entity type</typeparam>
-        public T ToEntity<T>() where T : Entity => entity.ToEntity<T>();
-
-        /// <summary>
-        /// Gets the underlying Entity object for direct attribute access or service operations
-        /// </summary>
-        public Entity GetUnderlyingEntity() => entity;
-    }
+        public {{propertyType}} {{propertyName}} => Entity.{{propertyName}};
 
 """;
 
@@ -251,11 +231,6 @@ $$"""
             return serviceProvider =>
             {
                 var service = serviceProvider.GetRequiredService<{{serviceFullName}}>();
-""";
-
-	private static string GetContextRetrieval() =>
-"""
-                var context = serviceProvider.GetRequiredService<IPluginExecutionContext>();
 """;
 
 	private static string GetPreImageRetrieval() =>

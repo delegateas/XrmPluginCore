@@ -2,9 +2,9 @@ using XrmPluginCore.Enums;
 using Microsoft.Extensions.DependencyInjection;
 using XrmPluginCore.Tests.Context.BusinessDomain;
 
-namespace XrmPluginCore.Tests.TestPlugins.Bedrock
-{
-    public abstract class PluginBase : Plugin
+namespace XrmPluginCore.Tests.TestPlugins.Bedrock;
+
+public abstract class PluginBase : Plugin
     {
         protected override IServiceCollection OnBeforeBuildServiceProvider(IServiceCollection services)
         {
@@ -31,4 +31,3 @@ namespace XrmPluginCore.Tests.TestPlugins.Bedrock
                 });
         }
     }
-}

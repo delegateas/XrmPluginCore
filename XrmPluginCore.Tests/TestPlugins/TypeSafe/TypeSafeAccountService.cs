@@ -8,14 +8,9 @@ namespace XrmPluginCore.Tests.TestPlugins.TypeSafe;
 /// <summary>
 /// Service for TypeSafeAccountPlugin that receives images directly
 /// </summary>
-public class TypeSafeAccountService
+public class TypeSafeAccountService(TypeSafeAccountPlugin plugin)
 {
-	private readonly TypeSafeAccountPlugin plugin;
-
-	public TypeSafeAccountService(TypeSafeAccountPlugin plugin)
-	{
-		this.plugin = plugin ?? throw new ArgumentNullException(nameof(plugin));
-	}
+	private readonly TypeSafeAccountPlugin plugin = plugin ?? throw new ArgumentNullException(nameof(plugin));
 
 	public void HandleUpdate(PreImage preImage, PostImage postImage)
 	{
@@ -23,7 +18,7 @@ public class TypeSafeAccountService
 		{
 			_ = preImage.Name;
 			_ = preImage.AccountNumber;
-			_ = preImage.SharesOutstanding;
+			_ = preImage.Revenue;
 		}
 
 		plugin.SetExecutionResult(preImage, postImage);

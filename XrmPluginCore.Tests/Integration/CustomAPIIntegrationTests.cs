@@ -4,164 +4,162 @@ using FluentAssertions;
 using Microsoft.Xrm.Sdk;
 using System;
 using System.Linq;
-using XrmPluginCore;
 using Xunit;
 using XrmPluginCore.Tests.Context.BusinessDomain;
 
-namespace XrmPluginCore.Tests.Integration
+namespace XrmPluginCore.Tests.Integration;
+
+public class CustomAPIIntegrationTests
 {
-    public class CustomAPIIntegrationTests
-    {
-        [Fact]
-        public void FullCustomAPIWorkflowShouldExecuteCorrectly()
-        {
-            // Arrange
-            var customApi = new IntegrationTestCustomAPI();
-            var mockProvider = new MockServiceProvider();
+	[Fact]
+	public void FullCustomAPIWorkflowShouldExecuteCorrectly()
+	{
+		// Arrange
+		var customApi = new IntegrationTestCustomAPI();
+		var mockProvider = new MockServiceProvider();
 
-            var inputParameters = new ParameterCollection
-            {
-                { "InputParameter", "Test Value" }
-            };
+		var inputParameters = new ParameterCollection
+			{
+				{ "InputParameter", "Test Value" }
+			};
 
-            var outputParameters = new ParameterCollection();
+		var outputParameters = new ParameterCollection();
 
-            mockProvider.SetupInputParameters(inputParameters);
-            mockProvider.SetupOutputParameters(outputParameters);
+		mockProvider.SetupInputParameters(inputParameters);
+		mockProvider.SetupOutputParameters(outputParameters);
 
-            // Act
-            customApi.Execute(mockProvider.ServiceProvider);
+		// Act
+		customApi.Execute(mockProvider.ServiceProvider);
 
-            // Assert
-            customApi.ExecutedCorrectly.Should().BeTrue();
-            customApi.ReceivedInputValue.Should().Be("Test Value");
-            outputParameters.Should().ContainKey("OutputParameter");
-            outputParameters["OutputParameter"].Should().Be("Processed: Test Value");
-        }
+		// Assert
+		customApi.ExecutedCorrectly.Should().BeTrue();
+		customApi.ReceivedInputValue.Should().Be("Test Value");
+		outputParameters.Should().ContainKey("OutputParameter");
+		outputParameters["OutputParameter"].Should().Be("Processed: Test Value");
+	}
 
-        [Fact]
-        public void CustomAPIRegistrationShouldContainCorrectConfiguration()
-        {
-            // Arrange
-            var customApi = new IntegrationTestCustomAPI();
+	[Fact]
+	public void CustomAPIRegistrationShouldContainCorrectConfiguration()
+	{
+		// Arrange
+		var customApi = new IntegrationTestCustomAPI();
 
-            // Act
-            var registration = customApi.GetRegistration();
+		// Act
+		var registration = customApi.GetRegistration();
 
-            // Assert
-            registration.Should().NotBeNull();
-            registration.Name.Should().Be("integration_test_api");
-            registration.IsFunction.Should().BeTrue();
-            registration.EnabledForWorkflow.Should().BeTrue();
-            registration.Description.Should().Be("Integration test custom API");
+		// Assert
+		registration.Should().NotBeNull();
+		registration.Name.Should().Be("integration_test_api");
+		registration.IsFunction.Should().BeTrue();
+		registration.EnabledForWorkflow.Should().BeTrue();
+		registration.Description.Should().Be("Integration test custom API");
 
-            var requestParams = registration.RequestParameters.ToList();
-            requestParams.Should().HaveCount(1);
-            requestParams[0].UniqueName.Should().Be("InputParameter");
-            requestParams[0].Type.Should().Be(CustomApiParameterType.String);
+		var requestParams = registration.RequestParameters.ToList();
+		requestParams.Should().HaveCount(1);
+		requestParams[0].UniqueName.Should().Be("InputParameter");
+		requestParams[0].Type.Should().Be(CustomApiParameterType.String);
 
-            var responseProps = registration.ResponseProperties.ToList();
-            responseProps.Should().HaveCount(1);
-            responseProps[0].UniqueName.Should().Be("OutputParameter");
-            responseProps[0].Type.Should().Be(CustomApiParameterType.String);
-        }
+		var responseProps = registration.ResponseProperties.ToList();
+		responseProps.Should().HaveCount(1);
+		responseProps[0].UniqueName.Should().Be("OutputParameter");
+		responseProps[0].Type.Should().Be(CustomApiParameterType.String);
+	}
 
-        [Fact]
-        public void BoundCustomAPIShouldConfigureBinding()
-        {
-            // Arrange
-            var customApi = new BoundCustomAPI();
+	[Fact]
+	public void BoundCustomAPIShouldConfigureBinding()
+	{
+		// Arrange
+		var customApi = new BoundCustomAPI();
 
-            // Act
-            var registration = customApi.GetRegistration();
+		// Act
+		var registration = customApi.GetRegistration();
 
-            // Assert
-            registration.BindingType.Should().Be(BindingType.Entity);
-            registration.BoundEntityLogicalName.Should().Be("account");
-        }
+		// Assert
+		registration.BindingType.Should().Be(BindingType.Entity);
+		registration.BoundEntityLogicalName.Should().Be("account");
+	}
 
-        [Fact]
-        public void PrivateCustomAPIShouldBePrivate()
-        {
-            // Arrange
-            var customApi = new PrivateCustomAPI();
+	[Fact]
+	public void PrivateCustomAPIShouldBePrivate()
+	{
+		// Arrange
+		var customApi = new PrivateCustomAPI();
 
-            // Act
-            var registration = customApi.GetRegistration();
+		// Act
+		var registration = customApi.GetRegistration();
 
-            // Assert
-            registration.IsPrivate.Should().BeTrue();
-            registration.IsFunction.Should().BeFalse();
-        }
-    }
+		// Assert
+		registration.IsPrivate.Should().BeTrue();
+		registration.IsFunction.Should().BeFalse();
+	}
+}
 
-    public class IntegrationTestCustomAPI : Plugin
-    {
-        public bool ExecutedCorrectly { get; private set; }
-        public string ReceivedInputValue { get; private set; }
+public class IntegrationTestCustomAPI : Plugin
+{
+	public bool ExecutedCorrectly { get; private set; }
+	public string ReceivedInputValue { get; private set; }
 
-        public IntegrationTestCustomAPI()
-        {
-            RegisterCustomAPI("integration_test_api", ExecuteAPI)
-                .SetDescription("Integration test custom API")
-                .MakeFunction()
-                .EnableForWorkFlow()
-                .AddRequestParameter("InputParameter", CustomApiParameterType.String, "Input Parameter", "Test input parameter")
-                .AddResponseProperty("OutputParameter", CustomApiParameterType.String, "Output Parameter", "Test output parameter");
-        }
+	public IntegrationTestCustomAPI()
+	{
+		RegisterCustomAPI("integration_test_api", ExecuteAPI)
+			.SetDescription("Integration test custom API")
+			.MakeFunction()
+			.EnableForWorkFlow()
+			.AddRequestParameter("InputParameter", CustomApiParameterType.String, "Input Parameter", "Test input parameter")
+			.AddResponseProperty("OutputParameter", CustomApiParameterType.String, "Output Parameter", "Test output parameter");
+	}
 
-        private void ExecuteAPI(LocalPluginContext context)
-        {
-            try
-            {
-                // Get input parameter
-                if (context.PluginExecutionContext.InputParameters.Contains("InputParameter"))
-                {
-                    ReceivedInputValue = context.PluginExecutionContext.InputParameters["InputParameter"] as string;
-                }
+	private void ExecuteAPI(LocalPluginContext context)
+	{
+		try
+		{
+			// Get input parameter
+			if (context.PluginExecutionContext.InputParameters.Contains("InputParameter"))
+			{
+				ReceivedInputValue = context.PluginExecutionContext.InputParameters["InputParameter"] as string;
+			}
 
-                // Set output parameter
-                var processedValue = $"Processed: {ReceivedInputValue}";
-                context.PluginExecutionContext.OutputParameters["OutputParameter"] = processedValue;
+			// Set output parameter
+			var processedValue = $"Processed: {ReceivedInputValue}";
+			context.PluginExecutionContext.OutputParameters["OutputParameter"] = processedValue;
 
-                context.Trace($"Processed input: {ReceivedInputValue}");
-                context.Trace($"Generated output: {processedValue}");
+			context.Trace($"Processed input: {ReceivedInputValue}");
+			context.Trace($"Generated output: {processedValue}");
 
-                ExecutedCorrectly = true;
-            }
-            catch (Exception ex)
-            {
-                context.Trace($"Error in custom API execution: {ex.Message}");
-                throw;
-            }
-        }
-    }
+			ExecutedCorrectly = true;
+		}
+		catch (Exception ex)
+		{
+			context.Trace($"Error in custom API execution: {ex.Message}");
+			throw;
+		}
+	}
+}
 
-    public class BoundCustomAPI : Plugin
-    {
-        public BoundCustomAPI()
-        {
-            RegisterCustomAPI("bound_test_api", ExecuteAPI)
-                .Bind<Account>(BindingType.Entity);
-        }
+public class BoundCustomAPI : Plugin
+{
+	public BoundCustomAPI()
+	{
+		RegisterCustomAPI("bound_test_api", ExecuteAPI)
+			.Bind<Account>(BindingType.Entity);
+	}
 
-        private void ExecuteAPI(LocalPluginContext context)
-        {
-            // Implementation
-        }
-    }
+	private void ExecuteAPI(LocalPluginContext context)
+	{
+		// Implementation
+	}
+}
 
-    public class PrivateCustomAPI : Plugin
-    {
-        public PrivateCustomAPI()
-        {
-            RegisterCustomAPI("private_test_api", ExecuteAPI)
-                .MakePrivate();
-        }
+public class PrivateCustomAPI : Plugin
+{
+	public PrivateCustomAPI()
+	{
+		RegisterCustomAPI("private_test_api", ExecuteAPI)
+			.MakePrivate();
+	}
 
-        private void ExecuteAPI(LocalPluginContext context)
-        {
-            // Implementation
-        }
-    }
+	private void ExecuteAPI(LocalPluginContext context)
+	{
+		// Implementation
+	}
 }

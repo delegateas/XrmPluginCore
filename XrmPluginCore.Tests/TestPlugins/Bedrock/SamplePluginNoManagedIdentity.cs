@@ -2,33 +2,32 @@ using XrmPluginCore.Enums;
 using Microsoft.Extensions.DependencyInjection;
 using XrmPluginCore.Tests.Context.BusinessDomain;
 
-namespace XrmPluginCore.Tests.TestPlugins.Bedrock
+namespace XrmPluginCore.Tests.TestPlugins.Bedrock;
+
+public abstract class PluginBaseNoMangedIdentity : Plugin
 {
-    public abstract class PluginBaseNoMangedIdentity : Plugin
-    {
-        protected override IServiceCollection OnBeforeBuildServiceProvider(IServiceCollection services)
-        {
-            return services.AddScoped<ISampleService, SampleServiceNoManagedIdentity>();
-        }
-    }
+	protected override IServiceCollection OnBeforeBuildServiceProvider(IServiceCollection services)
+	{
+		return services.AddScoped<ISampleService, SampleServiceNoManagedIdentity>();
+	}
+}
 
-    public class SamplePluginNoManagedIdentity : PluginBase
-    {
-        internal ISampleService SampleService { get; private set; }
+public class SamplePluginNoManagedIdentity : PluginBase
+{
+	internal ISampleService SampleService { get; private set; }
 
-        public SamplePluginNoManagedIdentity()
-        {
-            RegisterStep<Account, ISampleService>(
-                EventOperation.Create,
-                ExecutionStage.PreOperation,
-                s =>
-                {
-                    // We only do this for testing purposes
-                    SampleService = s;
+	public SamplePluginNoManagedIdentity()
+	{
+		RegisterStep<Account, ISampleService>(
+			EventOperation.Create,
+			ExecutionStage.PreOperation,
+			s =>
+			{
+				// We only do this for testing purposes
+				SampleService = s;
 
-                    // Call the service
-                    s.HandleCreate();
-                });
-        }
-    }
+				// Call the service
+				s.HandleCreate();
+			});
+	}
 }

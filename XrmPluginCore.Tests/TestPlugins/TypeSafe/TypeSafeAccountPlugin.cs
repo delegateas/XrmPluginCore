@@ -25,7 +25,7 @@ public class TypeSafeAccountPlugin : Plugin
 		RegisterStep<Account, TypeSafeAccountService>(EventOperation.Update, ExecutionStage.PreOperation,
 			nameof(TypeSafeAccountService.HandleUpdate))
 			.AddFilteredAttributes(x => x.Name, x => x.AccountNumber)
-			.WithPreImage(x => x.Name, x => x.AccountNumber, x => x.SharesOutstanding)
+			.WithPreImage(x => x.Name, x => x.AccountNumber, x => x.Revenue)
 			.WithPostImage(x => x.Name, x => x.AccountNumber);
 	}
 

@@ -35,6 +35,7 @@
     <ProjectReference Include="..\XrmPluginCore.SourceGenerator\XrmPluginCore.SourceGenerator.csproj" />
     <ProjectReference Include="..\XrmPluginCore\XrmPluginCore.csproj" />
     <ProjectReference Include="..\XrmPluginCore.Abstractions\XrmPluginCore.Abstractions.csproj" />
+    <ProjectReference Include="..\XrmPluginCore.Tests.Context\XrmPluginCore.Tests.Context.csproj" />
   </ItemGroup>
 
   <!-- Reference Dataverse SDK for test compilations -->

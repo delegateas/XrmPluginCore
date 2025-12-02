@@ -58,5 +58,8 @@ public static class CompilationHelper
         // Microsoft.Extensions.DependencyInjection (required by Plugin base class)
         yield return MetadataReference.CreateFromFile(typeof(Microsoft.Extensions.DependencyInjection.IServiceCollection).Assembly.Location);
         yield return MetadataReference.CreateFromFile(typeof(Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions).Assembly.Location);
+
+        // XrmPluginCore.Tests.Context (for realistic entity definitions)
+        yield return MetadataReference.CreateFromFile(typeof(XrmPluginCore.Tests.Context.BusinessDomain.Account).Assembly.Location);
     }
 }

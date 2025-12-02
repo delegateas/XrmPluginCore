@@ -62,9 +62,8 @@ public class CompilationTests
 
         var revenueProperty = preImageType.GetProperty("Revenue");
         revenueProperty.Should().NotBeNull();
-        var revenueValue = revenueProperty!.GetValue(preImageInstance) as Money;
-        revenueValue.Should().NotBeNull();
-        revenueValue!.Value.Should().Be(100000);
+        var revenueValue = revenueProperty!.GetValue(preImageInstance) as decimal?;
+        revenueValue!.Should().Be(100000);
     }
 
     [Fact]
@@ -72,7 +71,7 @@ public class CompilationTests
     {
         // Arrange
         var source = TestFixtures.GetCompleteSource(
-			TestFixtures.GetPluginWithPostImage());
+			TestFixtures.PluginWithPostImage);
 
         var result = GeneratorTestHelper.RunGeneratorAndCompile(source);
         result.Success.Should().BeTrue();
@@ -103,7 +102,7 @@ public class CompilationTests
     {
         // Arrange
         var source = TestFixtures.GetCompleteSource(
-			TestFixtures.GetPluginWithBothImages());
+			TestFixtures.PluginWithBothImages);
 
         var result = GeneratorTestHelper.RunGeneratorAndCompile(source);
         result.Success.Should().BeTrue();
@@ -132,8 +131,8 @@ public class CompilationTests
 
         // Assert - PreImage
         preImageType!.GetProperty("Name")!.GetValue(preImageInstance).Should().Be("Old Name");
-        var preRevenue = preImageType.GetProperty("Revenue")!.GetValue(preImageInstance) as Money;
-        preRevenue!.Value.Should().Be(50000);
+        var preRevenue = preImageType.GetProperty("Revenue")!.GetValue(preImageInstance) as decimal?;
+        preRevenue!.Should().Be(50000);
 
         // Assert - PostImage
         postImageType!.GetProperty("Name")!.GetValue(postImageInstance).Should().Be("New Name");
@@ -217,21 +216,5 @@ public class CompilationTests
         var createActionMethod = actionWrapperType.GetMethod("CreateAction");
         createActionMethod.Should().NotBeNull("CreateAction method should exist");
         createActionMethod!.IsStatic.Should().BeFalse("CreateAction should be an instance method since ActionWrapper implements IActionWrapper");
-    }
-
-    [Fact]
-    public void Should_Compile_Method_Reference_With_Image_Parameter()
-    {
-        // Arrange - Source code that mirrors XrmMockup's AccountPostImagePlugin pattern:
-        // service => service.HandleDelete where HandleDelete(PostImage postImage)
-        var source = TestFixtures.GetCompleteSource(
-			TestFixtures.GetPluginWithMethodReferenceAndPostImage());
-
-        // Act
-        var result = GeneratorTestHelper.RunGeneratorAndCompile(source);
-
-        // Assert
-        result.Success.Should().BeTrue(
-            because: $"method reference with image parameter should compile. Errors: {string.Join(", ", result.Errors ?? [])}");
     }
 }

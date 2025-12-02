@@ -42,6 +42,7 @@ public class TypeSafeContactPlugin : Plugin
 /// <summary>
 /// Simple Contact entity class for testing
 /// </summary>
+[Microsoft.Xrm.Sdk.Client.EntityLogicalName("contact")]
 public class Contact : Entity
 {
 	public Contact() : base("contact") { }

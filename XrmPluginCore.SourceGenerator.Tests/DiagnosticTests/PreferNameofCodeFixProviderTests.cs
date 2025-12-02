@@ -9,7 +9,7 @@ using XrmPluginCore.SourceGenerator.CodeFixes;
 using XrmPluginCore.SourceGenerator.Tests.Helpers;
 using Xunit;
 
-namespace XrmPluginCore.SourceGenerator.Tests.CodeFixTests;
+namespace XrmPluginCore.SourceGenerator.Tests.DiagnosticTests;
 
 /// <summary>
 /// Tests for PreferNameofCodeFixProvider that converts string literals to nameof() expressions.
@@ -63,51 +63,6 @@ namespace TestNamespace
 		// Assert
 		fixedSource.Should().Contain("nameof(ITestService.HandleUpdate)");
 		fixedSource.Should().NotContain("\"HandleUpdate\"");
-	}
-
-	[Fact]
-	public async Task Should_Preserve_Surrounding_Code_Structure()
-	{
-		// Arrange
-		const string pluginSource = """
-using XrmPluginCore;
-using XrmPluginCore.Enums;
-using Microsoft.Extensions.DependencyInjection;
-using TestNamespace;
-
-namespace TestNamespace
-{
-    public class TestPlugin : Plugin
-    {
-        public TestPlugin()
-        {
-            RegisterStep<Account, ITestService>(EventOperation.Update, ExecutionStage.PostOperation,
-                "HandleUpdate")
-                .AddFilteredAttributes(x => x.Name);
-        }
-
-        protected override IServiceCollection OnBeforeBuildServiceProvider(IServiceCollection services)
-        {
-            return services.AddScoped<ITestService, TestService>();
-        }
-    }
-
-    public interface ITestService
-    {
-        void HandleUpdate();
-    }
-
-    public class TestService : ITestService
-    {
-        public void HandleUpdate() { }
-    }
-}
-""";
-
-		var source = TestFixtures.GetCompleteSource(pluginSource);
-
-		// Act
-		var fixedSource = await ApplyCodeFixAsync(source);
 
 		// Assert - Verify structure is preserved
 		fixedSource.Should().Contain("RegisterStep<Account, ITestService>");
@@ -330,7 +285,7 @@ namespace TestNamespace
 			MetadataReference.CreateFromFile(typeof(object).Assembly.Location),
 			MetadataReference.CreateFromFile(typeof(Enumerable).Assembly.Location),
 			MetadataReference.CreateFromFile(typeof(Plugin).Assembly.Location),
-			MetadataReference.CreateFromFile(typeof(XrmPluginCore.Enums.EventOperation).Assembly.Location),
+			MetadataReference.CreateFromFile(typeof(IPluginDefinition).Assembly.Location),
 			MetadataReference.CreateFromFile(typeof(Microsoft.Xrm.Sdk.Entity).Assembly.Location),
 			MetadataReference.CreateFromFile(typeof(Microsoft.Extensions.DependencyInjection.IServiceCollection).Assembly.Location),
 			MetadataReference.CreateFromFile(typeof(Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions).Assembly.Location),

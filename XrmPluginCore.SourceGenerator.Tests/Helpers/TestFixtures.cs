@@ -1,3 +1,6 @@
+using System.Text;
+using XrmPluginCore.Tests.Context.BusinessDomain;
+
 namespace XrmPluginCore.SourceGenerator.Tests.Helpers;
 
 /// <summary>
@@ -5,108 +8,33 @@ namespace XrmPluginCore.SourceGenerator.Tests.Helpers;
 /// </summary>
 public static class TestFixtures
 {
-    /// <summary>
-    /// Sample Account entity class with common attributes.
-    /// </summary>
-    public const string AccountEntity = """
+	/// <summary>
+	/// Plugin with PreImage only.
+	/// </summary>
+	public static string GetPluginWithPreImage(string entityClass = "Account")
+	{
+		List<string> imageProperties = [];
+		if (entityClass == "Account")
+		{
+			imageProperties.AddRange([
+				nameof(Account.Name),
+				nameof(Account.Revenue),
+				nameof(Account.IndustryCode)
+			]);
+		}
+		else
+		{
+			imageProperties.AddRange([
+				nameof(Contact.FirstName),
+				nameof(Contact.EMailAddress1),
+				nameof(Contact.AccountId)
+			]);
+		}
 
-using System;
-using System.ComponentModel;
-using Microsoft.Xrm.Sdk;
+		var preImageProps = $"{string.Join(", ", imageProperties.Select(i => $"x => x.{i}"))}";
+		var filtered = entityClass == "Account" ? nameof(Account.Name) : nameof(Contact.FirstName);
 
-namespace TestNamespace
-{
-    [EntityLogicalName("account")]
-    public class Account : Entity
-    {
-        public const string EntityLogicalName = "account";
-
-        public Account() : base(EntityLogicalName) { }
-
-        [AttributeLogicalName("name")]
-        public string Name
-        {
-            get => GetAttributeValue<string>("name");
-            set => SetAttributeValue("name", value);
-        }
-
-        [AttributeLogicalName("accountnumber")]
-        public string AccountNumber
-        {
-            get => GetAttributeValue<string>("accountnumber");
-            set => SetAttributeValue("accountnumber", value);
-        }
-
-        [AttributeLogicalName("revenue")]
-        public Money Revenue
-        {
-            get => GetAttributeValue<Money>("revenue");
-            set => SetAttributeValue("revenue", value);
-        }
-
-        [AttributeLogicalName("industrycode")]
-        public OptionSetValue IndustryCode
-        {
-            get => GetAttributeValue<OptionSetValue>("industrycode");
-            set => SetAttributeValue("industrycode", value);
-        }
-
-        [AttributeLogicalName("primarycontactid")]
-        public EntityReference PrimaryContactId
-        {
-            get => GetAttributeValue<EntityReference>("primarycontactid");
-            set => SetAttributeValue("primarycontactid", value);
-        }
-    }
-}
-""";
-
-    /// <summary>
-    /// Sample Contact entity class with common attributes.
-    /// </summary>
-    public const string ContactEntity = """
-
-using System;
-using System.ComponentModel;
-using Microsoft.Xrm.Sdk;
-
-namespace TestNamespace
-{
-    [EntityLogicalName("contact")]
-    public class Contact : Entity
-    {
-        public const string EntityLogicalName = "contact";
-
-        public Contact() : base(EntityLogicalName) { }
-
-        [AttributeLogicalName("firstname")]
-        public string FirstName
-        {
-            get => GetAttributeValue<string>("firstname");
-            set => SetAttributeValue("firstname", value);
-        }
-
-        [AttributeLogicalName("lastname")]
-        public string LastName
-        {
-            get => GetAttributeValue<string>("lastname");
-            set => SetAttributeValue("lastname", value);
-        }
-
-        [AttributeLogicalName("emailaddress1")]
-        public string EmailAddress
-        {
-            get => GetAttributeValue<string>("emailaddress1");
-            set => SetAttributeValue("emailaddress1", value);
-        }
-    }
-}
-""";
-
-    /// <summary>
-    /// Plugin with PreImage only.
-    /// </summary>
-    public static string GetPluginWithPreImage(string entityClass = "Account") => $@"
+		return $@"
 using XrmPluginCore;
 using XrmPluginCore.Abstractions;
 using XrmPluginCore.Enums;
@@ -121,9 +49,9 @@ namespace TestNamespace
         public TestPlugin()
         {{
             RegisterStep<{entityClass}, ITestService>(EventOperation.Update, ExecutionStage.PostOperation,
-                nameof(ITestService.Process))
-                .AddFilteredAttributes(x => x.{(entityClass == "Account" ? "Name" : "FirstName")})
-                .WithPreImage(x => x.{(entityClass == "Account" ? "Name" : "FirstName")}, x => x.{(entityClass == "Account" ? "Revenue" : "EmailAddress")});
+                nameof(ITestService.HandleAccountUpdate))
+                .AddFilteredAttributes(x => x.{filtered})
+                .WithPreImage({preImageProps});
         }}
 
         protected override IServiceCollection OnBeforeBuildServiceProvider(IServiceCollection services)
@@ -134,285 +62,204 @@ namespace TestNamespace
 
     public interface ITestService
     {{
-        void Process(PreImage preImage);
+        void HandleAccountUpdate(PreImage preImage);
     }}
 
     public class TestService : ITestService
     {{
-        public void Process(PreImage preImage) {{ }}
+        public void HandleAccountUpdate(PreImage preImage) {{ }}
     }}
 }}";
+	}
 
-    /// <summary>
-    /// Plugin with PostImage.
-    /// </summary>
-    public static string GetPluginWithPostImage(string entityClass = "Account") => $@"
-using XrmPluginCore;
-using XrmPluginCore.Abstractions;
-using XrmPluginCore.Enums;
-using Microsoft.Extensions.DependencyInjection;
-using TestNamespace;
-using TestNamespace.PluginRegistrations.TestPlugin.{entityClass}UpdatePostOperation;
+	/// <summary>
+	/// Plugin with PostImage.
+	/// </summary>
+	public const string PluginWithPostImage = """
 
-namespace TestNamespace
-{{
-    public class TestPlugin : Plugin
-    {{
-        public TestPlugin()
-        {{
-            RegisterStep<{entityClass}, ITestService>(EventOperation.Update, ExecutionStage.PostOperation,
-                nameof(ITestService.Process))
-                .AddFilteredAttributes(x => x.{(entityClass == "Account" ? "Name" : "FirstName")})
-                .WithPostImage(x => x.{(entityClass == "Account" ? "Name" : "FirstName")}, x => x.{(entityClass == "Account" ? "AccountNumber" : "LastName")});
-        }}
+		using XrmPluginCore;
+		using XrmPluginCore.Abstractions;
+		using XrmPluginCore.Enums;
+		using Microsoft.Extensions.DependencyInjection;
+		using TestNamespace;
+		using TestNamespace.PluginRegistrations.TestPlugin.AccountUpdatePostOperation;
 
-        protected override IServiceCollection OnBeforeBuildServiceProvider(IServiceCollection services)
-        {{
-            return services.AddScoped<ITestService, TestService>();
-        }}
-    }}
+		namespace TestNamespace
+		{
+		    public class TestPlugin : Plugin
+		    {
+		        public TestPlugin()
+		        {
+		            RegisterStep<Account, ITestService>(EventOperation.Update, ExecutionStage.PostOperation,
+		                nameof(ITestService.HandleAccountUpdate))
+		                .AddFilteredAttributes(x => x.Name)
+		                .WithPostImage(x => x.Name, x => x.AccountNumber);
+		        }
 
-    public interface ITestService
-    {{
-        void Process(PostImage postImage);
-    }}
+		        protected override IServiceCollection OnBeforeBuildServiceProvider(IServiceCollection services)
+		        {
+		            return services.AddScoped<ITestService, TestService>();
+		        }
+		    }
 
-    public class TestService : ITestService
-    {{
-        public void Process(PostImage postImage) {{ }}
-    }}
-}}";
+		    public interface ITestService
+		    {
+		        void HandleAccountUpdate(PostImage postImage);
+		    }
+
+		    public class TestService : ITestService
+		    {
+		        public void HandleAccountUpdate(PostImage postImage) { }
+		    }
+		}
+		""";
 
     /// <summary>
     /// Plugin with both PreImage and PostImage using WithPreImage and WithPostImage.
     /// </summary>
-    public static string GetPluginWithBothImages(string entityClass = "Account") => $@"
-using XrmPluginCore;
-using XrmPluginCore.Abstractions;
-using XrmPluginCore.Enums;
-using Microsoft.Extensions.DependencyInjection;
-using TestNamespace;
-using TestNamespace.PluginRegistrations.TestPlugin.{entityClass}UpdatePostOperation;
+    public const string PluginWithBothImages = """
 
-namespace TestNamespace
-{{
-    public class TestPlugin : Plugin
-    {{
-        public TestPlugin()
-        {{
-            RegisterStep<{entityClass}, ITestService>(EventOperation.Update, ExecutionStage.PostOperation,
-                nameof(ITestService.Process))
-                .AddFilteredAttributes(x => x.Name)
-                .WithPreImage(x => x.Name, x => x.{(entityClass == "Account" ? "Revenue" : "EmailAddress")})
-                .WithPostImage(x => x.Name, x => x.{(entityClass == "Account" ? "AccountNumber" : "LastName")});
-        }}
+		using XrmPluginCore;
+		using XrmPluginCore.Abstractions;
+		using XrmPluginCore.Enums;
+		using Microsoft.Extensions.DependencyInjection;
+		using TestNamespace;
+		using TestNamespace.PluginRegistrations.TestPlugin.AccountUpdatePostOperation;
 
-        protected override IServiceCollection OnBeforeBuildServiceProvider(IServiceCollection services)
-        {{
-            return services.AddScoped<ITestService, TestService>();
-        }}
-    }}
+		namespace TestNamespace
+		{
+		    public class TestPlugin : Plugin
+		    {
+		        public TestPlugin()
+		        {
+		            RegisterStep<Account, ITestService>(EventOperation.Update, ExecutionStage.PostOperation,
+		                nameof(ITestService.HandleAccountUpdate))
+		                .AddFilteredAttributes(x => x.Name)
+		                .WithPreImage(x => x.Name, x => x.Revenue)
+		                .WithPostImage(x => x.Name, x => x.AccountNumber);
+		        }
 
-    public interface ITestService
-    {{
-        void Process(PreImage preImage, PostImage postImage);
-    }}
+		        protected override IServiceCollection OnBeforeBuildServiceProvider(IServiceCollection services)
+		        {
+		            return services.AddScoped<ITestService, TestService>();
+		        }
+		    }
 
-    public class TestService : ITestService
-    {{
-        public void Process(PreImage preImage, PostImage postImage) {{ }}
-    }}
-}}";
+		    public interface ITestService
+		    {
+		        void HandleAccountUpdate(PreImage preImage, PostImage postImage);
+		    }
+
+		    public class TestService : ITestService
+		    {
+		        public void HandleAccountUpdate(PreImage preImage, PostImage postImage) { }
+		    }
+		}
+		""";
 
     /// <summary>
     /// Plugin with handler method reference but without any images.
     /// Tests that ActionWrapper is generated even when no images are registered.
     /// </summary>
-    public static string GetPluginWithHandlerNoImages(string entityClass = "Account") => $@"
-using XrmPluginCore;
-using XrmPluginCore.Abstractions;
-using XrmPluginCore.Enums;
-using Microsoft.Extensions.DependencyInjection;
-using TestNamespace;
-using TestNamespace.PluginRegistrations.TestPlugin.{entityClass}UpdatePostOperation;
+    public static string GetPluginWithoutImages(string action = "nameof(ITestService.HandleUpdate)") => $$"""
+				using XrmPluginCore;
+				using XrmPluginCore.Abstractions;
+				using XrmPluginCore.Enums;
+				using Microsoft.Extensions.DependencyInjection;
+				using TestNamespace;
+				using TestNamespace.PluginRegistrations.TestPlugin.AccountUpdatePostOperation;
 
-namespace TestNamespace
-{{
-    public class TestPlugin : Plugin
-    {{
-        public TestPlugin()
-        {{
-            RegisterStep<{entityClass}, ITestService>(EventOperation.Update, ExecutionStage.PostOperation,
-                nameof(ITestService.HandleUpdate))
-                .AddFilteredAttributes(x => x.{(entityClass == "Account" ? "Name" : "FirstName")});
-        }}
+				namespace TestNamespace
+				{
+				    public class TestPlugin : Plugin
+				    {
+				        public TestPlugin()
+				        {
+				            RegisterStep<Account, ITestService>(EventOperation.Update, ExecutionStage.PostOperation,
+				                {{action}})
+				                .AddFilteredAttributes(x => x.Name);
+				        }
 
-        protected override IServiceCollection OnBeforeBuildServiceProvider(IServiceCollection services)
-        {{
-            return services.AddScoped<ITestService, TestService>();
-        }}
-    }}
+				        protected override IServiceCollection OnBeforeBuildServiceProvider(IServiceCollection services)
+				        {
+				            return services.AddScoped<ITestService, TestService>();
+				        }
+				    }
 
-    public interface ITestService
-    {{
-        void HandleUpdate();
-    }}
+				    public interface ITestService
+				    {
+				        void HandleUpdate();
+				    }
 
-    public class TestService : ITestService
-    {{
-        public void HandleUpdate() {{ }}
-    }}
-}}";
+				    public class TestService : ITestService
+				    {
+				        public void HandleUpdate() { }
+				    }
+				}
+		""";
 
     /// <summary>
     /// Plugin using old AddImage API for backward compatibility testing.
     /// </summary>
-    public static string GetPluginWithOldImageApi(string entityClass = "Account") => $@"
-using XrmPluginCore;
-using XrmPluginCore.Abstractions;
-using Microsoft.Extensions.DependencyInjection;
-using TestNamespace;
+    public const string PluginWithLegacyAddImage = """
 
-namespace TestNamespace
-{{
-    public class TestPlugin : Plugin
-    {{
-        public TestPlugin()
-        {{
-            RegisterStep<{entityClass}, ITestService>(EventOperation.Update, ExecutionStage.PostOperation, service => service.Process())
-                .AddFilteredAttributes(x => x.Name)
-                .AddImage(ImageType.PreImage, x => x.Name, x => x.{(entityClass == "Account" ? "Revenue" : "EmailAddress")});
-        }}
+		using XrmPluginCore;
+		using XrmPluginCore.Abstractions;
+		using Microsoft.Extensions.DependencyInjection;
+		using TestNamespace;
 
-        protected override IServiceCollection OnBeforeBuildServiceProvider(IServiceCollection services)
-        {{
-            return services.AddScoped<ITestService, TestService>();
-        }}
-    }}
+		namespace TestNamespace
+		{
+		    public class TestPlugin : Plugin
+		    {
+		        public TestPlugin()
+		        {
+		            RegisterStep<Account, ITestService>(EventOperation.Update, ExecutionStage.PostOperation, service => service.HandleAccountUpdate())
+		                .AddFilteredAttributes(x => x.Name)
+		                .AddImage(ImageType.PreImage, x => x.Name, x => x.Revenue);
+		        }
 
-    public interface ITestService
-    {{
-        void Process();
-    }}
+		        protected override IServiceCollection OnBeforeBuildServiceProvider(IServiceCollection services)
+		        {
+		            return services.AddScoped<ITestService, TestService>();
+		        }
+		    }
 
-    public class TestService : ITestService
-    {{
-        public void Process() {{ }}
-    }}
-}}";
+		    public interface ITestService
+		    {
+		        void HandleAccountUpdate();
+		    }
+
+		    public class TestService : ITestService
+		    {
+		        public void HandleAccountUpdate() { }
+		    }
+		}
+		""";
 
     /// <summary>
     /// Gets a complete compilable source with entity and plugin.
     /// </summary>
     public static string GetCompleteSource(string pluginSource)
-	{
-        // Determine which entity is being used by checking if pluginSource contains RegisterStep<Account or RegisterStep<Contact
-        var usesAccount = pluginSource.Contains("RegisterStep<Account");
-        var usesContact = pluginSource.Contains("RegisterStep<Contact");
+    {
+		var entityName = pluginSource.Contains("RegisterStep<Account") ? "Account" : "Contact";
+        var operation = pluginSource.Contains("EventOperation.Delete") ? "Delete" : "Update";
 
-        // Determine which operation is being used
-        var usesDelete = pluginSource.Contains("EventOperation.Delete");
-        var accountOperation = usesDelete ? "Delete" : "Update";
-        var contactOperation = usesDelete ? "Delete" : "Update";
-
-        // Build using statements conditionally
-        var usingStatements = new System.Text.StringBuilder();
-        usingStatements.AppendLine("using System;");
-        usingStatements.AppendLine("using System.ComponentModel;");
-        usingStatements.AppendLine("using Microsoft.Xrm.Sdk;");
-        usingStatements.AppendLine("using XrmPluginCore;");
-        usingStatements.AppendLine("using XrmPluginCore.Enums;");
-        usingStatements.AppendLine("using Microsoft.Extensions.DependencyInjection;");
-
-        if (usesAccount)
-        {
-            usingStatements.AppendLine($"using TestNamespace.PluginRegistrations.TestPlugin.Account{accountOperation}PostOperation;");
-        }
-        if (usesContact)
-        {
-            usingStatements.AppendLine($"using TestNamespace.PluginRegistrations.TestPlugin.Contact{contactOperation}PostOperation;");
-        }
-
-        // Properly combine sources by merging namespaces
         return $$"""
-{{usingStatements}}
-namespace TestNamespace
-{
-    [Microsoft.Xrm.Sdk.Client.EntityLogicalName("account")]
-    public class Account : Entity
-    {
-        public const string EntityLogicalName = "account";
+			using System;
+			using System.ComponentModel;
+			using Microsoft.Xrm.Sdk;
+			using XrmPluginCore;
+			using XrmPluginCore.Enums;
+			using Microsoft.Extensions.DependencyInjection;
+			using XrmPluginCore.Tests.Context.BusinessDomain;
+			using TestNamespace.PluginRegistrations.TestPlugin.{{entityName}}{{operation}}PostOperation;
 
-        public Account() : base(EntityLogicalName) { }
-
-        [AttributeLogicalName("name")]
-        public string Name
-        {
-            get => GetAttributeValue<string>("name");
-            set => SetAttributeValue("name", value);
-        }
-
-        [AttributeLogicalName("accountnumber")]
-        public string AccountNumber
-        {
-            get => GetAttributeValue<string>("accountnumber");
-            set => SetAttributeValue("accountnumber", value);
-        }
-
-        [AttributeLogicalName("revenue")]
-        public Money Revenue
-        {
-            get => GetAttributeValue<Money>("revenue");
-            set => SetAttributeValue("revenue", value);
-        }
-
-        [AttributeLogicalName("industrycode")]
-        public OptionSetValue IndustryCode
-        {
-            get => GetAttributeValue<OptionSetValue>("industrycode");
-            set => SetAttributeValue("industrycode", value);
-        }
-
-        [AttributeLogicalName("primarycontactid")]
-        public EntityReference PrimaryContactId
-        {
-            get => GetAttributeValue<EntityReference>("primarycontactid");
-            set => SetAttributeValue("primarycontactid", value);
-        }
-    }
-
-    [Microsoft.Xrm.Sdk.Client.EntityLogicalName("contact")]
-    public class Contact : Entity
-    {
-        public const string EntityLogicalName = "contact";
-
-        public Contact() : base(EntityLogicalName) { }
-
-        [AttributeLogicalName("firstname")]
-        public string FirstName
-        {
-            get => GetAttributeValue<string>("firstname");
-            set => SetAttributeValue("firstname", value);
-        }
-
-        [AttributeLogicalName("lastname")]
-        public string LastName
-        {
-            get => GetAttributeValue<string>("lastname");
-            set => SetAttributeValue("lastname", value);
-        }
-
-        [AttributeLogicalName("emailaddress1")]
-        public string EmailAddress
-        {
-            get => GetAttributeValue<string>("emailaddress1");
-            set => SetAttributeValue("emailaddress1", value);
-        }
-    }
-
-    {{StripNamespaceAndUsings(pluginSource)}}
-}
-""";
+			namespace TestNamespace
+			{
+				{{StripNamespaceAndUsings(pluginSource)}}
+			}
+			""";
     }
 
     /// <summary>
@@ -461,44 +308,4 @@ namespace TestNamespace
 
         return result.ToString();
     }
-
-    /// <summary>
-    /// Plugin with method reference and PostImage parameter - mirrors XrmMockup's AccountPostImagePlugin.
-    /// Tests that method groups for methods with parameters can be used with Expression&lt;Func&lt;TService, Delegate&gt;&gt;.
-    /// </summary>
-    public static string GetPluginWithMethodReferenceAndPostImage(string entityClass = "Account") => $@"
-using XrmPluginCore;
-using XrmPluginCore.Abstractions;
-using XrmPluginCore.Enums;
-using Microsoft.Extensions.DependencyInjection;
-using TestNamespace;
-using TestNamespace.PluginRegistrations.TestPlugin.{entityClass}DeletePostOperation;
-
-namespace TestNamespace
-{{
-    public class TestPlugin : Plugin
-    {{
-        public TestPlugin()
-        {{
-            RegisterStep<{entityClass}, ITestService>(EventOperation.Delete, ExecutionStage.PostOperation,
-                nameof(ITestService.HandleDelete))
-                .WithPostImage(x => x.{(entityClass == "Account" ? "Name" : "FirstName")});
-        }}
-
-        protected override IServiceCollection OnBeforeBuildServiceProvider(IServiceCollection services)
-        {{
-            return services.AddScoped<ITestService, TestService>();
-        }}
-    }}
-
-    public interface ITestService
-    {{
-        void HandleDelete(PostImage postImage);
-    }}
-
-    public class TestService : ITestService
-    {{
-        public void HandleDelete(PostImage postImage) {{ }}
-    }}
-}}";
 }

@@ -3,76 +3,75 @@ using Microsoft.Xrm.Sdk;
 using System;
 using XrmPluginCore.Tests.Context.BusinessDomain;
 
-namespace XrmPluginCore.Tests.TestPlugins
+namespace XrmPluginCore.Tests.TestPlugins;
+
+public class TestAccountPlugin : Plugin
 {
-    public class TestAccountPlugin : Plugin
-    {
-        public bool ExecutedAction { get; private set; }
-        public LocalPluginContext LastContext { get; private set; }
-        public IServiceProvider LastProvider { get; private set; }
+	public bool ExecutedAction { get; private set; }
+	public LocalPluginContext LastContext { get; private set; }
+	public IServiceProvider LastProvider { get; private set; }
 
-        public TestAccountPlugin()
-        {
-            RegisterPluginStep<Account>(EventOperation.Create, ExecutionStage.PreOperation, ExecuteCtx);
-            RegisterStep<Account>(EventOperation.Create, ExecutionStage.PostOperation, ExecuteSP);
-        }
+	public TestAccountPlugin()
+	{
+		RegisterPluginStep<Account>(EventOperation.Create, ExecutionStage.PreOperation, ExecuteCtx);
+		RegisterStep<Account>(EventOperation.Create, ExecutionStage.PostOperation, ExecuteSP);
+	}
 
-        private void ExecuteCtx(LocalPluginContext context)
-        {
-            ExecutedAction = true;
-            LastContext = context;
-        }
+	private void ExecuteCtx(LocalPluginContext context)
+	{
+		ExecutedAction = true;
+		LastContext = context;
+	}
 
-        private void ExecuteSP(IServiceProvider context)
-        {
-            ExecutedAction = true;
-            LastProvider = context;
-        }
-    }
+	private void ExecuteSP(IServiceProvider context)
+	{
+		ExecutedAction = true;
+		LastProvider = context;
+	}
+}
 
-    public class TestCustomMessagePlugin : Plugin
-    {
-        public bool ExecutedAction { get; private set; }
-        public LocalPluginContext LastContext { get; private set; }
+public class TestCustomMessagePlugin : Plugin
+{
+	public bool ExecutedAction { get; private set; }
+	public LocalPluginContext LastContext { get; private set; }
 
-        public TestCustomMessagePlugin()
-        {
-            RegisterPluginStep<Entity>("custom_message", ExecutionStage.PreOperation, Execute);
-        }
+	public TestCustomMessagePlugin()
+	{
+		RegisterPluginStep<Entity>("custom_message", ExecutionStage.PreOperation, Execute);
+	}
 
-        private void Execute(LocalPluginContext context)
-        {
-            ExecutedAction = true;
-            LastContext = context;
-        }
-    }
+	private void Execute(LocalPluginContext context)
+	{
+		ExecutedAction = true;
+		LastContext = context;
+	}
+}
 
-    public class TestNoRegistrationPlugin : Plugin
-    {
-        public bool ExecutedAction { get; private set; }
+public class TestNoRegistrationPlugin : Plugin
+{
+	public bool ExecutedAction { get; }
 
-        // No registrations added
-    }
+	// No registrations added
+}
 
-    public class TestMultipleRegistrationPlugin : Plugin
-    {
-        public bool CreateExecuted { get; private set; }
-        public bool UpdateExecuted { get; private set; }
+public class TestMultipleRegistrationPlugin : Plugin
+{
+	public bool CreateExecuted { get; private set; }
+	public bool UpdateExecuted { get; private set; }
 
-        public TestMultipleRegistrationPlugin()
-        {
-            RegisterPluginStep<Account>(EventOperation.Create, ExecutionStage.PreOperation, OnCreate);
-            RegisterPluginStep<Account>(EventOperation.Update, ExecutionStage.PostOperation, OnUpdate);
-        }
+	public TestMultipleRegistrationPlugin()
+	{
+		RegisterPluginStep<Account>(EventOperation.Create, ExecutionStage.PreOperation, OnCreate);
+		RegisterPluginStep<Account>(EventOperation.Update, ExecutionStage.PostOperation, OnUpdate);
+	}
 
-        private void OnCreate(LocalPluginContext context)
-        {
-            CreateExecuted = true;
-        }
+	private void OnCreate(LocalPluginContext context)
+	{
+		CreateExecuted = true;
+	}
 
-        private void OnUpdate(LocalPluginContext context)
-        {
-            UpdateExecuted = true;
-        }
-    }
+	private void OnUpdate(LocalPluginContext context)
+	{
+		UpdateExecuted = true;
+	}
 }
