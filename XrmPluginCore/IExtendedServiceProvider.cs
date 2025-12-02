@@ -1,8 +1,7 @@
-﻿using System;
+using System;
 
-namespace XrmPluginCore
+namespace XrmPluginCore;
+
+public interface IExtendedServiceProvider : IServiceProvider, IDisposable
 {
-    public interface IExtendedServiceProvider : IServiceProvider
-    {
-    }
 }

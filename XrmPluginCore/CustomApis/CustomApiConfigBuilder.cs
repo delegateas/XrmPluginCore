@@ -3,6 +3,7 @@ using Microsoft.Xrm.Sdk;
 using System.Collections.ObjectModel;
 using System;
 using System.Linq;
+using XrmPluginCore.Helpers;
 
 namespace XrmPluginCore.CustomApis
 {
@@ -27,7 +28,7 @@ namespace XrmPluginCore.CustomApis
                 BoundEntityLogicalName = "",
                 IsCustomizable = false,
                 IsPrivate = false,
-                ExecutePrivilegeName = null, // TODO
+                ExecutePrivilegeName = null,
                 Description = $"CustomAPI Definition for {name}",
                 OwnerId = null,
                 OwnerType = null
@@ -63,10 +64,10 @@ namespace XrmPluginCore.CustomApis
             return this;
         }
 
-        public CustomApiConfigBuilder Bind<T>(BindingType bindingType) where T : Entity
+        public CustomApiConfigBuilder Bind<T>(BindingType bindingType) where T : Entity, new()
         {
             Config.BindingType = bindingType;
-            Config.BoundEntityLogicalName = Activator.CreateInstance<T>().LogicalName;
+            Config.BoundEntityLogicalName = EntityLogicalNameCache.GetLogicalName<T>();
             return this;
         }
 
@@ -104,6 +105,12 @@ namespace XrmPluginCore.CustomApis
             Config.OwnerId = ownerId;
             Config.OwnerType = ownerType;
 
+            return this;
+        }
+
+        public CustomApiConfigBuilder WithExecutePrivilegeName(string privilegeName)
+        {
+            Config.ExecutePrivilegeName = privilegeName;
             return this;
         }
 

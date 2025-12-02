@@ -11,6 +11,7 @@
     <File Path=".github/workflows/release.yml" />
     <File Path="appsettings.json" />
     <File Path="CLAUDE.md" />
+    <File Path="Directory.Build.props" />
   </Folder>
   <Folder Name="/Solution Files/Scripts/">
     <File Path="scripts/Pack-Local.ps1" />

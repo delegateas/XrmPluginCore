@@ -1,59 +1,33 @@
 using System;
 
-namespace XrmPluginCore.Plugins
+namespace XrmPluginCore.Plugins;
+
+internal sealed class PluginStepRegistration(
+	IPluginStepConfigBuilder pluginStepConfig,
+	Action<IExtendedServiceProvider> action,
+	string pluginClassName,
+	string entityTypeName,
+	string eventOperation,
+	string executionStage,
+	string serviceTypeName = null,
+	string serviceTypeFullName = null,
+	string handlerMethodName = null)
 {
-    internal sealed class PluginStepRegistration
-    {
-        public PluginStepRegistration(IPluginStepConfigBuilder pluginStepConfig, Action<IExtendedServiceProvider> action)
-        {
-            ConfigBuilder = pluginStepConfig;
-            Action = action;
-        }
+	public IPluginStepConfigBuilder ConfigBuilder { get; } = pluginStepConfig;
 
-        public IPluginStepConfigBuilder ConfigBuilder { get; set; }
+	public Action<IExtendedServiceProvider> Action { get; } = action;
 
-        public Action<IExtendedServiceProvider> Action { get; set; }
+	public string PluginClassName { get; } = pluginClassName;
 
-        /// <summary>
-        /// Gets or sets the plugin class name for type-safe wrapper discovery.
-        /// Used to compute wrapper class names by convention.
-        /// </summary>
-        public string PluginClassName { get; set; }
+	public string EntityTypeName { get; } = entityTypeName;
 
-        /// <summary>
-        /// Gets or sets the entity type name for type-safe wrapper discovery.
-        /// Used to compute wrapper class names by convention.
-        /// </summary>
-        public string EntityTypeName { get; set; }
+	public string EventOperation { get; } = eventOperation;
 
-        /// <summary>
-        /// Gets or sets the event operation for type-safe wrapper discovery.
-        /// Used to compute wrapper class names by convention.
-        /// </summary>
-        public string EventOperation { get; set; }
+	public string ExecutionStage { get; } = executionStage;
 
-        /// <summary>
-        /// Gets or sets the execution stage for type-safe wrapper discovery.
-        /// Used to compute wrapper class names by convention.
-        /// </summary>
-        public string ExecutionStage { get; set; }
+	public string ServiceTypeName { get; } = serviceTypeName;
 
-        /// <summary>
-        /// Gets or sets the service type name (short name) for action wrapper generation.
-        /// Used by the source generator to emit the correct service resolution.
-        /// </summary>
-        public string ServiceTypeName { get; set; }
+	public string ServiceTypeFullName { get; } = serviceTypeFullName;
 
-        /// <summary>
-        /// Gets or sets the fully qualified service type name for action wrapper generation.
-        /// Used by the source generator to emit the correct using directive.
-        /// </summary>
-        public string ServiceTypeFullName { get; set; }
-
-        /// <summary>
-        /// Gets or sets the handler method name on the service.
-        /// Used by the source generator to emit the action wrapper that calls this method.
-        /// </summary>
-        public string HandlerMethodName { get; set; }
-    }
+	public string HandlerMethodName { get; } = handlerMethodName;
 }

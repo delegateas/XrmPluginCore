@@ -1,4 +1,5 @@
 ### v1.2.4 - 2 December 2025
+* ADD: Support for setting ExecutePrivilegeName
 * Fix: Image wrappers now forward to the underlying strongly-typed entity type instead of the base Entity type
 
 ### v1.2.3 - 28 November 2025

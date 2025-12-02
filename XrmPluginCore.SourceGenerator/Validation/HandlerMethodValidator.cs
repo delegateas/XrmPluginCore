@@ -43,34 +43,4 @@ internal static class HandlerMethodValidator
 		// in their handler method signature. The analyzer (XPC4002/XPC4003) will report if
 		// the signature doesn't match after the types are available.
 	}
-
-	private static bool SignatureMatches(IMethodSymbol method, bool hasPreImage, bool hasPostImage)
-	{
-		var parameters = method.Parameters;
-		var expectedParamCount = (hasPreImage ? 1 : 0) + (hasPostImage ? 1 : 0);
-
-		if (parameters.Length != expectedParamCount)
-			return false;
-
-		var paramIndex = 0;
-
-		if (hasPreImage)
-		{
-			if (paramIndex >= parameters.Length)
-				return false;
-			if (parameters[paramIndex].Type.Name != Constants.PreImageTypeName)
-				return false;
-			paramIndex++;
-		}
-
-		if (hasPostImage)
-		{
-			if (paramIndex >= parameters.Length)
-				return false;
-			if (parameters[paramIndex].Type.Name != Constants.PostImageTypeName)
-				return false;
-		}
-
-		return true;
-	}
 }

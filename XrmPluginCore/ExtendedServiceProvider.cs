@@ -1,16 +1,14 @@
-﻿using System;
+using System;
 
-namespace XrmPluginCore
+namespace XrmPluginCore;
+
+public sealed class ExtendedServiceProvider(IServiceProvider wrappedServiceProvider) : IExtendedServiceProvider
 {
-    public class ExtendedServiceProvider : IExtendedServiceProvider
-    {
-        private readonly IServiceProvider _wrappedServiceProvider;
+	public object GetService(Type serviceType) => wrappedServiceProvider.GetService(serviceType);
 
-        public ExtendedServiceProvider(IServiceProvider wrappedServiceProvider)
-        {
-            _wrappedServiceProvider = wrappedServiceProvider;
-        }
-
-        public object GetService(Type serviceType) => _wrappedServiceProvider.GetService(serviceType);
-    }
+	public void Dispose()
+	{
+		if (wrappedServiceProvider is IDisposable disposable)
+			disposable.Dispose();
+	}
 }

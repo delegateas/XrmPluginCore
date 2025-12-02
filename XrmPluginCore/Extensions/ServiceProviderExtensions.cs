@@ -3,54 +3,56 @@ using Microsoft.Xrm.Sdk;
 using Microsoft.Xrm.Sdk.PluginTelemetry;
 using System;
 
-namespace XrmPluginCore.Extensions
+namespace XrmPluginCore.Extensions;
+
+public static class ServiceProviderExtensions
 {
-    public static class ServiceProviderExtensions
-    {
-        /// <summary>
-        /// Builds a local scoped service provider for plugin execution.
-        /// </summary>
-        public static ExtendedServiceProvider BuildServiceProvider(
-            this IServiceProvider serviceProvider,
-            Func<IServiceCollection, IServiceCollection> onBeforeBuild)
-        {
-            // Get services of the ServiceProvider
-            var tracingService = serviceProvider.GetService<ITracingService>() ?? throw new Exception("Unable to get Tracing service");
-            var telemetryService = serviceProvider.GetService<ILogger>();
+	/// <summary>
+	/// Builds a local scoped service provider for plugin execution.
+	/// </summary>
+	public static ExtendedServiceProvider BuildServiceProvider(
+		this IServiceProvider serviceProvider,
+		Func<IServiceCollection, IServiceCollection> onBeforeBuild)
+	{
+		// Get services of the ServiceProvider
+		var tracingService = serviceProvider.GetRequiredService<ITracingService>();
+		var telemetryService = serviceProvider.GetService<ILogger>();
 
-            var extendedTracingService = new ExtendedTracingService(tracingService, telemetryService);
+		var extendedTracingService = new ExtendedTracingService(tracingService, telemetryService);
 
-            // Create a new service collection and add the relevant services
-            IServiceCollection services = new ServiceCollection();
+		// Create a new service collection and add the relevant services
+		IServiceCollection services = new ServiceCollection();
 
-            services.AddScoped(_ => serviceProvider.GetService<IPluginExecutionContext>());
-            services.AddScoped(_ => serviceProvider.GetService<IPluginExecutionContext2>());
-            services.AddScoped(_ => serviceProvider.GetService<IPluginExecutionContext3>());
-            services.AddScoped(_ => serviceProvider.GetService<IPluginExecutionContext4>());
-            services.AddScoped(_ => serviceProvider.GetService<IPluginExecutionContext5>());
-            services.AddScoped(_ => serviceProvider.GetService<IPluginExecutionContext6>());
-            services.AddScoped(_ => serviceProvider.GetService<IPluginExecutionContext7>());
+		// Inject services provided by Dataverse
+		services.AddScoped(_ => serviceProvider.GetService<IPluginExecutionContext>());
+		services.AddScoped(_ => serviceProvider.GetService<IPluginExecutionContext2>());
+		services.AddScoped(_ => serviceProvider.GetService<IPluginExecutionContext3>());
+		services.AddScoped(_ => serviceProvider.GetService<IPluginExecutionContext4>());
+		services.AddScoped(_ => serviceProvider.GetService<IPluginExecutionContext5>());
+		services.AddScoped(_ => serviceProvider.GetService<IPluginExecutionContext6>());
+		services.AddScoped(_ => serviceProvider.GetService<IPluginExecutionContext7>());
 
-            services.AddScoped(_ => serviceProvider.GetService<IOrganizationServiceFactory>());
-            services.AddScoped(_ => serviceProvider.GetService<IManagedIdentityService>());
-            services.AddScoped(_ => telemetryService);
-            services.AddScoped<ITracingService>(_ => extendedTracingService);
-            services.AddScoped<IExtendedTracingService>(_ => extendedTracingService);
+		services.AddScoped(_ => serviceProvider.GetService<IOrganizationServiceFactory>());
+		services.AddScoped(_ => serviceProvider.GetService<IManagedIdentityService>());
+		services.AddScoped(_ => telemetryService);
 
-            // Allow modification of services before building the provider
-            services = onBeforeBuild(services);
+		// Inject extended tracing service
+		services.AddScoped<ITracingService>(_ => extendedTracingService);
+		services.AddScoped<IExtendedTracingService>(_ => extendedTracingService);
 
-            // Build the service provider
-            var localServiceProvider = services.BuildServiceProvider();
-            return new ExtendedServiceProvider(localServiceProvider);
-        }
+		// Allow modification of services before building the provider
+		services = onBeforeBuild(services);
 
-        public static void Trace(this IServiceProvider serviceProvider, string message)
-        {
-            var tracingService = serviceProvider.GetService<IExtendedTracingService>();
-            var pluginExecutionContext = serviceProvider.GetService<IPluginExecutionContext>();
+		// Build the service provider
+		var localServiceProvider = services.BuildServiceProvider();
+		return new ExtendedServiceProvider(localServiceProvider);
+	}
 
-            tracingService?.Trace(message, pluginExecutionContext);
-        }
-    }
+	public static void Trace(this IServiceProvider serviceProvider, string message)
+	{
+		var tracingService = serviceProvider.GetService<IExtendedTracingService>();
+		var pluginExecutionContext = serviceProvider.GetService<IPluginExecutionContext>();
+
+		tracingService?.Trace(message, pluginExecutionContext);
+	}
 }

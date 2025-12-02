@@ -1,27 +1,27 @@
-﻿using XrmPluginCore.Enums;
+using XrmPluginCore.Enums;
 using System;
 using System.Linq.Expressions;
 
-namespace XrmPluginCore.Extensions
+namespace XrmPluginCore.Extensions;
+
+public static class PluginExtensions
 {
-    public static class PluginExtensions
-    {
-        public static EventOperation ToEventOperation(this string x)
-        {
-            return (EventOperation)Enum.Parse(typeof(EventOperation), x);
-        }
+	public static EventOperation ToEventOperation(this string x)
+	{
+		return (EventOperation)Enum.Parse(typeof(EventOperation), x);
+	}
 
-        public static string GetMemberName<T>(this Expression<Func<T, object>> lambda)
-        {
-            MemberExpression body = lambda.Body as MemberExpression;
+	public static string GetMemberName<T>(this Expression<Func<T, object>> lambda)
+	{
+		if (lambda.Body is not MemberExpression body)
+		{
+			var ubody = (UnaryExpression)lambda.Body;
+			body = ubody.Operand as MemberExpression
+				?? throw new ArgumentException(
+					$"Cannot extract member name from expression. Expected property access but got: {lambda.Body.GetType().Name}.",
+					nameof(lambda));
+		}
 
-            if (body == null)
-            {
-                UnaryExpression ubody = (UnaryExpression)lambda.Body;
-                body = ubody.Operand as MemberExpression;
-            }
-
-            return body.Member.Name;
-        }
-    }
+		return body.Member.Name;
+	}
 }

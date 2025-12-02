@@ -271,6 +271,44 @@ public class PluginTests
 	}
 
 	[Fact]
+	public void ExecuteUnexpectedExceptionShouldWrapInInvalidPluginExecutionException()
+	{
+		// Arrange
+		var plugin = new TestExceptionThrowingPlugin(new InvalidOperationException("Test error"));
+		var mockProvider = new MockServiceProvider();
+
+		// Setup context for account create
+		mockProvider.SetupPrimaryEntityName("account");
+		mockProvider.SetupMessageName("Create");
+		mockProvider.SetupStage(20); // Pre-operation
+
+		// Act & Assert
+		var exception = Assert.Throws<InvalidPluginExecutionException>(() => plugin.Execute(mockProvider.ServiceProvider));
+		exception.Status.Should().Be(OperationStatus.Failed);
+		exception.Message.Should().Contain("Unexpected error");
+		exception.Message.Should().Contain("Test error");
+		exception.Message.Should().Contain("TestExceptionThrowingPlugin");
+	}
+
+	[Fact]
+	public void ExecuteNotImplementedExceptionShouldWrapInInvalidPluginExecutionException()
+	{
+		// Arrange
+		var plugin = new TestExceptionThrowingPlugin(new NotImplementedException("Feature not implemented"));
+		var mockProvider = new MockServiceProvider();
+
+		// Setup context for account create
+		mockProvider.SetupPrimaryEntityName("account");
+		mockProvider.SetupMessageName("Create");
+		mockProvider.SetupStage(20); // Pre-operation
+
+		// Act & Assert
+		var exception = Assert.Throws<InvalidPluginExecutionException>(() => plugin.Execute(mockProvider.ServiceProvider));
+		exception.Status.Should().Be(OperationStatus.Failed);
+		exception.Message.Should().Be("Feature not implemented");
+	}
+
+	[Fact]
 	public void GetRegistrationsShouldReturnCorrectRegistrations()
 	{
 		// Arrange
@@ -413,5 +451,24 @@ public class TestServiceProviderModificationPlugin : Plugin
 		// Action implementation
 		var stringValue = context.GetService<string>();
 		ModifiedServiceProviderUsed = stringValue == "Modified";
+	}
+}
+
+// Helper plugin for testing exception handling
+#pragma warning disable XPC2001 // No parameterless constructor found
+public class TestExceptionThrowingPlugin : Plugin
+#pragma warning restore XPC2001 // No parameterless constructor found
+{
+	private readonly Exception exceptionToThrow;
+
+	public TestExceptionThrowingPlugin(Exception exceptionToThrow)
+	{
+		this.exceptionToThrow = exceptionToThrow;
+		RegisterStep<Account>(EventOperation.Create, ExecutionStage.PreOperation, ExecutePlugin);
+	}
+
+	private void ExecutePlugin(IExtendedServiceProvider context)
+	{
+		throw exceptionToThrow;
 	}
 }

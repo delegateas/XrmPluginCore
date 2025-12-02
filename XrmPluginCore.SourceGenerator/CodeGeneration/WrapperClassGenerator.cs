@@ -78,8 +78,8 @@ internal static class WrapperClassGenerator
 	/// </summary>
 	private static void GenerateActionWrapperClass(StringBuilder sb, PluginStepMetadata metadata, List<ImageMetadata> images)
 	{
-		var hasPreImage = images.Any(i => i.ImageType == "PreImage");
-		var hasPostImage = images.Any(i => i.ImageType == "PostImage");
+		var hasPreImage = images.Any(i => i.ImageType == Constants.PreImageTypeName);
+		var hasPostImage = images.Any(i => i.ImageType == Constants.PostImageTypeName);
 
 		// ActionWrapper header with documentation, class declaration, and service retrieval
 		sb.Append(GetActionWrapperHeader(

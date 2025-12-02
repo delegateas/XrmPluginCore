@@ -58,13 +58,12 @@ namespace XrmPluginCore
             }
 
             // Build a local service provider
-            var localServiceProvider = serviceProvider.BuildServiceProvider(OnBeforeBuildServiceProvider);
+            using var localServiceProvider = serviceProvider.BuildServiceProvider(OnBeforeBuildServiceProvider);
 
             try
             {
                 localServiceProvider.Trace(string.Format(CultureInfo.InvariantCulture, "Entered {0}.Execute()", ChildClassName));
-				var context = localServiceProvider.GetService<IPluginExecutionContext>()
-					?? throw new Exception("Unable to get Plugin Execution Context");
+				var context = localServiceProvider.GetRequiredService<IPluginExecutionContext>();
 
 				// Find the matching registration to determine if we need to register IPluginContext
 				var matchingRegistration = GetMatchingRegistration(context);
@@ -115,6 +114,13 @@ namespace XrmPluginCore
 
                 pluginAction.Invoke(localServiceProvider);
             }
+			catch (InvalidPluginExecutionException e)
+			{
+				localServiceProvider.Trace(string.Format(CultureInfo.InvariantCulture, "Exception: {0}", e.ToString()));
+
+				// Rethrow InvalidPluginExecutionException without wrapping
+				throw;
+			}
             catch (FaultException<OrganizationServiceFault> e)
             {
                 localServiceProvider.Trace(string.Format(CultureInfo.InvariantCulture, "Exception: {0}", e.ToString()));
@@ -124,6 +130,11 @@ namespace XrmPluginCore
             {
                 localServiceProvider.Trace(string.Format(CultureInfo.InvariantCulture, "Exception: {0}", e.ToString()));
                 throw new InvalidPluginExecutionException(OperationStatus.Failed, e.Message);
+            }
+            catch (Exception e)
+            {
+                localServiceProvider.Trace(string.Format(CultureInfo.InvariantCulture, "Unexpected exception: {0}", e.ToString()));
+                throw new InvalidPluginExecutionException(OperationStatus.Failed, $"Unexpected error in {ChildClassName}: {e.Message}");
             }
             finally
             {
@@ -157,7 +168,7 @@ namespace XrmPluginCore
         [Obsolete("Use RegisterStep instead")]
         protected PluginStepConfigBuilder<T> RegisterPluginStep<T>(
             EventOperation eventOperation, ExecutionStage executionStage, Action<LocalPluginContext> action)
-            where T : Entity
+            where T : Entity, new()
         {
             return RegisterStep<T>(eventOperation.ToString(), executionStage, sp => action(new LocalPluginContext(sp)));
         }
@@ -179,7 +190,7 @@ namespace XrmPluginCore
         [Obsolete("Use RegisterStep instead")]
         protected PluginStepConfigBuilder<T> RegisterPluginStep<T>(
             string eventOperation, ExecutionStage executionStage, Action<LocalPluginContext> action)
-            where T : Entity
+            where T : Entity, new()
         {
             return RegisterStep<T>(eventOperation, executionStage, sp => action(new LocalPluginContext(sp)));
         }
@@ -196,7 +207,7 @@ namespace XrmPluginCore
         /// <returns>The <see cref="PluginStepConfigBuilder{T}"/> to register filters and images</returns>
         protected PluginStepConfigBuilder<TEntity> RegisterStep<TEntity, TService>(
             EventOperation eventOperation, ExecutionStage executionStage, Action<TService> action)
-            where TEntity : Entity
+            where TEntity : Entity, new()
         {
             return RegisterStep<TEntity>(eventOperation.ToString(), executionStage, sp => action(sp.GetRequiredService<TService>()));
         }
@@ -218,7 +229,7 @@ namespace XrmPluginCore
         /// <returns>The <see cref="PluginStepConfigBuilder{T}"/> to register filters and images</returns>
         protected PluginStepConfigBuilder<TEntity> RegisterStep<TEntity, TService>(
             string eventOperation, ExecutionStage executionStage, Action<TService> action)
-            where TEntity : Entity
+            where TEntity : Entity, new()
         {
             return RegisterStep<TEntity>(eventOperation, executionStage, sp => action(sp.GetRequiredService<TService>()));
         }
@@ -234,7 +245,7 @@ namespace XrmPluginCore
         /// <returns>The <see cref="PluginStepConfigBuilder{T}"/> to register filters and images</returns>
         protected PluginStepConfigBuilder<T> RegisterStep<T>(
             EventOperation eventOperation, ExecutionStage executionStage, Action<IExtendedServiceProvider> action)
-            where T : Entity
+            where T : Entity, new()
         {
             return RegisterStep<T>(eventOperation.ToString(), executionStage, action);
         }
@@ -255,17 +266,16 @@ namespace XrmPluginCore
         /// <returns>The <see cref="PluginStepConfigBuilder{T}"/> to register filters and images</returns>
         protected PluginStepConfigBuilder<T> RegisterStep<T>(
             string eventOperation, ExecutionStage executionStage, Action<IExtendedServiceProvider> action)
-            where T : Entity
+            where T : Entity, new()
         {
             var builder = new PluginStepConfigBuilder<T>(eventOperation, executionStage);
-            var registration = new PluginStepRegistration(builder, action)
-            {
-                // Store metadata for convention-based type-safe wrapper discovery
-                EntityTypeName = typeof(T).Name,
-                EventOperation = eventOperation,
-                ExecutionStage = executionStage.ToString(),
-                PluginClassName = ChildClassShortName
-            };
+            var registration = new PluginStepRegistration(
+                pluginStepConfig: builder,
+                action: action,
+                pluginClassName: ChildClassShortName,
+                entityTypeName: typeof(T).Name,
+                eventOperation: eventOperation,
+                executionStage: executionStage.ToString());
             RegisteredPluginSteps.Add(registration);
             return builder;
         }
@@ -287,7 +297,7 @@ namespace XrmPluginCore
             EventOperation eventOperation,
             ExecutionStage executionStage,
             string handlerMethodName)
-            where TEntity : Entity
+            where TEntity : Entity, new()
         {
             return RegisterStep<TEntity, TService>(eventOperation.ToString(), executionStage, handlerMethodName);
         }
@@ -314,20 +324,20 @@ namespace XrmPluginCore
             string eventOperation,
             ExecutionStage executionStage,
             string handlerMethodName)
-            where TEntity : Entity
+            where TEntity : Entity, new()
         {
             var builder = new PluginStepConfigBuilder<TEntity>(eventOperation, executionStage);
 
-            var registration = new PluginStepRegistration(builder, null)
-            {
-                EntityTypeName = typeof(TEntity).Name,
-                EventOperation = eventOperation,
-                ExecutionStage = executionStage.ToString(),
-                PluginClassName = ChildClassShortName,
-                ServiceTypeName = typeof(TService).Name,
-                ServiceTypeFullName = typeof(TService).FullName,
-                HandlerMethodName = handlerMethodName
-            };
+            var registration = new PluginStepRegistration(
+                pluginStepConfig: builder,
+                action: null,
+                pluginClassName: ChildClassShortName,
+                entityTypeName: typeof(TEntity).Name,
+                eventOperation: eventOperation,
+                executionStage: executionStage.ToString(),
+                serviceTypeName: typeof(TService).Name,
+                serviceTypeFullName: typeof(TService).FullName,
+                handlerMethodName: handlerMethodName);
 
             RegisteredPluginSteps.Add(registration);
             return builder;
@@ -345,7 +355,9 @@ namespace XrmPluginCore
                 return null;
 
             // Use interface instead of reflection
-            var wrapper = (IActionWrapper)Activator.CreateInstance(wrapperType);
+            var wrapper = Activator.CreateInstance(wrapperType) as IActionWrapper
+                ?? throw new InvalidOperationException(
+                    $"Generated type '{wrapperTypeName}' could not be instantiated or does not implement IActionWrapper.");
             return wrapper.CreateAction();
         }
 
@@ -403,7 +415,13 @@ namespace XrmPluginCore
             // If no plugin step found and we have a CustomAPI, return a registration with that action
             if (pluginStepRegistration == null && RegisteredCustomApi != null)
             {
-                return new PluginStepRegistration(null, RegisteredCustomApi.Action);
+                return new PluginStepRegistration(
+                    pluginStepConfig: null,
+                    action: RegisteredCustomApi.Action,
+                    pluginClassName: ChildClassShortName,
+                    entityTypeName: null,
+                    eventOperation: null,
+                    executionStage: null);
             }
 
             return pluginStepRegistration;

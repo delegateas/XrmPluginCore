@@ -225,7 +225,7 @@ public class PluginImageGenerator : IIncrementalGenerator
 		var diagnostic = Diagnostic.Create(
 			DiagnosticDescriptors.GenerationError,
 			Location.None,
-			exception.Message);
+			$"{exception.Message} | StackTrace: {exception.StackTrace}");
 
 		context.ReportDiagnostic(diagnostic);
 	}
