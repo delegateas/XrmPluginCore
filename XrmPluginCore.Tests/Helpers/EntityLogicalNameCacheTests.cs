@@ -85,11 +85,6 @@ public class EntityLogicalNameCacheTests
 
 		var cache = cacheField?.GetValue(null) as ConcurrentDictionary<Type, string>;
 
-		// Clear the cache before the test to ensure clean state
-		// Note: This modifies shared state, but since Entity types are the same,
-		// the cache would still contain the same values
-		var initialCacheCount = cache?.Count ?? 0;
-
 		// Act - call multiple times
 		var result1 = genericMethod.Invoke(null, null) as string;
 		var result2 = genericMethod.Invoke(null, null) as string;

@@ -126,15 +126,9 @@ public class PluginStepConfigBuilderTests
 		var constructor = builderType.GetConstructor(
 			BindingFlags.NonPublic | BindingFlags.Instance,
 			null,
-			new[] { typeof(string), typeof(ExecutionStage) },
-			null);
+			[typeof(string), typeof(ExecutionStage)],
+			null) ?? throw new InvalidOperationException("Could not find internal constructor");
 
-		if (constructor == null)
-		{
-			throw new InvalidOperationException("Could not find internal constructor");
-		}
-
-		return (PluginStepConfigBuilder<Account>)constructor.Invoke(
-			[nameof(EventOperation.Update), ExecutionStage.PostOperation]);
+		return (PluginStepConfigBuilder<Account>)constructor.Invoke([nameof(EventOperation.Update), ExecutionStage.PostOperation]);
 	}
 }

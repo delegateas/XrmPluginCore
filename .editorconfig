@@ -88,6 +88,9 @@ dotnet_separate_import_directive_groups = false
 # https://docs.microsoft.com/visualstudio/ide/editorconfig-language-conventions#net-code-style-settings
 [*.{cs,csx,cake}]
 
+# XPC: Do not prefer ThrowIfNull, it's not supported on .NET Framework 4.6.2
+dotnet_diagnostic.CA1510.severity = none
+
 # "this." and "Me." qualifiers
 # https://docs.microsoft.com/visualstudio/ide/editorconfig-language-conventions#this-and-me
 dotnet_style_qualification_for_field = false

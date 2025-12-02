@@ -50,7 +50,7 @@ public class ExtendedServiceProviderTests
 	public void GetService_DelegatesToWrappedProvider()
 	{
 		// Arrange
-		var expectedService = "test-service";
+		const string expectedService = "test-service";
 		var wrappedProvider = Substitute.For<IServiceProvider>();
 		wrappedProvider.GetService(typeof(string)).Returns(expectedService);
 		var extendedProvider = new ExtendedServiceProvider(wrappedProvider);
@@ -83,7 +83,7 @@ public class ExtendedServiceProviderTests
 		act.Should().Throw<ObjectDisposedException>();
 	}
 
-	private interface IDisposableService : IDisposable { }
+	private interface IDisposableService : IDisposable;
 
 	private class DisposableService : IDisposableService
 	{

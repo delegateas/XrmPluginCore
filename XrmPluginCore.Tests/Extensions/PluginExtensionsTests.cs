@@ -54,7 +54,7 @@ public class PluginExtensionsTests
 	{
 		// Arrange
 		// A constant expression is not a member access expression and cannot be cast to UnaryExpression
-		Expression<Func<Account, object>> expression = a => "constant";
+		Expression<Func<Account, object>> expression = _ => "constant";
 
 		// Act
 		Action act = () => expression.GetMemberName();

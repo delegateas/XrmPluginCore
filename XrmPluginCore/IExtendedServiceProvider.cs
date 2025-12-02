@@ -2,6 +2,4 @@ using System;
 
 namespace XrmPluginCore;
 
-public interface IExtendedServiceProvider : IServiceProvider, IDisposable
-{
-}
+public interface IExtendedServiceProvider : IServiceProvider, IDisposable;
