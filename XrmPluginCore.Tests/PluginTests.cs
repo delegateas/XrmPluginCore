@@ -69,96 +69,59 @@ public class PluginTests
 		plugin.LastContext.Should().BeNull();
 	}
 
-	[Fact]
-	public void ExecuteMatchingRegistrationShouldExecuteActionServiceProviderDI()
+	public static TheoryData<bool, bool> ManagedIdentityTestCases => new()
+	{
+		{ true, true },   // Plugin uses ManagedIdentity, Provider has ManagedIdentity
+		{ true, false },  // Plugin uses ManagedIdentity, Provider does not have ManagedIdentity
+		{ false, true },  // Plugin does not use ManagedIdentity, Provider has ManagedIdentity
+		{ false, false }  // Plugin does not use ManagedIdentity, Provider does not have ManagedIdentity
+	};
+
+	[Theory]
+	[MemberData(nameof(ManagedIdentityTestCases))]
+	public void ExecuteMatchingRegistrationShouldExecuteActionServiceProviderDI(bool pluginUsesManagedIdentity, bool providerHasManagedIdentity)
 	{
 		// Arrange
-		var plugin = new SamplePlugin();
-		var mockProvider = new MockServiceProvider();
+		Plugin plugin = pluginUsesManagedIdentity ? new SamplePlugin() : new SamplePluginNoManagedIdentity();
 
-		// Setup context for account create
-		mockProvider.SetupPrimaryEntityName("account");
-		mockProvider.SetupMessageName("Create");
-		mockProvider.SetupStage((int)ExecutionStage.PreOperation);
+		IServiceProvider serviceProvider;
+		IPluginExecutionContext pluginExecutionContext;
+		IOrganizationService organizationService;
 
-		// Act
-		plugin.Execute(mockProvider.ServiceProvider);
-
-		// Assert
-		var sampleService = plugin.SampleService as SampleService;
-		sampleService.Should().NotBeNull();
-		sampleService.HandleCreateCalled.Should().BeTrue();
-		sampleService.PluginContext.Should().Be(mockProvider.PluginExecutionContext);
-		sampleService.OrganizationService.Should().Be(mockProvider.OrganizationService);
-	}
-
-	[Fact]
-	public void ExecuteMatchingRegistrationShouldExecuteActionServiceProviderDINoManagedIdentity()
-	{
-		// Arrange
-		var plugin = new SamplePluginNoManagedIdentity();
-		var mockProvider = new MockServiceProviderNoManagedIdentity();
-
-		// Setup context for account create
-		mockProvider.SetupPrimaryEntityName("account");
-		mockProvider.SetupMessageName("Create");
-		mockProvider.SetupStage((int)ExecutionStage.PreOperation);
+		if (providerHasManagedIdentity)
+		{
+			var mockProvider = new MockServiceProvider();
+			mockProvider.SetupPrimaryEntityName("account");
+			mockProvider.SetupMessageName("Create");
+			mockProvider.SetupStage((int)ExecutionStage.PreOperation);
+			serviceProvider = mockProvider.ServiceProvider;
+			pluginExecutionContext = mockProvider.PluginExecutionContext;
+			organizationService = mockProvider.OrganizationService;
+		}
+		else
+		{
+			var mockProvider = new MockServiceProviderNoManagedIdentity();
+			mockProvider.SetupPrimaryEntityName("account");
+			mockProvider.SetupMessageName("Create");
+			mockProvider.SetupStage((int)ExecutionStage.PreOperation);
+			serviceProvider = mockProvider.ServiceProvider;
+			pluginExecutionContext = mockProvider.PluginExecutionContext;
+			organizationService = mockProvider.OrganizationService;
+		}
 
 		// Act
-		plugin.Execute(mockProvider.ServiceProvider);
+		plugin.Execute(serviceProvider);
 
 		// Assert
-		var sampleService = plugin.SampleService as SampleService;
-		sampleService.Should().NotBeNull();
-		sampleService.HandleCreateCalled.Should().BeTrue();
-		sampleService.PluginContext.Should().Be(mockProvider.PluginExecutionContext);
-		sampleService.OrganizationService.Should().Be(mockProvider.OrganizationService);
-	}
+		ISampleService sampleService = pluginUsesManagedIdentity
+			? ((SamplePlugin)plugin).SampleService
+			: ((SamplePluginNoManagedIdentity)plugin).SampleService;
 
-	[Fact]
-	public void ExecuteMatchingRegistrationShouldExecuteActionServiceProviderDINoManagedIdentityProviderHas()
-	{
-		// Arrange
-		var plugin = new SamplePluginNoManagedIdentity();
-		var mockProvider = new MockServiceProvider();
-
-		// Setup context for account create
-		mockProvider.SetupPrimaryEntityName("account");
-		mockProvider.SetupMessageName("Create");
-		mockProvider.SetupStage((int)ExecutionStage.PreOperation);
-
-		// Act
-		plugin.Execute(mockProvider.ServiceProvider);
-
-		// Assert
-		var sampleService = plugin.SampleService as SampleService;
-		sampleService.Should().NotBeNull();
-		sampleService.HandleCreateCalled.Should().BeTrue();
-		sampleService.PluginContext.Should().Be(mockProvider.PluginExecutionContext);
-		sampleService.OrganizationService.Should().Be(mockProvider.OrganizationService);
-	}
-
-	[Fact]
-	public void ExecuteMatchingRegistrationShouldExecuteActionServiceProviderDINoManagedIdentityFromProvider()
-	{
-		// Arrange
-		var plugin = new SamplePlugin();
-		var mockProvider = new MockServiceProviderNoManagedIdentity();
-
-		// Setup context for account create
-		mockProvider.SetupPrimaryEntityName("account");
-		mockProvider.SetupMessageName("Create");
-		mockProvider.SetupStage((int)ExecutionStage.PreOperation);
-
-		// Act
-		plugin.Execute(mockProvider.ServiceProvider);
-
-		// Assert
-		var sampleService = plugin.SampleService as SampleService;
-		sampleService.Should().NotBeNull();
-		sampleService.HandleCreateCalled.Should().BeTrue();
-		sampleService.PluginContext.Should().Be(mockProvider.PluginExecutionContext);
-		sampleService.OrganizationService.Should().Be(mockProvider.OrganizationService);
+		var service = sampleService as SampleService;
+		service.Should().NotBeNull();
+		service.HandleCreateCalled.Should().BeTrue();
+		service.PluginContext.Should().Be(pluginExecutionContext);
+		service.OrganizationService.Should().Be(organizationService);
 	}
 
 	[Fact]

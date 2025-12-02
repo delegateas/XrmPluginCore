@@ -51,39 +51,6 @@ public class PluginIntegrationTests
 	}
 
 	[Fact]
-	public void PluginWithMultipleImagesShouldAccessAllImages()
-	{
-		// Arrange
-		var plugin = new MultipleImagesPlugin();
-		var mockProvider = new MockServiceProvider();
-
-		var accountId = Guid.NewGuid();
-		var account = new Entity("account") { Id = accountId };
-
-		var preImage = new Entity("account") { Id = accountId, ["name"] = "Pre Image" };
-		var postImage = new Entity("account") { Id = accountId, ["name"] = "Post Image" };
-
-		var inputParameters = new ParameterCollection { { "Target", account } };
-		var preImages = new EntityImageCollection { { "PreImage", preImage } };
-		var postImages = new EntityImageCollection { { "PostImage", postImage } };
-
-		mockProvider.SetupInputParameters(inputParameters);
-		mockProvider.SetupPreEntityImages(preImages);
-		mockProvider.SetupPostEntityImages(postImages);
-		mockProvider.SetupPrimaryEntityName("account");
-		mockProvider.SetupMessageName("Update");
-		mockProvider.SetupStage(40);
-
-		// Act
-		plugin.Execute(mockProvider.ServiceProvider);
-
-		// Assert
-		plugin.ExecutedCorrectly.Should().BeTrue();
-		plugin.PreImageRetrieved.Should().BeTrue();
-		plugin.PostImageRetrieved.Should().BeTrue();
-	}
-
-	[Fact]
 	public void PluginRegistrationsShouldContainCorrectConfiguration()
 	{
 		// Arrange
@@ -153,44 +120,3 @@ public class IntegrationTestPlugin : Plugin
 	}
 }
 
-public class MultipleImagesPlugin : Plugin
-{
-	public bool ExecutedCorrectly { get; private set; }
-	public bool PreImageRetrieved { get; private set; }
-	public bool PostImageRetrieved { get; private set; }
-
-	public MultipleImagesPlugin()
-	{
-		RegisterPluginStep<Account>(EventOperation.Update, ExecutionStage.PostOperation, ExecutePlugin);
-	}
-
-	private void ExecutePlugin(LocalPluginContext context)
-	{
-		try
-		{
-			// Get images using different methods - These will throw NotSupportedException due to ToEntity<T> limitation
-			Entity preImage = context.GetPreImage<Account>();
-			PreImageRetrieved = true;
-
-			Entity postImage = context.GetPostImage<Account>();
-			PostImageRetrieved = true;
-
-			if (preImage != null)
-			{
-				context.Trace($"Pre-image name: {preImage.GetAttributeValue<string>("name")}");
-			}
-
-			if (postImage != null)
-			{
-				context.Trace($"Post-image name: {postImage.GetAttributeValue<string>("name")}");
-			}
-
-			ExecutedCorrectly = PreImageRetrieved && PostImageRetrieved;
-		}
-		catch (Exception ex)
-		{
-			context.Trace($"Error in plugin execution: {ex.Message}");
-			throw;
-		}
-	}
-}

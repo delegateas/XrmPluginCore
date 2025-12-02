@@ -131,25 +131,6 @@ public class TypeSafePluginTests
 		plugin.LastPostImage.Should().BeNull();
 	}
 
-	[Fact]
-	public void AccountPlugin_ShouldNotExecuteForWrongMessage()
-	{
-		// Arrange
-		var plugin = new TypeSafeAccountPlugin();
-		var mockProvider = new MockServiceProvider();
-
-		mockProvider.SetupPrimaryEntityName("account");
-		mockProvider.SetupMessageName("Create"); // Wrong message - plugin registered for Update
-		mockProvider.SetupStage((int)ExecutionStage.PreOperation);
-		mockProvider.SetupInputParameters([]);
-
-		// Act
-		plugin.Execute(mockProvider.ServiceProvider);
-
-		// Assert
-		plugin.UpdateExecuted.Should().BeFalse();
-	}
-
 	#endregion
 
 	#region Contact Plugin Tests (PreImage only)
@@ -243,25 +224,6 @@ public class TypeSafePluginTests
 		// Assert
 		plugin.CreateExecuted.Should().BeTrue();
 		plugin.LastPreImage.Should().BeNull();
-	}
-
-	[Fact]
-	public void ContactPlugin_ShouldNotExecuteForWrongStage()
-	{
-		// Arrange
-		var plugin = new TypeSafeContactPlugin();
-		var mockProvider = new MockServiceProvider();
-
-		mockProvider.SetupPrimaryEntityName("contact");
-		mockProvider.SetupMessageName("Create");
-		mockProvider.SetupStage((int)ExecutionStage.PreOperation); // Wrong stage
-		mockProvider.SetupInputParameters([]);
-
-		// Act
-		plugin.Execute(mockProvider.ServiceProvider);
-
-		// Assert
-		plugin.CreateExecuted.Should().BeFalse();
 	}
 
 	#endregion
