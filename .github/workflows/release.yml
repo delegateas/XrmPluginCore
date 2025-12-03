@@ -69,7 +69,7 @@ jobs:
       uses: nuget/login@v1
       if: github.event_name == 'release' || (github.event_name == 'workflow_dispatch' && github.event.inputs.dry_run != 'true')
       with:
-        nuget-api-url: https://api.nuget.org/v3/index.json
+        user: ${{ secrets.NUGET_USER }}
 
     - name: 🚀 Publish to NuGet
       shell: pwsh
