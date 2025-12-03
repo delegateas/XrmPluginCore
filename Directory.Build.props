@@ -20,14 +20,6 @@
     <AssemblyOriginatorKeyFile>$(MSBuildThisFileDirectory)resources\delegate.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
 
-  <!-- Package metadata for packable projects -->
-  <PropertyGroup Condition="'$(IsPackable)' != 'false'">
-    <PackageLicenseFile>LICENSE</PackageLicenseFile>
-    <PackageIcon>contextand.png</PackageIcon>
-    <PackageReadmeFile>README.md</PackageReadmeFile>
-    <Version>1.0.0-local</Version>
-  </PropertyGroup>
-
   <!-- Test project defaults -->
   <PropertyGroup Condition="$(MSBuildProjectName.EndsWith('.Tests'))">
     <IsTestProject>true</IsTestProject>
