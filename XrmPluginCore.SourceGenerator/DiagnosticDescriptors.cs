@@ -14,8 +14,7 @@ namespace XrmPluginCore.SourceGenerator;
 internal static class DiagnosticDescriptors
 {
 	private const string Category = "XrmPluginCore.SourceGenerator";
-
-	#region XPC1xxx - Informational Messages
+	private const string HelpLinkBaseUri = "https://github.com/delegateas/XrmPluginCore/blob/main/XrmPluginCore.SourceGenerator/rules";
 
 	public static readonly DiagnosticDescriptor GenerationSuccess = new(
 		id: "XPC1001",
@@ -25,10 +24,6 @@ internal static class DiagnosticDescriptors
 		DiagnosticSeverity.Info,
 		isEnabledByDefault: true);
 
-	#endregion
-
-	#region XPC2xxx - Plugin Class Structure
-
 	public static readonly DiagnosticDescriptor NoParameterlessConstructor = new(
 		id: "XPC2001",
 		title: "No parameterless constructor found",
@@ -36,11 +31,7 @@ internal static class DiagnosticDescriptors
 		category: Category,
 		defaultSeverity: DiagnosticSeverity.Warning,
 		isEnabledByDefault: true,
-		helpLinkUri: "https://github.com/delegateas/XrmPluginCore/blob/main/XrmPluginCore.SourceGenerator/rules/XPC2001.md");
-
-	#endregion
-
-	#region XPC3xxx - Code Style & Best Practices
+		helpLinkUri: $"{HelpLinkBaseUri}/XPC2001.md");
 
 	public static readonly DiagnosticDescriptor PreferNameofOverStringLiteral = new(
 		id: "XPC3001",
@@ -50,7 +41,7 @@ internal static class DiagnosticDescriptors
 		defaultSeverity: DiagnosticSeverity.Warning,
 		isEnabledByDefault: true,
 		description: "Using nameof() provides compile-time verification that the method exists and enables refactoring support.",
-		helpLinkUri: "https://github.com/delegateas/XrmPluginCore/blob/main/XrmPluginCore.SourceGenerator/rules/XPC3001.md");
+		helpLinkUri: $"{HelpLinkBaseUri}/XPC3001.md");
 
 	public static readonly DiagnosticDescriptor LegacyImageRegistration = new(
 		id: "XPC3002",
@@ -59,7 +50,7 @@ internal static class DiagnosticDescriptors
 		category: Category,
 		defaultSeverity: DiagnosticSeverity.Info,
 		isEnabledByDefault: true,
-		helpLinkUri: "https://github.com/delegateas/XrmPluginCore/blob/main/XrmPluginCore.SourceGenerator/rules/XPC3002.md");
+		helpLinkUri: $"{HelpLinkBaseUri}/XPC3002.md");
 
 	public static readonly DiagnosticDescriptor ImageWithoutMethodReference = new(
 		id: "XPC3003",
@@ -68,11 +59,7 @@ internal static class DiagnosticDescriptors
 		category: Category,
 		defaultSeverity: DiagnosticSeverity.Warning,
 		isEnabledByDefault: true,
-		helpLinkUri: "https://github.com/delegateas/XrmPluginCore/blob/main/XrmPluginCore.SourceGenerator/rules/XPC3003.md");
-
-	#endregion
-
-	#region XPC4xxx - Handler Method Issues
+		helpLinkUri: $"{HelpLinkBaseUri}/XPC3003.md");
 
 	public static readonly DiagnosticDescriptor HandlerMethodNotFound = new(
 		id: "XPC4001",
@@ -81,7 +68,7 @@ internal static class DiagnosticDescriptors
 		category: Category,
 		defaultSeverity: DiagnosticSeverity.Error,
 		isEnabledByDefault: true,
-		helpLinkUri: "https://github.com/delegateas/XrmPluginCore/blob/main/XrmPluginCore.SourceGenerator/rules/XPC4001.md");
+		helpLinkUri: $"{HelpLinkBaseUri}/XPC4001.md");
 
 	public static readonly DiagnosticDescriptor HandlerSignatureMismatch = new(
 		id: "XPC4002",
@@ -90,7 +77,7 @@ internal static class DiagnosticDescriptors
 		category: Category,
 		defaultSeverity: DiagnosticSeverity.Warning,
 		isEnabledByDefault: true,
-		helpLinkUri: "https://github.com/delegateas/XrmPluginCore/blob/main/XrmPluginCore.SourceGenerator/rules/XPC4002.md");
+		helpLinkUri: $"{HelpLinkBaseUri}/XPC4002.md");
 
 	public static readonly DiagnosticDescriptor HandlerSignatureMismatchError = new(
 		id: "XPC4003",
@@ -99,11 +86,7 @@ internal static class DiagnosticDescriptors
 		category: Category,
 		defaultSeverity: DiagnosticSeverity.Error,
 		isEnabledByDefault: true,
-		helpLinkUri: "https://github.com/delegateas/XrmPluginCore/blob/main/XrmPluginCore.SourceGenerator/rules/XPC4003.md");
-
-	#endregion
-
-	#region XPC5xxx - Internal Errors
+		helpLinkUri: $"{HelpLinkBaseUri}/XPC4003.md");
 
 	public static readonly DiagnosticDescriptor SymbolResolutionFailed = new(
 		id: "XPC5001",
@@ -121,5 +104,4 @@ internal static class DiagnosticDescriptors
 		DiagnosticSeverity.Error,
 		isEnabledByDefault: true);
 
-	#endregion
 }
