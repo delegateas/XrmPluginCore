@@ -12,6 +12,7 @@
     <File Path="appsettings.json" />
     <File Path="CLAUDE.md" />
     <File Path="Directory.Build.props" />
+    <File Path="Directory.Build.targets" />
   </Folder>
   <Folder Name="/Solution Files/Scripts/">
     <File Path="scripts/Pack-Local.ps1" />

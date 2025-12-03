@@ -5,6 +5,6 @@
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <PackageIcon>contextand.png</PackageIcon>
     <PackageReadmeFile>README.md</PackageReadmeFile>
-    <Version>1.0.0-local</Version>
+    <Version Condition="'$(Version)' == ''">1.0.0-local</Version>
   </PropertyGroup>
 </Project>
