@@ -53,6 +53,14 @@ jobs:
         name: packages
         path: ./nupkg
 
+    - name: 📎 Add packages to release
+      uses: softprops/action-gh-release@v2
+      if: github.event_name == 'release'
+      with:
+        files: |
+          ./nupkg/*.nupkg
+          ./nupkg/*.snupkg
+
     - name: 🚀 Publish to NuGet
       shell: pwsh
       run: |

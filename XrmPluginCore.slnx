@@ -7,12 +7,14 @@
   <Folder Name="/Solution Files/">
     <File Path=".config/dotnet-tools.json" />
     <File Path=".editorconfig" />
-    <File Path=".github/workflows/ci.yml" />
-    <File Path=".github/workflows/release.yml" />
     <File Path="appsettings.json" />
     <File Path="CLAUDE.md" />
     <File Path="Directory.Build.props" />
     <File Path="Directory.Build.targets" />
+  </Folder>
+  <Folder Name="/Solution Files/Github/">
+    <File Path=".github/workflows/ci.yml" />
+    <File Path=".github/workflows/release.yml" />
   </Folder>
   <Folder Name="/Solution Files/Scripts/">
     <File Path="scripts/Pack-Local.ps1" />
