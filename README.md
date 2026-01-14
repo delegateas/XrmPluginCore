@@ -268,6 +268,7 @@ To ensure XrmPluginCore, and it's dependencies are included, you can use the fol
 <Target Name="ILRepack" AfterTargets="Build">
   <ItemGroup>
     <InputAssemblies Include="$(TargetPath)" />
+    <InputAssemblies Include="$(TargetDir)System.Threading.Tasks.Extensions.dll" />
     <InputAssemblies Include="$(TargetDir)Microsoft.Bcl.AsyncInterfaces.dll" />
     <InputAssemblies Include="$(TargetDir)Microsoft.Extensions.DependencyInjection.Abstractions.dll" />
     <InputAssemblies Include="$(TargetDir)Microsoft.Extensions.DependencyInjection.dll" />
