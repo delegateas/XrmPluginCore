@@ -658,9 +658,10 @@ public class DiagnosticReportingTests
 	}
 
 	[Fact]
-	public async Task Should_Report_XPC3003_Not_XPC3002_When_WithPreImage_Used_Even_With_AddImage()
+	public async Task Should_Report_Both_XPC3002_And_XPC3003_When_AddImage_And_WithPreImage_Used_With_Invocation()
 	{
-		// Arrange - Both WithPreImage (modern) and AddImage (legacy) used - should report XPC3003 since modern takes precedence
+		// Arrange - Both WithPreImage (modern) and AddImage (legacy) used with lambda invocation
+		// Should report both: XPC3002 for AddImage, XPC3003 for lambda invocation with modern API
 		const string pluginSource = """
 
 			using XrmPluginCore;
@@ -703,7 +704,7 @@ public class DiagnosticReportingTests
 		// Act - Run analyzer instead of generator
 		var diagnostics = await GetAnalyzerDiagnosticsAsync(source, new ImageWithoutMethodReferenceAnalyzer());
 
-		// Assert - Should report XPC3003 (modern API takes precedence)
+		// Assert - Should report both diagnostics
 		var xpc3003Diagnostics = diagnostics
 			.Where(d => d.Id == "XPC3003")
 			.ToArray();
@@ -712,8 +713,126 @@ public class DiagnosticReportingTests
 			.Where(d => d.Id == "XPC3002")
 			.ToArray();
 
-		xpc3003Diagnostics.Should().NotBeEmpty("XPC3003 should be reported when modern API (WithPreImage) is used");
-		xpc3002Diagnostics.Should().BeEmpty("XPC3002 should NOT be reported when modern API is also present");
+		xpc3003Diagnostics.Should().NotBeEmpty("XPC3003 should be reported when modern API is used with lambda invocation");
+		xpc3002Diagnostics.Should().NotBeEmpty("XPC3002 should be reported for AddImage usage");
+	}
+
+	[Fact]
+	public async Task Should_Report_XPC3002_When_AddImage_Used_With_Nameof()
+	{
+		// Arrange - AddImage used with nameof() - should still suggest migration to modern API
+		const string pluginSource = """
+
+			using XrmPluginCore;
+			using XrmPluginCore.Enums;
+			using Microsoft.Extensions.DependencyInjection;
+			using TestNamespace;
+
+			namespace TestNamespace
+			{
+			    public class TestPlugin : Plugin
+			    {
+			        public TestPlugin()
+			        {
+			            RegisterStep<Account, ITestService>(EventOperation.Update, ExecutionStage.PostOperation,
+			                nameof(ITestService.DoSomething))
+			                .AddImage(ImageType.PreImage, x => x.Name);
+			        }
+
+			        protected override IServiceCollection OnBeforeBuildServiceProvider(IServiceCollection services)
+			        {
+			            return services.AddScoped<ITestService, TestService>();
+			        }
+			    }
+
+			    public interface ITestService
+			    {
+			        void DoSomething();
+			    }
+
+			    public class TestService : ITestService
+			    {
+			        public void DoSomething() { }
+			    }
+			}
+			""";
+
+		var source = TestFixtures.GetCompleteSource(pluginSource);
+
+		// Act - Run analyzer instead of generator
+		var diagnostics = await GetAnalyzerDiagnosticsAsync(source, new ImageWithoutMethodReferenceAnalyzer());
+
+		// Assert - Should report XPC3002 for AddImage, but NOT XPC3003 (no lambda invocation)
+		var xpc3002Diagnostics = diagnostics
+			.Where(d => d.Id == "XPC3002")
+			.ToArray();
+
+		var xpc3003Diagnostics = diagnostics
+			.Where(d => d.Id == "XPC3003")
+			.ToArray();
+
+		xpc3002Diagnostics.Should().NotBeEmpty("XPC3002 should be reported when AddImage is used, even with nameof()");
+		xpc3002Diagnostics.Should().OnlyContain(d => d.Severity == DiagnosticSeverity.Info);
+		xpc3003Diagnostics.Should().BeEmpty("XPC3003 should NOT be reported when using nameof()");
+	}
+
+	[Fact]
+	public async Task Should_Report_XPC3002_When_AddImage_Used_With_MethodReference()
+	{
+		// Arrange - AddImage used with method reference syntax (s => s.DoSomething without parentheses)
+		const string pluginSource = """
+
+			using XrmPluginCore;
+			using XrmPluginCore.Enums;
+			using Microsoft.Extensions.DependencyInjection;
+			using TestNamespace;
+
+			namespace TestNamespace
+			{
+			    public class TestPlugin : Plugin
+			    {
+			        public TestPlugin()
+			        {
+			            RegisterStep<Account, ITestService>(EventOperation.Update, ExecutionStage.PostOperation,
+			                s => s.DoSomething)
+			                .AddImage(ImageType.PreImage, x => x.Name);
+			        }
+
+			        protected override IServiceCollection OnBeforeBuildServiceProvider(IServiceCollection services)
+			        {
+			            return services.AddScoped<ITestService, TestService>();
+			        }
+			    }
+
+			    public interface ITestService
+			    {
+			        void DoSomething();
+			    }
+
+			    public class TestService : ITestService
+			    {
+			        public void DoSomething() { }
+			    }
+			}
+			""";
+
+		var source = TestFixtures.GetCompleteSource(pluginSource);
+
+		// Act - Run analyzer instead of generator
+		var diagnostics = await GetAnalyzerDiagnosticsAsync(source, new ImageWithoutMethodReferenceAnalyzer());
+
+		// Assert - Should report XPC3002 for AddImage, but NOT XPC3003 (method reference, not invocation)
+		var xpc3002Diagnostics = diagnostics
+			.Where(d => d.Id == "XPC3002")
+			.ToArray();
+
+		var xpc3003Diagnostics = diagnostics
+			.Where(d => d.Id == "XPC3003")
+			.ToArray();
+
+		xpc3002Diagnostics.Should().NotBeEmpty("XPC3002 should be reported when AddImage is used, even with method reference");
+		xpc3002Diagnostics.Should().OnlyContain(d => d.Severity == DiagnosticSeverity.Info);
+		xpc3003Diagnostics.Should().BeEmpty("XPC3003 should NOT be reported when using method reference syntax");
 	}
 
 	private static async Task<ImmutableArray<Diagnostic>> GetAnalyzerDiagnosticsAsync(string source, DiagnosticAnalyzer analyzer)
