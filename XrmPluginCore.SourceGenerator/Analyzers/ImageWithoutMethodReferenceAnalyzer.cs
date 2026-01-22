@@ -2,25 +2,20 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using XrmPluginCore.SourceGenerator.Helpers;
 
 namespace XrmPluginCore.SourceGenerator.Analyzers;
 
 /// <summary>
-/// Analyzer that warns when lambda invocation syntax (s => s.Method()) is used with image registrations
-/// instead of method reference syntax (nameof(Service.Method)).
+/// Analyzer that reports:
+/// - XPC3002: When AddImage is used (suggesting migration to WithPreImage/WithPostImage)
+/// - XPC3003: When lambda invocation syntax (s => s.Method()) is used with modern API (WithPreImage/WithPostImage)
 /// </summary>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public class ImageWithoutMethodReferenceAnalyzer : DiagnosticAnalyzer
 {
-	private enum ImageRegistrationType
-	{
-		None,
-		Modern,  // WithPreImage, WithPostImage
-		Legacy   // AddImage
-	}
-
 	public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics =>
 		ImmutableArray.Create(
 			DiagnosticDescriptors.ImageWithoutMethodReference,
@@ -58,39 +53,36 @@ public class ImageWithoutMethodReferenceAnalyzer : DiagnosticAnalyzer
 
 		var handlerArgument = arguments[2].Expression;
 
-		// Check if the 3rd argument is a lambda with an invocation body (s => s.Method())
-		if (!IsLambdaWithInvocation(handlerArgument, out var methodName, out var hasArguments))
+		// Get image registration info
+		var (hasModernApi, addImageLocations) = GetImageRegistrationInfo(invocation);
+
+		// XPC3002: Report for any AddImage usage (suggesting migration to modern API)
+		foreach (var addImageLocation in addImageLocations)
 		{
-			return;
+			var diagnostic = Diagnostic.Create(
+				DiagnosticDescriptors.LegacyImageRegistration,
+				addImageLocation);
+
+			context.ReportDiagnostic(diagnostic);
 		}
 
-		// Check if the call chain has image registration and which type
-		var imageType = GetImageRegistrationType(invocation);
-		if (imageType == ImageRegistrationType.None)
+		// XPC3003: Report when modern API is used with lambda invocation syntax
+		if (hasModernApi && IsLambdaWithInvocation(handlerArgument, out var methodName, out var hasArguments))
 		{
-			return;
+			var serviceType = genericName.TypeArgumentList.Arguments[1].ToString();
+
+			var properties = ImmutableDictionary.CreateBuilder<string, string>();
+			properties.Add("ServiceType", serviceType);
+			properties.Add("MethodName", methodName ?? string.Empty);
+			properties.Add("HasArguments", hasArguments.ToString());
+
+			var diagnostic = Diagnostic.Create(
+				DiagnosticDescriptors.ImageWithoutMethodReference,
+				handlerArgument.GetLocation(),
+				properties.ToImmutable());
+
+			context.ReportDiagnostic(diagnostic);
 		}
-
-		// Get the service type name (TService)
-		var serviceType = genericName.TypeArgumentList.Arguments[1].ToString();
-
-		// Create diagnostic properties for the code fix
-		var properties = ImmutableDictionary.CreateBuilder<string, string>();
-		properties.Add("ServiceType", serviceType);
-		properties.Add("MethodName", methodName);
-		properties.Add("HasArguments", hasArguments.ToString());
-
-		// Select appropriate diagnostic based on API type
-		var descriptor = imageType == ImageRegistrationType.Modern
-			? DiagnosticDescriptors.ImageWithoutMethodReference
-			: DiagnosticDescriptors.LegacyImageRegistration;
-
-		var diagnostic = Diagnostic.Create(
-			descriptor,
-			handlerArgument.GetLocation(),
-			properties.ToImmutable());
-
-		context.ReportDiagnostic(diagnostic);
 	}
 
 	private static bool IsLambdaWithInvocation(ExpressionSyntax expression, out string methodName, out bool hasArguments)
@@ -125,11 +117,18 @@ public class ImageWithoutMethodReferenceAnalyzer : DiagnosticAnalyzer
 		return false;
 	}
 
-	private static ImageRegistrationType GetImageRegistrationType(InvocationExpressionSyntax registerStepInvocation)
+	/// <summary>
+	/// Checks the call chain for image registrations.
+	/// Returns whether modern API is used and the locations of all AddImage calls.
+	/// </summary>
+	private static (bool hasModernApi, List<Location> addImageLocations) GetImageRegistrationInfo(
+		InvocationExpressionSyntax registerStepInvocation)
 	{
+		var hasModernApi = false;
+		var addImageLocations = new List<Location>();
+
 		// Walk up to find the full fluent call chain
 		var current = registerStepInvocation.Parent;
-		var result = ImageRegistrationType.None;
 
 		while (current != null)
 		{
@@ -140,14 +139,12 @@ public class ImageWithoutMethodReferenceAnalyzer : DiagnosticAnalyzer
 				if (methodName == Constants.WithPreImageMethodName ||
 					methodName == Constants.WithPostImageMethodName)
 				{
-					// Modern API takes precedence
-					return ImageRegistrationType.Modern;
+					hasModernApi = true;
 				}
-
-				if (methodName == Constants.AddImageMethodName)
+				else if (methodName == Constants.AddImageMethodName)
 				{
-					// Track legacy, but keep looking for modern
-					result = ImageRegistrationType.Legacy;
+					// Collect the location of the AddImage identifier for the diagnostic
+					addImageLocations.Add(memberAccess.Name.GetLocation());
 				}
 			}
 
@@ -155,6 +152,6 @@ public class ImageWithoutMethodReferenceAnalyzer : DiagnosticAnalyzer
 			current = current.Parent;
 		}
 
-		return result;
+		return (hasModernApi, addImageLocations);
 	}
 }
