@@ -35,11 +35,17 @@ public static class GeneratorTestHelper
 			.Where(tree => !compilation.SyntaxTrees.Contains(tree))
 			.ToArray();
 
+		// Get generated sources with hint names from the run result
+		var generatedSources = runResult.Results[0].GeneratedSources
+			.Select(gs => new GeneratedSourceInfo(gs.HintName, gs.SourceText.ToString()))
+			.ToArray();
+
 		return new GeneratorRunResult
 		{
 			OutputCompilation = (CSharpCompilation)outputCompilation,
 			Diagnostics = [.. diagnostics],
 			GeneratedTrees = generatedTrees,
+			GeneratedSources = generatedSources,
 			GeneratorDiagnostics = [.. runResult.Results[0].Diagnostics]
 		};
 	}
@@ -105,8 +111,14 @@ public class GeneratorRunResult
 	public required CSharpCompilation OutputCompilation { get; init; }
 	public required Diagnostic[] Diagnostics { get; init; }
 	public required SyntaxTree[] GeneratedTrees { get; init; }
+	public required GeneratedSourceInfo[] GeneratedSources { get; init; }
 	public required Diagnostic[] GeneratorDiagnostics { get; init; }
 }
+
+/// <summary>
+/// Information about a generated source file including its hint name.
+/// </summary>
+public record GeneratedSourceInfo(string HintName, string SourceText);
 
 /// <summary>
 /// Result from compiling generated code.
