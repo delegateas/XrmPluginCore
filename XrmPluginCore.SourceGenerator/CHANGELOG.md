@@ -1,3 +1,9 @@
+### v1.2.5 - 22 January 2026
+* Fix: Avoid naming collisions on generated types when multiple plugins in the same assembly use Type-Safe Images
+* Fix: Generate PreImage/PostImage types, even when handler signature does not match
+* Fix: Refactored the image registration analyzer to always report XPC3002 for any AddImage usage, regardless of handler syntax (nameof, method reference, or lambda).
+XPC3003 is now only reported for lambda invocation with the modern API.
+
 ### v1.2.4 - 3 December 2025
 * Fix: Image wrappers now forward to the underlying strongly-typed entity type instead of the base Entity type
  
