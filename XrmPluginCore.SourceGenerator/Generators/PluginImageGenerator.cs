@@ -9,7 +9,6 @@ using XrmPluginCore.SourceGenerator.CodeGeneration;
 using XrmPluginCore.SourceGenerator.Helpers;
 using XrmPluginCore.SourceGenerator.Models;
 using XrmPluginCore.SourceGenerator.Parsers;
-using XrmPluginCore.SourceGenerator.Validation;
 
 namespace XrmPluginCore.SourceGenerator.Generators;
 
@@ -93,11 +92,6 @@ public class PluginImageGenerator : IIncrementalGenerator
 
 			if (mergedMetadata is null)
 				continue;
-
-			// Validate handler method signature
-			HandlerMethodValidator.ValidateHandlerMethod(
-				mergedMetadata,
-				semanticModel.Compilation);
 
 			// Include if:
 			// - Has method reference (for ActionWrapper generation)
