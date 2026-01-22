@@ -658,9 +658,10 @@ public class DiagnosticReportingTests
 	}
 
 	[Fact]
-	public async Task Should_Report_XPC3003_Not_XPC3002_When_WithPreImage_Used_Even_With_AddImage()
+	public async Task Should_Report_Both_XPC3002_And_XPC3003_When_AddImage_And_WithPreImage_Used_With_Invocation()
 	{
-		// Arrange - Both WithPreImage (modern) and AddImage (legacy) used - should report XPC3003 since modern takes precedence
+		// Arrange - Both WithPreImage (modern) and AddImage (legacy) used with lambda invocation
+		// Should report both: XPC3002 for AddImage, XPC3003 for lambda invocation with modern API
 		const string pluginSource = """
 
 			using XrmPluginCore;
@@ -703,7 +704,7 @@ public class DiagnosticReportingTests
 		// Act - Run analyzer instead of generator
 		var diagnostics = await GetAnalyzerDiagnosticsAsync(source, new ImageWithoutMethodReferenceAnalyzer());
 
-		// Assert - Should report XPC3003 (modern API takes precedence)
+		// Assert - Should report both diagnostics
 		var xpc3003Diagnostics = diagnostics
 			.Where(d => d.Id == "XPC3003")
 			.ToArray();
@@ -712,8 +713,355 @@ public class DiagnosticReportingTests
 			.Where(d => d.Id == "XPC3002")
 			.ToArray();
 
-		xpc3003Diagnostics.Should().NotBeEmpty("XPC3003 should be reported when modern API (WithPreImage) is used");
-		xpc3002Diagnostics.Should().BeEmpty("XPC3002 should NOT be reported when modern API is also present");
+		xpc3003Diagnostics.Should().NotBeEmpty("XPC3003 should be reported when modern API is used with lambda invocation");
+		xpc3002Diagnostics.Should().NotBeEmpty("XPC3002 should be reported for AddImage usage");
+	}
+
+	[Fact]
+	public async Task Should_Report_XPC3002_When_AddImage_Used_With_Nameof()
+	{
+		// Arrange - AddImage used with nameof() - should still suggest migration to modern API
+		const string pluginSource = """
+
+			using XrmPluginCore;
+			using XrmPluginCore.Enums;
+			using Microsoft.Extensions.DependencyInjection;
+			using TestNamespace;
+
+			namespace TestNamespace
+			{
+			    public class TestPlugin : Plugin
+			    {
+			        public TestPlugin()
+			        {
+			            RegisterStep<Account, ITestService>(EventOperation.Update, ExecutionStage.PostOperation,
+			                nameof(ITestService.DoSomething))
+			                .AddImage(ImageType.PreImage, x => x.Name);
+			        }
+
+			        protected override IServiceCollection OnBeforeBuildServiceProvider(IServiceCollection services)
+			        {
+			            return services.AddScoped<ITestService, TestService>();
+			        }
+			    }
+
+			    public interface ITestService
+			    {
+			        void DoSomething();
+			    }
+
+			    public class TestService : ITestService
+			    {
+			        public void DoSomething() { }
+			    }
+			}
+			""";
+
+		var source = TestFixtures.GetCompleteSource(pluginSource);
+
+		// Act - Run analyzer instead of generator
+		var diagnostics = await GetAnalyzerDiagnosticsAsync(source, new ImageWithoutMethodReferenceAnalyzer());
+
+		// Assert - Should report XPC3002 for AddImage, but NOT XPC3003 (no lambda invocation)
+		var xpc3002Diagnostics = diagnostics
+			.Where(d => d.Id == "XPC3002")
+			.ToArray();
+
+		var xpc3003Diagnostics = diagnostics
+			.Where(d => d.Id == "XPC3003")
+			.ToArray();
+
+		xpc3002Diagnostics.Should().NotBeEmpty("XPC3002 should be reported when AddImage is used, even with nameof()");
+		xpc3002Diagnostics.Should().OnlyContain(d => d.Severity == DiagnosticSeverity.Info);
+		xpc3003Diagnostics.Should().BeEmpty("XPC3003 should NOT be reported when using nameof()");
+	}
+
+	[Fact]
+	public async Task Should_Report_XPC3002_When_AddImage_Used_With_MethodReference()
+	{
+		// Arrange - AddImage used with method reference syntax (s => s.DoSomething without parentheses)
+		const string pluginSource = """
+
+			using XrmPluginCore;
+			using XrmPluginCore.Enums;
+			using Microsoft.Extensions.DependencyInjection;
+			using TestNamespace;
+
+			namespace TestNamespace
+			{
+			    public class TestPlugin : Plugin
+			    {
+			        public TestPlugin()
+			        {
+			            RegisterStep<Account, ITestService>(EventOperation.Update, ExecutionStage.PostOperation,
+			                s => s.DoSomething)
+			                .AddImage(ImageType.PreImage, x => x.Name);
+			        }
+
+			        protected override IServiceCollection OnBeforeBuildServiceProvider(IServiceCollection services)
+			        {
+			            return services.AddScoped<ITestService, TestService>();
+			        }
+			    }
+
+			    public interface ITestService
+			    {
+			        void DoSomething();
+			    }
+
+			    public class TestService : ITestService
+			    {
+			        public void DoSomething() { }
+			    }
+			}
+			""";
+
+		var source = TestFixtures.GetCompleteSource(pluginSource);
+
+		// Act - Run analyzer instead of generator
+		var diagnostics = await GetAnalyzerDiagnosticsAsync(source, new ImageWithoutMethodReferenceAnalyzer());
+
+		// Assert - Should report XPC3002 for AddImage, but NOT XPC3003 (method reference, not invocation)
+		var xpc3002Diagnostics = diagnostics
+			.Where(d => d.Id == "XPC3002")
+			.ToArray();
+
+		var xpc3003Diagnostics = diagnostics
+			.Where(d => d.Id == "XPC3003")
+			.ToArray();
+
+		xpc3002Diagnostics.Should().NotBeEmpty("XPC3002 should be reported when AddImage is used, even with method reference");
+		xpc3002Diagnostics.Should().OnlyContain(d => d.Severity == DiagnosticSeverity.Info);
+		xpc3003Diagnostics.Should().BeEmpty("XPC3003 should NOT be reported when using method reference syntax");
+	}
+
+	[Fact]
+	public void Should_Generate_Types_Even_When_Handler_Method_Not_Found()
+	{
+		// Arrange - method reference points to NonExistentMethod but types should still be generated
+		// This enables a better DX where developers can create the method with correct signature
+		// using the generated PreImage/PostImage types
+		const string pluginSource = """
+
+			using XrmPluginCore;
+			using XrmPluginCore.Enums;
+			using Microsoft.Extensions.DependencyInjection;
+			using TestNamespace;
+
+			namespace TestNamespace
+			{
+			    public class TestPlugin : Plugin
+			    {
+			        public TestPlugin()
+			        {
+			            RegisterStep<Account, ITestService>(EventOperation.Update, ExecutionStage.PostOperation,
+			                service => service.NonExistentMethod)
+			                .WithPreImage(x => x.Name);
+			        }
+
+			        protected override IServiceCollection OnBeforeBuildServiceProvider(IServiceCollection services)
+			        {
+			            return services.AddScoped<ITestService, TestService>();
+			        }
+			    }
+
+			    public interface ITestService
+			    {
+			        void Process();  // Different method, NonExistentMethod doesn't exist
+			    }
+
+			    public class TestService : ITestService
+			    {
+			        public void Process() { }
+			    }
+			}
+			""";
+
+		var source = TestFixtures.GetCompleteSource(pluginSource);
+
+		// Act
+		var result = GeneratorTestHelper.RunGenerator(
+			CompilationHelper.CreateCompilation(source));
+
+		// Assert - Types should be generated even though handler method doesn't exist
+		result.GeneratedTrees.Should().NotBeEmpty(
+			"PreImage/PostImage types should be generated even when handler method doesn't exist");
+
+		// Verify PreImage class is generated
+		var generatedSource = result.GeneratedTrees.First().ToString();
+		generatedSource.Should().Contain("public sealed class PreImage",
+			"PreImage class should be generated to allow developers to create the handler method with correct signature");
+	}
+
+	[Fact]
+	public void Should_Generate_Types_Even_When_Handler_Method_Wrong_Signature()
+	{
+		// Arrange - method reference points to MethodWithoutImage but types should still be generated
+		// This enables a better DX where developers can create the method with correct signature
+		// using the generated PreImage/PostImage types
+		const string pluginSource = """
+
+			using XrmPluginCore;
+			using XrmPluginCore.Enums;
+			using Microsoft.Extensions.DependencyInjection;
+			using TestNamespace;
+
+			namespace TestNamespace
+			{
+			    public class TestPlugin : Plugin
+			    {
+			        public TestPlugin()
+			        {
+			            RegisterStep<Account, ITestService>(EventOperation.Update, ExecutionStage.PostOperation,
+			                service => service.MethodWithoutImage)
+			                .WithPreImage(x => x.Name);
+			        }
+
+			        protected override IServiceCollection OnBeforeBuildServiceProvider(IServiceCollection services)
+			        {
+			            return services.AddScoped<ITestService, TestService>();
+			        }
+			    }
+
+			    public interface ITestService
+			    {
+			        void Process();  // Different method
+					void MethodWithoutImage(); // Method exists but wrong signature (missing PreImage parameter)
+			    }
+
+			    public class TestService : ITestService
+			    {
+			        public void Process() { }
+					public void MethodWithoutImage() { }
+			    }
+			}
+			""";
+
+		var source = TestFixtures.GetCompleteSource(pluginSource);
+
+		// Act
+		var result = GeneratorTestHelper.RunGenerator(
+			CompilationHelper.CreateCompilation(source));
+
+		// Assert - Types should be generated even though handler method doesn't exist
+		result.GeneratedTrees.Should().NotBeEmpty(
+			"PreImage/PostImage types should be generated even when handler method doesn't exist");
+
+		// Verify PreImage class is generated
+		var generatedSource = result.GeneratedTrees.First().ToString();
+		generatedSource.Should().Contain("public sealed class PreImage",
+			"PreImage class should be generated to allow developers to create the handler method with correct signature");
+
+		generatedSource.Should().Contain("namespace TestNamespace.PluginRegistrations.TestPlugin.AccountUpdatePostOperation",
+			"Generated types should be in the correct namespace");
+	}
+
+	[Fact]
+	public void Should_Generate_Unique_Files_For_Same_Named_Plugins_In_Different_Namespaces()
+	{
+		// Arrange - Two plugins with the same class name but in different namespaces
+		// Both register the same entity/operation/stage combination
+		// Previously this would cause a hint name collision
+		// Note: We don't use GetCompleteSource here because it strips namespaces
+		const string source = """
+			using System;
+			using Microsoft.Xrm.Sdk;
+			using XrmPluginCore;
+			using XrmPluginCore.Enums;
+			using Microsoft.Extensions.DependencyInjection;
+			using XrmPluginCore.Tests.Context.BusinessDomain;
+
+			namespace Namespace1
+			{
+			    public class AccountPlugin : Plugin
+			    {
+			        public AccountPlugin()
+			        {
+			            RegisterStep<Account, ITestService>(EventOperation.Update, ExecutionStage.PostOperation,
+			                service => service.HandleUpdate)
+			                .WithPreImage(x => x.Name);
+			        }
+
+			        protected override IServiceCollection OnBeforeBuildServiceProvider(IServiceCollection services)
+			        {
+			            return services.AddScoped<ITestService, TestService>();
+			        }
+			    }
+
+			    public interface ITestService
+			    {
+			        void HandleUpdate();
+			    }
+
+			    public class TestService : ITestService
+			    {
+			        public void HandleUpdate() { }
+			    }
+			}
+
+			namespace Namespace2
+			{
+			    public class AccountPlugin : Plugin
+			    {
+			        public AccountPlugin()
+			        {
+			            RegisterStep<Account, ITestService>(EventOperation.Update, ExecutionStage.PostOperation,
+			                service => service.HandleUpdate)
+			                .WithPreImage(x => x.AccountNumber);
+			        }
+
+			        protected override IServiceCollection OnBeforeBuildServiceProvider(IServiceCollection services)
+			        {
+			            return services.AddScoped<ITestService, TestService>();
+			        }
+			    }
+
+			    public interface ITestService
+			    {
+			        void HandleUpdate();
+			    }
+
+			    public class TestService : ITestService
+			    {
+			        public void HandleUpdate() { }
+			    }
+			}
+			""";
+
+		// Act
+		var result = GeneratorTestHelper.RunGenerator(
+			CompilationHelper.CreateCompilation(source));
+
+		// Assert - Both plugins should generate separate files with unique hint names
+		result.GeneratedSources.Should().HaveCount(2,
+			"both plugins should generate code without hint name collision");
+
+		// Index sources by hint name for precise verification
+		var sourcesByHintName = result.GeneratedSources.ToDictionary(gs => gs.HintName, gs => gs.SourceText);
+
+		// Find the hint names for each namespace
+		var namespace1HintName = sourcesByHintName.Keys.Single(h => h.Contains("Namespace1_"));
+		var namespace2HintName = sourcesByHintName.Keys.Single(h => h.Contains("Namespace2_"));
+
+		// Verify Namespace1 source: correct namespace AND correct property (Name)
+		var namespace1Source = sourcesByHintName[namespace1HintName];
+		namespace1Source.Should().Contain("namespace Namespace1.PluginRegistrations.AccountPlugin.AccountUpdatePostOperation",
+			"Namespace1 hint name should map to Namespace1 generated namespace");
+		namespace1Source.Should().Contain("public string Name =>",
+			"Namespace1 plugin registered Name attribute");
+
+		// Verify Namespace2 source: correct namespace AND correct property (AccountNumber)
+		var namespace2Source = sourcesByHintName[namespace2HintName];
+		namespace2Source.Should().Contain("namespace Namespace2.PluginRegistrations.AccountPlugin.AccountUpdatePostOperation",
+			"Namespace2 hint name should map to Namespace2 generated namespace");
+		namespace2Source.Should().Contain("public string AccountNumber =>",
+			"Namespace2 plugin registered AccountNumber attribute");
+
+		// Verify each source only contains its own namespace (not cross-contaminated)
+		namespace1Source.Should().NotContain("namespace Namespace2",
+			"Namespace1 source should not contain Namespace2 namespace declaration");
+		namespace2Source.Should().NotContain("namespace Namespace1",
+			"Namespace2 source should not contain Namespace1 namespace declaration");
 	}
 
 	private static async Task<ImmutableArray<Diagnostic>> GetAnalyzerDiagnosticsAsync(string source, DiagnosticAnalyzer analyzer)

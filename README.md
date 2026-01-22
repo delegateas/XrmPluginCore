@@ -190,6 +190,20 @@ public string AccountNumber => Entity.AccountNumber;
 
 **Note:** This is optional. Without it, wrapper properties work normally but won't have XML documentation tooltips.
 
+#### Analyzer Diagnostics
+
+The source generator includes analyzers that help catch common issues at compile time:
+
+| ID | Severity | Title |
+|----|----------|-------|
+| [XPC2001](XrmPluginCore.SourceGenerator/rules/XPC2001.md) | Warning | No parameterless constructor found |
+| [XPC3001](XrmPluginCore.SourceGenerator/rules/XPC3001.md) | Warning | Prefer nameof over string literal for handler method |
+| [XPC3002](XrmPluginCore.SourceGenerator/rules/XPC3002.md) | Info | Consider using modern image registration API |
+| [XPC3003](XrmPluginCore.SourceGenerator/rules/XPC3003.md) | Warning | Image registration without method reference |
+| [XPC4001](XrmPluginCore.SourceGenerator/rules/XPC4001.md) | Error | Handler method not found |
+| [XPC4002](XrmPluginCore.SourceGenerator/rules/XPC4002.md) | Warning | Handler signature does not match registered images |
+| [XPC4003](XrmPluginCore.SourceGenerator/rules/XPC4003.md) | Error | Handler signature does not match registered images |
+
 ### Using the LocalPluginContext wrapper (Legacy)
 
 **NOTE**: This is only supported for legacy DAXIF/XrmFramework style plugins. It is recommended to use dependency injection based plugins instead.

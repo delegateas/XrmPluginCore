@@ -9,7 +9,6 @@ using XrmPluginCore.SourceGenerator.CodeGeneration;
 using XrmPluginCore.SourceGenerator.Helpers;
 using XrmPluginCore.SourceGenerator.Models;
 using XrmPluginCore.SourceGenerator.Parsers;
-using XrmPluginCore.SourceGenerator.Validation;
 
 namespace XrmPluginCore.SourceGenerator.Generators;
 
@@ -93,11 +92,6 @@ public class PluginImageGenerator : IIncrementalGenerator
 
 			if (mergedMetadata is null)
 				continue;
-
-			// Validate handler method signature
-			HandlerMethodValidator.ValidateHandlerMethod(
-				mergedMetadata,
-				semanticModel.Compilation);
 
 			// Include if:
 			// - Has method reference (for ActionWrapper generation)
@@ -184,10 +178,6 @@ public class PluginImageGenerator : IIncrementalGenerator
 				context.ReportDiagnostic(diagnostic);
 			}
 		}
-
-		// Skip generation if validation failed (analyzer will report the error)
-		if (metadata?.HasValidationError == true)
-			return;
 
 		// Generate code if we have a handler method reference (ActionWrapper always needed)
 		if (string.IsNullOrEmpty(metadata?.HandlerMethodName))
