@@ -45,6 +45,7 @@ public class FixHandlerSignatureCodeFixProvider : CodeFixProvider
 
 		diagnostic.Properties.TryGetValue("HasPreImage", out var hasPreImageStr);
 		diagnostic.Properties.TryGetValue("HasPostImage", out var hasPostImageStr);
+		diagnostic.Properties.TryGetValue("ImageNamespace", out var imageNamespace);
 
 		var hasPreImage = bool.TryParse(hasPreImageStr, out var pre) && pre;
 		var hasPostImage = bool.TryParse(hasPostImageStr, out var post) && post;
@@ -56,7 +57,7 @@ public class FixHandlerSignatureCodeFixProvider : CodeFixProvider
 		context.RegisterCodeFix(
 			CodeAction.Create(
 				title: title,
-				createChangedSolution: c => FixSignatureAsync(context.Document, diagnostic, serviceType!, methodName!, hasPreImage, hasPostImage, c),
+				createChangedSolution: c => FixSignatureAsync(context.Document, diagnostic, serviceType!, methodName!, hasPreImage, hasPostImage, imageNamespace, c),
 				equivalenceKey: nameof(FixHandlerSignatureCodeFixProvider)),
 			diagnostic);
 	}
@@ -68,6 +69,7 @@ public class FixHandlerSignatureCodeFixProvider : CodeFixProvider
 		string methodName,
 		bool hasPreImage,
 		bool hasPostImage,
+		string imageNamespace,
 		CancellationToken cancellationToken)
 	{
 		var solution = document.Project.Solution;
@@ -113,7 +115,7 @@ public class FixHandlerSignatureCodeFixProvider : CodeFixProvider
 		}
 
 		// Find the method declarations to fix (in interface and implementations)
-		solution = await FixMethodDeclarationsAsync(solution, serviceTypeSymbol, methodName, hasPreImage, hasPostImage, cancellationToken);
+		solution = await FixMethodDeclarationsAsync(solution, serviceTypeSymbol, methodName, hasPreImage, hasPostImage, imageNamespace, cancellationToken);
 
 		return solution;
 	}
@@ -124,6 +126,7 @@ public class FixHandlerSignatureCodeFixProvider : CodeFixProvider
 		string methodName,
 		bool hasPreImage,
 		bool hasPostImage,
+		string imageNamespace,
 		CancellationToken cancellationToken)
 	{
 		// Find all method declarations with this name on the service type
@@ -167,6 +170,7 @@ public class FixHandlerSignatureCodeFixProvider : CodeFixProvider
 				var newMethodDeclaration = methodDeclaration.WithParameterList(newParameters);
 
 				var newRoot = methodRoot.ReplaceNode(methodDeclaration, newMethodDeclaration);
+				newRoot = SyntaxFactoryHelper.AddUsingDirectiveIfMissing(newRoot, imageNamespace);
 				solution = solution.WithDocumentSyntaxRoot(methodDocument.Id, newRoot);
 
 				// Re-fetch the tree since we modified the solution

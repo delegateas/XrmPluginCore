@@ -1,6 +1,8 @@
+using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace XrmPluginCore.SourceGenerator.Helpers;
 
@@ -72,5 +74,32 @@ internal static class SyntaxFactoryHelper
 		}
 
 		return string.Join(", ", parts);
+	}
+
+	/// <summary>
+	/// Adds a using directive to the compilation unit if it doesn't already exist.
+	/// </summary>
+	public static SyntaxNode AddUsingDirectiveIfMissing(SyntaxNode root, string namespaceName)
+	{
+		if (string.IsNullOrEmpty(namespaceName))
+		{
+			return root;
+		}
+
+		if (root is not CompilationUnitSyntax compilationUnit)
+		{
+			return root;
+		}
+
+		var alreadyExists = compilationUnit.Usings.Any(u => u.Name?.ToString() == namespaceName);
+		if (alreadyExists)
+		{
+			return root;
+		}
+
+		var usingDirective = SyntaxFactory.UsingDirective(SyntaxFactory.ParseName(namespaceName))
+			.WithTrailingTrivia(SyntaxFactory.CarriageReturnLineFeed);
+
+		return compilationUnit.AddUsings(usingDirective);
 	}
 }

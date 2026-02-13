@@ -43,6 +43,7 @@ public class CreateHandlerMethodCodeFixProvider : CodeFixProvider
 
 		diagnostic.Properties.TryGetValue("HasPreImage", out var hasPreImageStr);
 		diagnostic.Properties.TryGetValue("HasPostImage", out var hasPostImageStr);
+		diagnostic.Properties.TryGetValue("ImageNamespace", out var imageNamespace);
 
 		var hasPreImage = bool.TryParse(hasPreImageStr, out var pre) && pre;
 		var hasPostImage = bool.TryParse(hasPostImageStr, out var post) && post;
@@ -54,7 +55,7 @@ public class CreateHandlerMethodCodeFixProvider : CodeFixProvider
 		context.RegisterCodeFix(
 			CodeAction.Create(
 				title: title,
-				createChangedSolution: c => CreateMethodAsync(context.Document, diagnostic, serviceType!, methodName!, hasPreImage, hasPostImage, c),
+				createChangedSolution: c => CreateMethodAsync(context.Document, diagnostic, serviceType!, methodName!, hasPreImage, hasPostImage, imageNamespace, c),
 				equivalenceKey: nameof(CreateHandlerMethodCodeFixProvider)),
 			diagnostic);
 	}
@@ -66,6 +67,7 @@ public class CreateHandlerMethodCodeFixProvider : CodeFixProvider
 		string methodName,
 		bool hasPreImage,
 		bool hasPostImage,
+		string imageNamespace,
 		CancellationToken cancellationToken)
 	{
 		var solution = document.Project.Solution;
@@ -135,6 +137,7 @@ public class CreateHandlerMethodCodeFixProvider : CodeFixProvider
 
 		var newInterface = interfaceDeclaration.AddMembers(methodDeclaration);
 		var newRoot = interfaceRoot.ReplaceNode(interfaceDeclaration, newInterface);
+		newRoot = SyntaxFactoryHelper.AddUsingDirectiveIfMissing(newRoot, imageNamespace);
 
 		return solution.WithDocumentSyntaxRoot(interfaceDocument.Id, newRoot);
 	}

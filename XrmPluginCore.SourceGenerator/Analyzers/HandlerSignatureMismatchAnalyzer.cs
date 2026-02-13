@@ -95,11 +95,13 @@ public class HandlerSignatureMismatchAnalyzer : DiagnosticAnalyzer
 		// Build expected signature description
 		var expectedSignature = SyntaxFactoryHelper.BuildSignatureDescription(hasPreImage, hasPostImage);
 
+		// Compute expected namespace for generated types
+		var expectedNamespace = RegisterStepHelper.GetExpectedImageNamespace(invocation, genericName, context.SemanticModel);
+
 		// Determine if generated types exist to choose appropriate diagnostic severity
 		var generatedTypesExist = DoGeneratedTypesExist(
 			context,
-			invocation,
-			genericName,
+			expectedNamespace,
 			hasPreImage,
 			hasPostImage);
 
@@ -114,6 +116,10 @@ public class HandlerSignatureMismatchAnalyzer : DiagnosticAnalyzer
 		properties.Add("MethodName", methodName);
 		properties.Add("HasPreImage", hasPreImage.ToString());
 		properties.Add("HasPostImage", hasPostImage.ToString());
+		if (expectedNamespace != null)
+		{
+			properties.Add("ImageNamespace", expectedNamespace);
+		}
 
 		var diagnostic = Diagnostic.Create(
 			descriptor,
@@ -127,35 +133,15 @@ public class HandlerSignatureMismatchAnalyzer : DiagnosticAnalyzer
 
 	private static bool DoGeneratedTypesExist(
 		SyntaxNodeAnalysisContext context,
-		InvocationExpressionSyntax invocation,
-		GenericNameSyntax genericName,
+		string expectedNamespace,
 		bool hasPreImage,
 		bool hasPostImage)
 	{
-		// Get plugin class info
-		var pluginClass = invocation.Ancestors().OfType<ClassDeclarationSyntax>().FirstOrDefault();
-		if (pluginClass == null)
+		if (expectedNamespace == null)
 		{
 			return false;
 		}
 
-		var pluginClassName = pluginClass.Identifier.Text;
-		var pluginNamespace = GetNamespace(pluginClass);
-
-		// Get entity type name
-		var entityTypeSyntax = genericName.TypeArgumentList.Arguments[0];
-		var entityTypeInfo = context.SemanticModel.GetTypeInfo(entityTypeSyntax);
-		var entityTypeName = entityTypeInfo.Type?.Name ?? "Unknown";
-
-		// Get operation and stage from arguments
-		var arguments = invocation.ArgumentList.Arguments;
-		var operation = ExtractEnumValue(arguments[0].Expression);
-		var stage = ExtractEnumValue(arguments[1].Expression);
-
-		// Build expected namespace: {Namespace}.PluginRegistrations.{PluginClass}.{Entity}{Op}{Stage}
-		var expectedNamespace = $"{pluginNamespace}.PluginRegistrations.{pluginClassName}.{entityTypeName}{operation}{stage}";
-
-		// Check if the required generated types exist
 		var compilation = context.SemanticModel.Compilation;
 
 		if (hasPreImage)
@@ -177,43 +163,6 @@ public class HandlerSignatureMismatchAnalyzer : DiagnosticAnalyzer
 		}
 
 		return true;
-	}
-
-	private static string GetNamespace(SyntaxNode node)
-	{
-		while (node != null)
-		{
-			if (node is NamespaceDeclarationSyntax namespaceDecl)
-			{
-				return namespaceDecl.Name.ToString();
-			}
-
-			if (node is FileScopedNamespaceDeclarationSyntax fileScopedNs)
-			{
-				return fileScopedNs.Name.ToString();
-			}
-
-			node = node.Parent;
-		}
-
-		return string.Empty;
-	}
-
-	private static string ExtractEnumValue(ExpressionSyntax expression)
-	{
-		// Handle direct enum access like EventOperation.Update
-		if (expression is MemberAccessExpressionSyntax memberAccess)
-		{
-			return memberAccess.Name.Identifier.Text;
-		}
-
-		// Handle string literal for custom messages
-		if (expression is LiteralExpressionSyntax literal)
-		{
-			return literal.Token.ValueText;
-		}
-
-		return "Unknown";
 	}
 
 	private static bool SignatureMatches(IMethodSymbol method, bool hasPreImage, bool hasPostImage)

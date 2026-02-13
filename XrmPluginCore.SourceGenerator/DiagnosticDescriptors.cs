@@ -11,7 +11,7 @@ namespace XrmPluginCore.SourceGenerator;
 /// - XPC4xxx: Handler method issues (not found, signature mismatch)
 /// - XPC5xxx: Internal errors (generation failures, symbol resolution)
 /// </summary>
-internal static class DiagnosticDescriptors
+public static class DiagnosticDescriptors
 {
 	private const string Category = "XrmPluginCore.SourceGenerator";
 	private const string HelpLinkBaseUri = "https://github.com/delegateas/XrmPluginCore/blob/main/XrmPluginCore.SourceGenerator/rules";

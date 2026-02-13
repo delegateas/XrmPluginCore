@@ -1,6 +1,7 @@
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using System.Linq;
 
 namespace XrmPluginCore.SourceGenerator.Helpers;
 
@@ -9,6 +10,76 @@ namespace XrmPluginCore.SourceGenerator.Helpers;
 /// </summary>
 internal static class RegisterStepHelper
 {
+	/// <summary>
+	/// Computes the expected generated wrapper namespace for a RegisterStep invocation.
+	/// Returns: {PluginNamespace}.PluginRegistrations.{PluginClassName}.{EntityTypeName}{Operation}{Stage}
+	/// </summary>
+	public static string GetExpectedImageNamespace(
+		InvocationExpressionSyntax invocation,
+		GenericNameSyntax genericName,
+		SemanticModel semanticModel)
+	{
+		var pluginClass = invocation.Ancestors().OfType<ClassDeclarationSyntax>().FirstOrDefault();
+		if (pluginClass == null)
+		{
+			return null;
+		}
+
+		var pluginClassName = pluginClass.Identifier.Text;
+		var pluginNamespace = GetNamespace(pluginClass);
+
+		var entityTypeSyntax = genericName.TypeArgumentList.Arguments[0];
+		var entityTypeInfo = semanticModel.GetTypeInfo(entityTypeSyntax);
+		var entityTypeName = entityTypeInfo.Type?.Name ?? "Unknown";
+
+		var arguments = invocation.ArgumentList.Arguments;
+		var operation = ExtractEnumValue(arguments[0].Expression);
+		var stage = ExtractEnumValue(arguments[1].Expression);
+
+		return $"{pluginNamespace}.PluginRegistrations.{pluginClassName}.{entityTypeName}{operation}{stage}";
+	}
+
+	/// <summary>
+	/// Extracts the namespace from a syntax node by walking up the tree.
+	/// </summary>
+	public static string GetNamespace(SyntaxNode node)
+	{
+		while (node != null)
+		{
+			if (node is NamespaceDeclarationSyntax namespaceDecl)
+			{
+				return namespaceDecl.Name.ToString();
+			}
+
+			if (node is FileScopedNamespaceDeclarationSyntax fileScopedNs)
+			{
+				return fileScopedNs.Name.ToString();
+			}
+
+			node = node.Parent;
+		}
+
+		return string.Empty;
+	}
+
+	/// <summary>
+	/// Extracts the enum value name from an expression (e.g., EventOperation.Update -> "Update").
+	/// </summary>
+	public static string ExtractEnumValue(ExpressionSyntax expression)
+	{
+		if (expression is MemberAccessExpressionSyntax memberAccess)
+		{
+			return memberAccess.Name.Identifier.Text;
+		}
+
+		if (expression is LiteralExpressionSyntax literal)
+		{
+			return literal.Token.ValueText;
+		}
+
+		return "Unknown";
+	}
+
 	/// <summary>
 	/// Checks if an invocation is a RegisterStep call and extracts the generic name.
 	/// </summary>
