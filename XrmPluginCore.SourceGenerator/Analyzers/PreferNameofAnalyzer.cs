@@ -61,8 +61,8 @@ public class PreferNameofAnalyzer : DiagnosticAnalyzer
 
 		// Create diagnostic properties for the code fix
 		var properties = ImmutableDictionary.CreateBuilder<string, string>();
-		properties.Add("ServiceType", serviceType);
-		properties.Add("MethodName", methodName);
+		properties.Add(Constants.PropertyServiceType, serviceType);
+		properties.Add(Constants.PropertyMethodName, methodName);
 
 		var diagnostic = Diagnostic.Create(
 			DiagnosticDescriptors.PreferNameofOverStringLiteral,

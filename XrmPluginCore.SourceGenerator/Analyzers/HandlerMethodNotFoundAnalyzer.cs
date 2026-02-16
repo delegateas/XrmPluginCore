@@ -75,20 +75,20 @@ public class HandlerMethodNotFoundAnalyzer : DiagnosticAnalyzer
 
 		// Create diagnostic properties for the code fix
 		var properties = ImmutableDictionary.CreateBuilder<string, string>();
-		properties.Add("ServiceType", serviceType.Name);
-		properties.Add("MethodName", methodName);
+		properties.Add(Constants.PropertyServiceType, serviceType.Name);
+		properties.Add(Constants.PropertyMethodName, methodName);
 
 		// Determine if there are images registered by checking the call chain
 		var (hasPreImage, hasPostImage) = RegisterStepHelper.CheckForImages(invocation);
-		properties.Add("HasPreImage", hasPreImage.ToString());
-		properties.Add("HasPostImage", hasPostImage.ToString());
+		properties.Add(Constants.PropertyHasPreImage, hasPreImage.ToString());
+		properties.Add(Constants.PropertyHasPostImage, hasPostImage.ToString());
 
 		if (hasPreImage || hasPostImage)
 		{
 			var imageNamespace = RegisterStepHelper.GetExpectedImageNamespace(invocation, genericName, context.SemanticModel);
 			if (imageNamespace != null)
 			{
-				properties.Add("ImageNamespace", imageNamespace);
+				properties.Add(Constants.PropertyImageNamespace, imageNamespace);
 			}
 		}
 

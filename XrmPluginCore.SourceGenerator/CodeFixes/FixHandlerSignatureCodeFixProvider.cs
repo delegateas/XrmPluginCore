@@ -37,15 +37,15 @@ public class FixHandlerSignatureCodeFixProvider : CodeFixProvider
 		var diagnostic = context.Diagnostics.First();
 
 		// Get properties from diagnostic
-		if (!diagnostic.Properties.TryGetValue("ServiceType", out var serviceType) ||
-			!diagnostic.Properties.TryGetValue("MethodName", out var methodName))
+		if (!diagnostic.Properties.TryGetValue(Constants.PropertyServiceType, out var serviceType) ||
+			!diagnostic.Properties.TryGetValue(Constants.PropertyMethodName, out var methodName))
 		{
 			return;
 		}
 
-		diagnostic.Properties.TryGetValue("HasPreImage", out var hasPreImageStr);
-		diagnostic.Properties.TryGetValue("HasPostImage", out var hasPostImageStr);
-		diagnostic.Properties.TryGetValue("ImageNamespace", out var imageNamespace);
+		diagnostic.Properties.TryGetValue(Constants.PropertyHasPreImage, out var hasPreImageStr);
+		diagnostic.Properties.TryGetValue(Constants.PropertyHasPostImage, out var hasPostImageStr);
+		diagnostic.Properties.TryGetValue(Constants.PropertyImageNamespace, out var imageNamespace);
 
 		var hasPreImage = bool.TryParse(hasPreImageStr, out var pre) && pre;
 		var hasPostImage = bool.TryParse(hasPostImageStr, out var post) && post;

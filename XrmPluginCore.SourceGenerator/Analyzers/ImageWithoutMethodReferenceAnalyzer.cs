@@ -72,9 +72,9 @@ public class ImageWithoutMethodReferenceAnalyzer : DiagnosticAnalyzer
 			var serviceType = genericName.TypeArgumentList.Arguments[1].ToString();
 
 			var properties = ImmutableDictionary.CreateBuilder<string, string>();
-			properties.Add("ServiceType", serviceType);
-			properties.Add("MethodName", methodName ?? string.Empty);
-			properties.Add("HasArguments", hasArguments.ToString());
+			properties.Add(Constants.PropertyServiceType, serviceType);
+			properties.Add(Constants.PropertyMethodName, methodName ?? string.Empty);
+			properties.Add(Constants.PropertyHasArguments, hasArguments.ToString());
 
 			var diagnostic = Diagnostic.Create(
 				DiagnosticDescriptors.ImageWithoutMethodReference,

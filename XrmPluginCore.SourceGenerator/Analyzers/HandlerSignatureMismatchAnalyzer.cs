@@ -112,13 +112,13 @@ public class HandlerSignatureMismatchAnalyzer : DiagnosticAnalyzer
 
 		// Create diagnostic properties for the code fix
 		var properties = ImmutableDictionary.CreateBuilder<string, string>();
-		properties.Add("ServiceType", serviceType.Name);
-		properties.Add("MethodName", methodName);
-		properties.Add("HasPreImage", hasPreImage.ToString());
-		properties.Add("HasPostImage", hasPostImage.ToString());
+		properties.Add(Constants.PropertyServiceType, serviceType.Name);
+		properties.Add(Constants.PropertyMethodName, methodName);
+		properties.Add(Constants.PropertyHasPreImage, hasPreImage.ToString());
+		properties.Add(Constants.PropertyHasPostImage, hasPostImage.ToString());
 		if (expectedNamespace != null)
 		{
-			properties.Add("ImageNamespace", expectedNamespace);
+			properties.Add(Constants.PropertyImageNamespace, expectedNamespace);
 		}
 
 		var diagnostic = Diagnostic.Create(

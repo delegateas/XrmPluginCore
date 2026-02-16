@@ -19,4 +19,12 @@ internal static class Constants
 	// Image types
 	public const string PreImageTypeName = "PreImage";
 	public const string PostImageTypeName = "PostImage";
+
+	// Diagnostic property keys (passed from analyzers to code fix providers)
+	public const string PropertyServiceType = "ServiceType";
+	public const string PropertyMethodName = "MethodName";
+	public const string PropertyHasPreImage = "HasPreImage";
+	public const string PropertyHasPostImage = "HasPostImage";
+	public const string PropertyImageNamespace = "ImageNamespace";
+	public const string PropertyHasArguments = "HasArguments";
 }

@@ -39,15 +39,15 @@ public class ImageWithoutMethodReferenceCodeFixProvider : CodeFixProvider
 		var lambdaNode = root.FindNode(diagnosticSpan);
 
 		// Get service type and method name from diagnostic properties
-		if (!diagnostic.Properties.TryGetValue("ServiceType", out var serviceType) ||
-			!diagnostic.Properties.TryGetValue("MethodName", out var methodName))
+		if (!diagnostic.Properties.TryGetValue(Constants.PropertyServiceType, out var serviceType) ||
+			!diagnostic.Properties.TryGetValue(Constants.PropertyMethodName, out var methodName))
 		{
 			return;
 		}
 
 		// Only offer fix if the invocation has no arguments
 		// Converting s => s.Method(arg1, arg2) to nameof() would lose the arguments
-		if (diagnostic.Properties.TryGetValue("HasArguments", out var hasArgs) &&
+		if (diagnostic.Properties.TryGetValue(Constants.PropertyHasArguments, out var hasArgs) &&
 			hasArgs == "True")
 		{
 			return;

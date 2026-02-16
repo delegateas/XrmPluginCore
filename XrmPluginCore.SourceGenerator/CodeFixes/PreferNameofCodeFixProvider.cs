@@ -37,8 +37,8 @@ public class PreferNameofCodeFixProvider : CodeFixProvider
 		var stringLiteral = root.FindNode(diagnosticSpan);
 
 		// Get service type and method name from diagnostic properties
-		if (!diagnostic.Properties.TryGetValue("ServiceType", out var serviceType) ||
-			!diagnostic.Properties.TryGetValue("MethodName", out var methodName))
+		if (!diagnostic.Properties.TryGetValue(Constants.PropertyServiceType, out var serviceType) ||
+			!diagnostic.Properties.TryGetValue(Constants.PropertyMethodName, out var methodName))
 		{
 			return;
 		}
