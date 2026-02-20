@@ -227,6 +227,71 @@ public class FixHandlerSignatureCodeFixProviderTests : CodeFixTestBase
 		count.Should().Be(1, "the using directive should not be duplicated");
 	}
 
+	[Fact]
+	public async Task Should_Avoid_Ambiguous_Usings()
+	{
+		// Arrange - Using directive already exists for Update registration
+		const string source = """
+			using System;
+			using System.ComponentModel;
+			using Microsoft.Xrm.Sdk;
+			using XrmPluginCore;
+			using XrmPluginCore.Enums;
+			using Microsoft.Extensions.DependencyInjection;
+			using XrmPluginCore.Tests.Context.BusinessDomain;
+			using TestNamespace.PluginRegistrations.TestPlugin.AccountUpdatePostOperation;
+
+			namespace TestNamespace
+			{
+			    public class TestPlugin : Plugin
+			    {
+			        public TestPlugin()
+			        {
+			            RegisterStep<Account, ITestService>(EventOperation.Update, ExecutionStage.PostOperation,
+			                nameof(ITestService.HandleUpdate))
+			                .AddFilteredAttributes(x => x.Name)
+			                .WithPreImage(x => x.Name, x => x.Revenue);
+
+						RegisterStep<Account, ITestService>(EventOperation.Delete, ExecutionStage.PostOperation,
+							nameof(ITestService.HandleDelete))
+							.AddFilteredAttributes(x => x.Name)
+							.WithPreImage(x => x.Name, x => x.Revenue);
+			        }
+
+			        protected override IServiceCollection OnBeforeBuildServiceProvider(IServiceCollection services)
+			        {
+			            return services.AddScoped<ITestService, TestService>();
+			        }
+			    }
+
+			    public interface ITestService
+			    {
+			        void HandleUpdate(PreImage preImage);
+					void HandleDelete();
+			    }
+
+			    public class TestService : ITestService
+			    {
+			        public void HandleUpdate(PreImage preImage) { }
+					public void HandleDelete() { }
+			    }
+			}
+			""";
+
+		// Act
+		var fixedSource = await ApplyCodeFixAsync(source);
+
+		// Assert - Signature fixed
+		CountOccurrences(fixedSource, "void HandleUpdate(AccountUpdatePostOperation.PreImage preImage)").Should().Be(2, "both the interface and implementation are updated");
+		CountOccurrences(fixedSource, "void HandleDelete(AccountDeletePostOperation.PreImage preImage)").Should().Be(2, "both the interface and implementation are updated");
+
+		// Assert - Using directive not duplicated (count occurrences)
+		CountOccurrences(fixedSource, "using AccountUpdatePostOperation = TestNamespace.PluginRegistrations.TestPlugin.AccountUpdatePostOperation;")
+			.Should().Be(1, "the using directive should be de-ambiguified");
+		CountOccurrences(fixedSource, "using AccountDeletePostOperation = TestNamespace.PluginRegistrations.TestPlugin.AccountDeletePostOperation;")
+			.Should().Be(1, "the using directive should be de-ambiguified");
+	}
+
 	private static int CountOccurrences(string source, string search)
 	{
 		var count = 0;

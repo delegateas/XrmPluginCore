@@ -164,6 +164,83 @@ public class CreateHandlerMethodCodeFixProviderTests : CodeFixTestBase
 		fixedSource.Should().NotContain("using TestNamespace.PluginRegistrations");
 	}
 
+	[Fact]
+	public async Task Should_Avoid_Ambiguous_Usings()
+	{
+		// Arrange - Using directive already exists for Update registration, method missing for Delete
+		const string source = """
+			using System;
+			using System.ComponentModel;
+			using Microsoft.Xrm.Sdk;
+			using XrmPluginCore;
+			using XrmPluginCore.Enums;
+			using Microsoft.Extensions.DependencyInjection;
+			using XrmPluginCore.Tests.Context.BusinessDomain;
+			using TestNamespace.PluginRegistrations.TestPlugin.AccountUpdatePostOperation;
+
+			namespace TestNamespace
+			{
+			    public class TestPlugin : Plugin
+			    {
+			        public TestPlugin()
+			        {
+			            RegisterStep<Account, ITestService>(EventOperation.Update, ExecutionStage.PostOperation,
+			                nameof(ITestService.HandleUpdate))
+			                .AddFilteredAttributes(x => x.Name)
+			                .WithPreImage(x => x.Name, x => x.Revenue);
+
+						RegisterStep<Account, ITestService>(EventOperation.Delete, ExecutionStage.PostOperation,
+							"HandleDelete")
+							.AddFilteredAttributes(x => x.Name)
+							.WithPreImage(x => x.Name, x => x.Revenue);
+			        }
+
+			        protected override IServiceCollection OnBeforeBuildServiceProvider(IServiceCollection services)
+			        {
+			            return services.AddScoped<ITestService, TestService>();
+			        }
+			    }
+
+			    public interface ITestService
+			    {
+			        void HandleUpdate(PreImage preImage);
+			    }
+
+			    public class TestService : ITestService
+			    {
+			        public void HandleUpdate(PreImage preImage) { }
+			    }
+			}
+			""";
+
+		// Act
+		var fixedSource = await ApplyCodeFixAsync(source);
+
+		// Assert - New method created with qualified type
+		fixedSource.Should().Contain("void HandleDelete(AccountDeletePostOperation.PreImage preImage)");
+
+		// Assert - Existing PreImage references qualified with alias
+		CountOccurrences(fixedSource, "AccountUpdatePostOperation.PreImage preImage").Should().BeGreaterOrEqualTo(1);
+
+		// Assert - Aliased usings
+		CountOccurrences(fixedSource, "using AccountUpdatePostOperation = TestNamespace.PluginRegistrations.TestPlugin.AccountUpdatePostOperation;")
+			.Should().Be(1, "the existing using should be converted to aliased form");
+		CountOccurrences(fixedSource, "using AccountDeletePostOperation = TestNamespace.PluginRegistrations.TestPlugin.AccountDeletePostOperation;")
+			.Should().Be(1, "the new using should be added in aliased form");
+	}
+
+	private static int CountOccurrences(string source, string search)
+	{
+		var count = 0;
+		var index = 0;
+		while ((index = source.IndexOf(search, index, StringComparison.Ordinal)) != -1)
+		{
+			count++;
+			index += search.Length;
+		}
+		return count;
+	}
+
 	private static Task<string> ApplyCodeFixAsync(string source)
 		=> ApplyCodeFixAsync(source, new HandlerMethodNotFoundAnalyzer(), new CreateHandlerMethodCodeFixProvider(),
 			DiagnosticDescriptors.HandlerMethodNotFound.Id);

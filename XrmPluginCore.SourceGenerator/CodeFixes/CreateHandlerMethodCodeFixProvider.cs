@@ -119,9 +119,6 @@ public class CreateHandlerMethodCodeFixProvider : CodeFixProvider
 			return solution;
 		}
 
-		// Create the method declaration
-		var methodDeclaration = CreateMethodDeclaration(methodName, hasPreImage, hasPostImage);
-
 		// Add the method to the interface
 		var interfaceDocument = solution.GetDocument(interfaceDeclaration.SyntaxTree);
 		if (interfaceDocument == null)
@@ -135,19 +132,34 @@ public class CreateHandlerMethodCodeFixProvider : CodeFixProvider
 			return solution;
 		}
 
+		// Detect ambiguity before creating the method
+		var (needsAlias, alias) = SyntaxFactoryHelper.DetectImageAmbiguity(interfaceRoot, imageNamespace);
+
+		// Create the method declaration with qualifier if ambiguous
+		var methodDeclaration = CreateMethodDeclaration(methodName, hasPreImage, hasPostImage, needsAlias ? alias : null);
+
 		var newInterface = interfaceDeclaration.AddMembers(methodDeclaration);
 		var newRoot = interfaceRoot.ReplaceNode(interfaceDeclaration, newInterface);
-		newRoot = SyntaxFactoryHelper.AddUsingDirectiveIfMissing(newRoot, imageNamespace);
+
+		// Handle usings
+		if (needsAlias)
+		{
+			newRoot = SyntaxFactoryHelper.ConvertToAliasedUsingsAndQualifyRefs(newRoot, imageNamespace);
+		}
+		else
+		{
+			newRoot = SyntaxFactoryHelper.AddUsingDirectiveIfMissing(newRoot, imageNamespace);
+		}
 
 		return solution.WithDocumentSyntaxRoot(interfaceDocument.Id, newRoot);
 	}
 
-	private static MethodDeclarationSyntax CreateMethodDeclaration(string methodName, bool hasPreImage, bool hasPostImage)
+	private static MethodDeclarationSyntax CreateMethodDeclaration(string methodName, bool hasPreImage, bool hasPostImage, string qualifier = null)
 	{
 		return SyntaxFactory.MethodDeclaration(
 				SyntaxFactory.PredefinedType(SyntaxFactory.Token(SyntaxKind.VoidKeyword)),
 				SyntaxFactory.Identifier(methodName))
-			.WithParameterList(SyntaxFactoryHelper.CreateImageParameterList(hasPreImage, hasPostImage))
+			.WithParameterList(SyntaxFactoryHelper.CreateImageParameterList(hasPreImage, hasPostImage, qualifier))
 			.WithSemicolonToken(SyntaxFactory.Token(SyntaxKind.SemicolonToken))
 			.WithLeadingTrivia(SyntaxFactory.ElasticCarriageReturnLineFeed, SyntaxFactory.ElasticTab)
 			.WithTrailingTrivia(SyntaxFactory.ElasticCarriageReturnLineFeed);

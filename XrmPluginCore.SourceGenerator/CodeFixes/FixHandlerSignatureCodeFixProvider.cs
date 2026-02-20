@@ -3,6 +3,7 @@ using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Composition;
 using System.Linq;
@@ -115,13 +116,14 @@ public class FixHandlerSignatureCodeFixProvider : CodeFixProvider
 		}
 
 		// Find the method declarations to fix (in interface and implementations)
-		solution = await FixMethodDeclarationsAsync(solution, serviceTypeSymbol, methodName, hasPreImage, hasPostImage, imageNamespace, cancellationToken);
+		solution = await FixMethodDeclarationsAsync(solution, semanticModel.Compilation, serviceTypeSymbol, methodName, hasPreImage, hasPostImage, imageNamespace, cancellationToken);
 
 		return solution;
 	}
 
 	private static async Task<Solution> FixMethodDeclarationsAsync(
 		Solution solution,
+		Compilation compilation,
 		INamedTypeSymbol serviceType,
 		string methodName,
 		bool hasPreImage,
@@ -129,53 +131,110 @@ public class FixHandlerSignatureCodeFixProvider : CodeFixProvider
 		string imageNamespace,
 		CancellationToken cancellationToken)
 	{
-		// Find all method declarations with this name on the service type
-		var methods = TypeHelper.GetAllMethodsIncludingInherited(serviceType, methodName);
+		// Collect ALL methods to fix (interface + implementations)
+		var allMethods = new List<IMethodSymbol>(TypeHelper.GetAllMethodsIncludingInherited(serviceType, methodName));
 
-		foreach (var method in methods)
+		if (serviceType.TypeKind == TypeKind.Interface)
+		{
+			var implMethods = TypeHelper.FindImplementingMethods(compilation, serviceType, methodName);
+			allMethods.AddRange(implMethods);
+		}
+
+		// Group method locations by document (syntax tree)
+		var locationsByTree = new Dictionary<SyntaxTree, List<Location>>();
+		foreach (var method in allMethods)
 		{
 			foreach (var location in method.Locations)
 			{
-				if (!location.IsInSource)
+				if (!location.IsInSource || location.SourceTree == null)
 				{
 					continue;
 				}
 
-				var tree = location.SourceTree;
-				if (tree == null)
+				if (!locationsByTree.TryGetValue(location.SourceTree, out var list))
 				{
-					continue;
+					list = new List<Location>();
+					locationsByTree[location.SourceTree] = list;
 				}
 
-				var methodDocument = solution.GetDocument(tree);
-				if (methodDocument == null)
-				{
-					continue;
-				}
+				list.Add(location);
+			}
+		}
 
-				var methodRoot = await tree.GetRootAsync(cancellationToken).ConfigureAwait(false);
+		// Process each document
+		foreach (var kvp in locationsByTree)
+		{
+			var tree = kvp.Key;
+			var locations = kvp.Value;
+
+			var methodDocument = solution.GetDocument(tree);
+			if (methodDocument == null)
+			{
+				continue;
+			}
+
+			var methodRoot = await tree.GetRootAsync(cancellationToken).ConfigureAwait(false);
+
+			// Find all method declarations in this document
+			var methodDeclarations = new List<MethodDeclarationSyntax>();
+			foreach (var location in locations)
+			{
 				var node = methodRoot.FindNode(location.SourceSpan);
-
-				var methodDeclaration = node.AncestorsAndSelf()
+				var methodDecl = node.AncestorsAndSelf()
 					.OfType<MethodDeclarationSyntax>()
 					.FirstOrDefault();
 
-				if (methodDeclaration == null)
+				if (methodDecl != null && !methodDeclarations.Contains(methodDecl))
 				{
-					continue;
+					methodDeclarations.Add(methodDecl);
 				}
-
-				// Create new parameter list
-				var newParameters = SyntaxFactoryHelper.CreateImageParameterList(hasPreImage, hasPostImage);
-				var newMethodDeclaration = methodDeclaration.WithParameterList(newParameters);
-
-				var newRoot = methodRoot.ReplaceNode(methodDeclaration, newMethodDeclaration);
-				newRoot = SyntaxFactoryHelper.AddUsingDirectiveIfMissing(newRoot, imageNamespace);
-				solution = solution.WithDocumentSyntaxRoot(methodDocument.Id, newRoot);
-
-				// Re-fetch the tree since we modified the solution
-				break; // Only fix the first declaration, we'll fix others on subsequent runs
 			}
+
+			if (methodDeclarations.Count == 0)
+			{
+				continue;
+			}
+
+			// Detect ambiguity
+			var ambiguity = SyntaxFactoryHelper.DetectImageAmbiguity(methodRoot, imageNamespace);
+			var newParameters = SyntaxFactoryHelper.CreateImageParameterList(hasPreImage, hasPostImage, ambiguity.needsAlias ? ambiguity.alias : null);
+
+			// Build a set of (containingTypeName, methodName) pairs to replace
+			var targets = new HashSet<(string typeName, string method)>();
+			foreach (var methodDecl in methodDeclarations)
+			{
+				var containingType = methodDecl.Ancestors().OfType<TypeDeclarationSyntax>().FirstOrDefault();
+				var typeName = containingType?.Identifier.Text;
+				if (typeName != null)
+				{
+					targets.Add((typeName, methodDecl.Identifier.Text));
+				}
+			}
+
+			// Replace all matching method declarations one at a time, re-finding after each
+			SyntaxNode newRoot = methodRoot;
+			foreach (var target in targets)
+			{
+				var current = newRoot.DescendantNodes().OfType<MethodDeclarationSyntax>()
+					.FirstOrDefault(m => m.Identifier.Text == target.method &&
+						m.Ancestors().OfType<TypeDeclarationSyntax>().FirstOrDefault()?.Identifier.Text == target.typeName);
+				if (current != null)
+				{
+					newRoot = newRoot.ReplaceNode(current, current.WithParameterList(newParameters));
+				}
+			}
+
+			// Handle usings
+			if (ambiguity.needsAlias)
+			{
+				newRoot = SyntaxFactoryHelper.ConvertToAliasedUsingsAndQualifyRefs(newRoot, imageNamespace);
+			}
+			else
+			{
+				newRoot = SyntaxFactoryHelper.AddUsingDirectiveIfMissing(newRoot, imageNamespace);
+			}
+
+			solution = solution.WithDocumentSyntaxRoot(methodDocument.Id, newRoot);
 		}
 
 		return solution;
