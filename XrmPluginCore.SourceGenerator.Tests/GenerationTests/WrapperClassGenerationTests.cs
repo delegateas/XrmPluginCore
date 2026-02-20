@@ -61,7 +61,7 @@ public partial class WrapperClassGenerationTests
 		generatedSource.Should().Contain($"Entity = entity.ToEntity<{ContextNamespace}.Account>();");
 
 		// Verify properties forward to Entity
-		generatedSource.Should().Contain("public string Name => Entity.Name;");
+		generatedSource.Should().Contain("public string? Name => Entity.Name;");
 
 		HasAccountNumberSummary().Matches(generatedSource).Count.Should().Be(1, $"AccountNumber property should have correct XML summary. Generated source:\n{generatedSource}");
 
@@ -116,15 +116,15 @@ public partial class WrapperClassGenerationTests
 		// Verify properties forward to Entity with correct types
 		if (entityType == "Account")
 		{
-			generatedSource.Should().Contain("public string Name => Entity.Name;");
+			generatedSource.Should().Contain("public string? Name => Entity.Name;");
 			generatedSource.Should().Contain("public decimal? Revenue => Entity.Revenue;");
 			generatedSource.Should().Contain("public XrmPluginCore.Tests.Context.BusinessDomain.account_industrycode? IndustryCode => Entity.IndustryCode;");
 		}
 		else
 		{
-			generatedSource.Should().Contain("public string FirstName => Entity.FirstName;");
+			generatedSource.Should().Contain("public string? FirstName => Entity.FirstName;");
 			generatedSource.Should().Contain("public Microsoft.Xrm.Sdk.EntityReference? AccountId => Entity.AccountId;");
-			generatedSource.Should().Contain("public string EMailAddress1 => Entity.EMailAddress1;");
+			generatedSource.Should().Contain("public string? EMailAddress1 => Entity.EMailAddress1;");
 		}
 	}
 

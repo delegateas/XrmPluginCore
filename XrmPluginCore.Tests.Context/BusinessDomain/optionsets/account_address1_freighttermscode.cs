@@ -2,17 +2,17 @@ using System.Runtime.Serialization;
 
 namespace XrmPluginCore.Tests.Context.BusinessDomain;
 
-[System.CodeDom.Compiler.GeneratedCode("DataverseProxyGenerator", "4.0.0.20")]
+[System.CodeDom.Compiler.GeneratedCode("DataverseProxyGenerator", "4.0.0.24")]
 [DataContract]
 #pragma warning disable CS8981
 public enum account_address1_freighttermscode
 #pragma warning restore CS8981
 {
-	[EnumMember]
-	[OptionSetMetadata("FOB", 1033)]
-	FOB = 1,
+    [EnumMember]
+    [OptionSetMetadata("FOB", 1033)]
+    FOB = 1,
 
-	[EnumMember]
-	[OptionSetMetadata("No Charge", 1033)]
-	NoCharge = 2,
+    [EnumMember]
+    [OptionSetMetadata("No Charge", 1033)]
+    NoCharge = 2,
 }

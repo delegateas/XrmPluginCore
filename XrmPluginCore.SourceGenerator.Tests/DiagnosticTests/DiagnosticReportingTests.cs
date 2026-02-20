@@ -1047,14 +1047,14 @@ public class DiagnosticReportingTests
 		var namespace1Source = sourcesByHintName[namespace1HintName];
 		namespace1Source.Should().Contain("namespace Namespace1.PluginRegistrations.AccountPlugin.AccountUpdatePostOperation",
 			"Namespace1 hint name should map to Namespace1 generated namespace");
-		namespace1Source.Should().Contain("public string Name =>",
+		namespace1Source.Should().Contain("public string? Name =>",
 			"Namespace1 plugin registered Name attribute");
 
 		// Verify Namespace2 source: correct namespace AND correct property (AccountNumber)
 		var namespace2Source = sourcesByHintName[namespace2HintName];
 		namespace2Source.Should().Contain("namespace Namespace2.PluginRegistrations.AccountPlugin.AccountUpdatePostOperation",
 			"Namespace2 hint name should map to Namespace2 generated namespace");
-		namespace2Source.Should().Contain("public string AccountNumber =>",
+		namespace2Source.Should().Contain("public string? AccountNumber =>",
 			"Namespace2 plugin registered AccountNumber attribute");
 
 		// Verify each source only contains its own namespace (not cross-contaminated)
