@@ -1,3 +1,7 @@
+### v1.2.6 - 27 February 2026
+* Add: Add using directives for generated image namespaces
+* Fix: Handle ambiguous PreImage/PostImage usings with aliases
+
 ### v1.2.5 - 22 January 2026
 * Fix: Avoid naming collisions on generated types when multiple plugins in the same assembly use Type-Safe Images
 * Fix: Generate PreImage/PostImage types, even when handler signature does not match
