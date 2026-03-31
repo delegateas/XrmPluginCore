@@ -1,0 +1,12 @@
+{
+  "hookSpecificOutput": {
+    "hookEventName": "SessionStart",
+    "additionalContext": "I'm working on the following GitHub issue(s):\n\n## Issue #6: `RegisterStep<T>` with `Action<LocalPluginContext>` method group silently resolves to wrong overload, causing StackOverflow\n## `RegisterStep<T>` with `Action<LocalPluginContext>` method group silently resolves to wrong overload, causing StackOverflow\n\n  ### Summary\n\n  When using `RegisterStep<T>(EventOperation, ExecutionStage, Execute)` where `Execute` is a method accepting `LocalPluginContext`, C# method group resolution silently picks the 2-type-parameter overload\n  `RegisterStep<TEntity, TService>` with `TService = LocalPluginContext`. This stores the action as `sp => Execute(sp.GetRequiredService<LocalPluginContext>())`, but `LocalPluginContext` is never registered in\n   the DI container built by `BuildServiceProvider`, resulting in a `StackOverflowException` at runtime.\n\n  ### Reproduction\n\n  ```csharp\n  public class MyPlugin : Plugin\n  {\n      public MyPlugin()\n      {\n          // StackOverflow at runtime\n          RegisterStep<Contact>(\n              EventOperation.Update,\n              ExecutionStage.PostOperation,\n              Execute);\n      }\n\n      protected void Execute(LocalPluginContext localContext)\n      {\n          // Never reached\n      }\n  }\n```\n\n**Expected behavior**\n\n  Either:\n  - Compile error indicating the method group doesn't match any overload, or\n  - Works the same as RegisterPluginStep, which correctly wraps the delegate\n\n**Actual behavior**\n\nCompiles without errors or warnings. At runtime, Plugin.Execute calls the stored action which does sp.GetRequiredService<LocalPluginContext>(). Since LocalPluginContext is not in the DI container, this throws, and the exception handling/tracing path overflows the stack.\n\n**Workarounds**\n\nBoth of these work correctly:\n\n```csharp\n  // Option 1: Use RegisterPluginStep (wraps correctly via Plugin.cs:173)\n  RegisterPluginStep<Contact>(EventOperation.Update, ExecutionStage.PostOperation, Execute);\n\n  // Option 2: Use explicit lambda instead of method group\n  RegisterStep<Contact>(EventOperation.Update, ExecutionStage.PostOperation,\n      sp => Execute(new LocalPluginContext(sp)));\n```\n\n**Root cause**\n\n  Plugin.cs has these o...\n\nPlease help me implement a solution for this."
+  },
+  "meta": {
+    "issueNumbers": [
+      6
+    ],
+    "gitRemote": "https://github.com/delegateas/XrmPluginCore"
+  }
+}

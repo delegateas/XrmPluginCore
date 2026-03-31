@@ -16,5 +16,72 @@
     "deny": [],
     "ask": []
   },
-  "outputStyle": "default"
+  "outputStyle": "default",
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "curl -sS --connect-timeout 2 http://host.docker.internal:52835/hook/stop?ptyId=a186a548-9d31-4dcb-8847-8526683d14ed"
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "curl -sS --connect-timeout 2 http://host.docker.internal:52835/hook/busy?ptyId=a186a548-9d31-4dcb-8847-8526683d14ed"
+          }
+        ]
+      }
+    ],
+    "Notification": [
+      {
+        "matcher": "permission_prompt",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "curl -sS --connect-timeout 2 -X POST -H \"Content-Type: application/json\" -d @- http://host.docker.internal:52835/hook/notification?ptyId=a186a548-9d31-4dcb-8847-8526683d14ed"
+          }
+        ]
+      },
+      {
+        "matcher": "idle_prompt",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "curl -sS --connect-timeout 2 -X POST -H \"Content-Type: application/json\" -d @- http://host.docker.internal:52835/hook/notification?ptyId=a186a548-9d31-4dcb-8847-8526683d14ed"
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "matcher": "startup",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cat \".claude/task-context.json\""
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "WebSearch",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo \"Tool WebSearch is disabled — web traffic is routed through api.anthropic.com and bypasses the container firewall\" >&2; exit 2"
+          }
+        ]
+      }
+    ]
+  },
+  "attribution": {
+    "commit": "\n\nCo-Authored-By: Claude <noreply@anthropic.com> via Conducktor <conducktor@contextand.com>"
+  }
 }

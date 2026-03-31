@@ -61,6 +61,16 @@ public static class DiagnosticDescriptors
 		isEnabledByDefault: true,
 		helpLinkUri: $"{HelpLinkBaseUri}/XPC3003.md");
 
+	public static readonly DiagnosticDescriptor LocalPluginContextAsService = new(
+		id: "XPC3004",
+		title: "Do not use LocalPluginContext as TService in RegisterStep",
+		messageFormat: "RegisterStep<{0}, LocalPluginContext> will cause a runtime exception because LocalPluginContext is not registered in the DI container. Use RegisterPluginStep<{0}> instead, or migrate to a DI-registered service type.",
+		category: Category,
+		defaultSeverity: DiagnosticSeverity.Error,
+		isEnabledByDefault: true,
+		description: "LocalPluginContext cannot be resolved via GetRequiredService<T>() in the scoped DI container. Use RegisterPluginStep which correctly wraps the action, or migrate to a DI-registered service.",
+		helpLinkUri: $"{HelpLinkBaseUri}/XPC3004.md");
+
 	public static readonly DiagnosticDescriptor HandlerMethodNotFound = new(
 		id: "XPC4001",
 		title: "Handler method not found",
