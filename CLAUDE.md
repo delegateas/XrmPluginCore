@@ -396,9 +396,8 @@ Registration is automated using XrmSync (https://github.com/delegateas/XrmSync),
 ## Versioning
 
 Version numbers are managed through CHANGELOG.md files:
-- `XrmPluginCore/CHANGELOG.md` for the main library
+- `XrmPluginCore/CHANGELOG.md` for the main library and source generator (both use the same version)
 - `XrmPluginCore.Abstractions/CHANGELOG.md` for abstractions
-- `XrmPluginCore.SourceGenerator/CHANGELOG.md` for the source generator. When updating the source generator version, the main library and version should also be updated to match.
 
 The `Set-VersionFromChangelog.ps1` script updates .csproj files from CHANGELOG during CI/CD.
 
@@ -408,9 +407,8 @@ When developing or debugging the source generator, use the following workflow to
 
 ### Development Loop
 
-1. **Update CHANGELOG versions** - Add a preview version to both:
+1. **Update CHANGELOG version** - Add a preview version to:
    - `XrmPluginCore/CHANGELOG.md`
-   - `XrmPluginCore.SourceGenerator/CHANGELOG.md`
 
    Example: `### v1.2.3-preview.1 - 28 November 2025`
 
