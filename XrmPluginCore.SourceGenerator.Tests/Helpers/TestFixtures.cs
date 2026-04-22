@@ -199,6 +199,90 @@ namespace TestNamespace
 		""";
 
 	/// <summary>
+	/// Plugin with full entity PreImage (no attributes specified — captures all entity attributes).
+	/// </summary>
+	public const string PluginWithFullEntityPreImage = """
+
+		using XrmPluginCore;
+		using XrmPluginCore.Abstractions;
+		using XrmPluginCore.Enums;
+		using Microsoft.Extensions.DependencyInjection;
+		using TestNamespace;
+		using TestNamespace.PluginRegistrations.TestPlugin.AccountUpdatePostOperation;
+
+		namespace TestNamespace
+		{
+		    public class TestPlugin : Plugin
+		    {
+		        public TestPlugin()
+		        {
+		            RegisterStep<Account, ITestService>(EventOperation.Update, ExecutionStage.PostOperation,
+		                nameof(ITestService.HandleAccountUpdate))
+		                .AddFilteredAttributes(x => x.Name)
+		                .WithPreImage();
+		        }
+
+		        protected override IServiceCollection OnBeforeBuildServiceProvider(IServiceCollection services)
+		        {
+		            return services.AddScoped<ITestService, TestService>();
+		        }
+		    }
+
+		    public interface ITestService
+		    {
+		        void HandleAccountUpdate(PreImage preImage);
+		    }
+
+		    public class TestService : ITestService
+		    {
+		        public void HandleAccountUpdate(PreImage preImage) { }
+		    }
+		}
+		""";
+
+	/// <summary>
+	/// Plugin with full entity PostImage (no attributes specified — captures all entity attributes).
+	/// </summary>
+	public const string PluginWithFullEntityPostImage = """
+
+		using XrmPluginCore;
+		using XrmPluginCore.Abstractions;
+		using XrmPluginCore.Enums;
+		using Microsoft.Extensions.DependencyInjection;
+		using TestNamespace;
+		using TestNamespace.PluginRegistrations.TestPlugin.AccountUpdatePostOperation;
+
+		namespace TestNamespace
+		{
+		    public class TestPlugin : Plugin
+		    {
+		        public TestPlugin()
+		        {
+		            RegisterStep<Account, ITestService>(EventOperation.Update, ExecutionStage.PostOperation,
+		                nameof(ITestService.HandleAccountUpdate))
+		                .AddFilteredAttributes(x => x.Name)
+		                .WithPostImage();
+		        }
+
+		        protected override IServiceCollection OnBeforeBuildServiceProvider(IServiceCollection services)
+		        {
+		            return services.AddScoped<ITestService, TestService>();
+		        }
+		    }
+
+		    public interface ITestService
+		    {
+		        void HandleAccountUpdate(PostImage postImage);
+		    }
+
+		    public class TestService : ITestService
+		    {
+		        public void HandleAccountUpdate(PostImage postImage) { }
+		    }
+		}
+		""";
+
+	/// <summary>
 	/// Plugin using old AddImage API for backward compatibility testing.
 	/// </summary>
 	public const string PluginWithLegacyAddImage =

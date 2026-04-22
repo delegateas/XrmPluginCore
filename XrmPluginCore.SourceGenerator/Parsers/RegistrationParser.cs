@@ -244,7 +244,27 @@ internal static class RegistrationParser
 			imageMetadata.ImageName = imageMetadata.ImageType;
 		}
 
+		// For WithPreImage/WithPostImage with no attributes specified, capture all entity attributes
+		if (!imageMetadata.Attributes.Any() &&
+			(methodName == Constants.WithPreImageMethodName || methodName == Constants.WithPostImageMethodName))
+		{
+			imageMetadata.Attributes.AddRange(GetAllEntityAttributes(entityType));
+		}
+
 		return imageMetadata.Attributes.Any() ? imageMetadata : null;
+	}
+
+	/// <summary>
+	/// Gets all attribute metadata for all entity properties that have an AttributeLogicalName attribute.
+	/// Used for full entity images where no specific attributes are specified.
+	/// </summary>
+	private static IEnumerable<AttributeMetadata> GetAllEntityAttributes(ITypeSymbol entityType)
+	{
+		return entityType.GetMembers()
+			.OfType<IPropertySymbol>()
+			.Where(p => p.GetAttributes().Any(a => a.AttributeClass?.Name == Constants.LogicalNameAttributeName))
+			.Select(p => GetAttributeMetadata(p.Name, entityType))
+			.Where(a => a != null);
 	}
 
 	/// <summary>

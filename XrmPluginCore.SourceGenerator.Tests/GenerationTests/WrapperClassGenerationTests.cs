@@ -330,6 +330,84 @@ public partial class WrapperClassGenerationTests
 		generatedSource.Should().Contain("service.HandleUpdate()");
 	}
 
+	[Fact]
+	public void Should_Generate_PreImage_With_All_Entity_Properties_When_No_Attributes_Specified()
+	{
+		// Arrange - WithPreImage() called with no arguments
+		var source = TestFixtures.GetCompleteSource(
+			TestFixtures.PluginWithFullEntityPreImage);
+
+		// Act
+		var result = GeneratorTestHelper.RunGenerator(
+			CompilationHelper.CreateCompilation(source));
+
+		// Assert
+		result.GeneratedTrees.Should().NotBeEmpty("code should be generated for full entity PreImage");
+		var generatedSource = result.GeneratedTrees[0].GetText().ToString();
+
+		// Verify PreImage class is generated
+		generatedSource.Should().Contain($"public sealed class PreImage : IEntityImageWrapper<{ContextNamespace}.Account>");
+
+		// Verify that multiple entity properties are present (full entity = all properties)
+		generatedSource.Should().Contain("public string? Name => Entity.Name;");
+		generatedSource.Should().Contain("public decimal? Revenue => Entity.Revenue;");
+		generatedSource.Should().Contain("public string? AccountNumber => Entity.AccountNumber;");
+
+		// Verify NO PostImage class is generated
+		generatedSource.Should().NotContain("public sealed class PostImage");
+	}
+
+	[Fact]
+	public void Should_Generate_PostImage_With_All_Entity_Properties_When_No_Attributes_Specified()
+	{
+		// Arrange - WithPostImage() called with no arguments
+		var source = TestFixtures.GetCompleteSource(
+			TestFixtures.PluginWithFullEntityPostImage);
+
+		// Act
+		var result = GeneratorTestHelper.RunGenerator(
+			CompilationHelper.CreateCompilation(source));
+
+		// Assert
+		result.GeneratedTrees.Should().NotBeEmpty("code should be generated for full entity PostImage");
+		var generatedSource = result.GeneratedTrees[0].GetText().ToString();
+
+		// Verify PostImage class is generated
+		generatedSource.Should().Contain($"public sealed class PostImage : IEntityImageWrapper<{ContextNamespace}.Account>");
+
+		// Verify that multiple entity properties are present (full entity = all properties)
+		generatedSource.Should().Contain("public string? Name => Entity.Name;");
+		generatedSource.Should().Contain("public decimal? Revenue => Entity.Revenue;");
+		generatedSource.Should().Contain("public string? AccountNumber => Entity.AccountNumber;");
+
+		// Verify NO PreImage class is generated
+		generatedSource.Should().NotContain("public sealed class PreImage");
+	}
+
+	[Fact]
+	public void Should_Generate_ActionWrapper_With_Full_Entity_PreImage_Call()
+	{
+		// Arrange - WithPreImage() called with no arguments
+		var source = TestFixtures.GetCompleteSource(
+			TestFixtures.PluginWithFullEntityPreImage);
+
+		// Act
+		var result = GeneratorTestHelper.RunGenerator(
+			CompilationHelper.CreateCompilation(source));
+
+		// Assert
+		var generatedSource = result.GeneratedTrees[0].GetText().ToString();
+
+		// Verify ActionWrapper is generated and handles the PreImage
+		generatedSource.Should().Contain("internal sealed class ActionWrapper : IActionWrapper");
+		generatedSource.Should().Contain("var preImageEntity = context?.PreEntityImages?.Values?.FirstOrDefault();");
+		generatedSource.Should().Contain("var preImage = preImageEntity != null ? new PreImage(preImageEntity) : null;");
+		generatedSource.Should().Contain("service.HandleAccountUpdate(preImage)");
+
+		// Should NOT have PostImage retrieval
+		generatedSource.Should().NotContain("PostEntityImages");
+	}
+
 	[System.Text.RegularExpressions.GeneratedRegex(@"namespace\s+TestNamespace\.PluginRegistrations\.TestPlugin\.AccountUpdatePostOperation")]
 	private static partial System.Text.RegularExpressions.Regex IsAccountUpdatePostOperationNamespace();
 
