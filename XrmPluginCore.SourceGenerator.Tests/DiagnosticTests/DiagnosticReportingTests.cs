@@ -1064,6 +1064,56 @@ public class DiagnosticReportingTests
 			"Namespace2 source should not contain Namespace1 namespace declaration");
 	}
 
+	[Fact]
+	public async Task Should_Report_XPC3005_When_WithPreImage_Has_No_Arguments()
+	{
+		var source = TestFixtures.GetCompleteSource(TestFixtures.PluginWithFullEntityPreImage);
+
+		var diagnostics = await GetAnalyzerDiagnosticsAsync(source, new FullEntityImageAnalyzer());
+
+		var warnings = diagnostics.Where(d => d.Id == "XPC3005").ToArray();
+
+		warnings.Should().NotBeEmpty("XPC3005 should be reported when WithPreImage() is called with no arguments");
+		warnings.Should().OnlyContain(d => d.Severity == DiagnosticSeverity.Warning);
+	}
+
+	[Fact]
+	public async Task Should_Report_XPC3005_When_WithPostImage_Has_No_Arguments()
+	{
+		var source = TestFixtures.GetCompleteSource(TestFixtures.PluginWithFullEntityPostImage);
+
+		var diagnostics = await GetAnalyzerDiagnosticsAsync(source, new FullEntityImageAnalyzer());
+
+		var warnings = diagnostics.Where(d => d.Id == "XPC3005").ToArray();
+
+		warnings.Should().NotBeEmpty("XPC3005 should be reported when WithPostImage() is called with no arguments");
+		warnings.Should().OnlyContain(d => d.Severity == DiagnosticSeverity.Warning);
+	}
+
+	[Fact]
+	public async Task Should_Not_Report_XPC3005_When_WithPreImage_Has_Arguments()
+	{
+		var source = TestFixtures.GetCompleteSource(TestFixtures.GetPluginWithPreImage());
+
+		var diagnostics = await GetAnalyzerDiagnosticsAsync(source, new FullEntityImageAnalyzer());
+
+		var warnings = diagnostics.Where(d => d.Id == "XPC3005").ToArray();
+
+		warnings.Should().BeEmpty("XPC3005 should NOT be reported when WithPreImage() is called with specific attributes");
+	}
+
+	[Fact]
+	public async Task Should_Not_Report_XPC3005_When_WithPostImage_Has_Arguments()
+	{
+		var source = TestFixtures.GetCompleteSource(TestFixtures.PluginWithPostImage);
+
+		var diagnostics = await GetAnalyzerDiagnosticsAsync(source, new FullEntityImageAnalyzer());
+
+		var warnings = diagnostics.Where(d => d.Id == "XPC3005").ToArray();
+
+		warnings.Should().BeEmpty("XPC3005 should NOT be reported when WithPostImage() is called with specific attributes");
+	}
+
 	private static async Task<ImmutableArray<Diagnostic>> GetAnalyzerDiagnosticsAsync(string source, DiagnosticAnalyzer analyzer)
 	{
 		var compilation = CompilationHelper.CreateCompilation(source);

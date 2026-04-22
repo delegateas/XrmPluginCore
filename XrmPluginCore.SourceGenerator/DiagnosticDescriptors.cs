@@ -106,6 +106,16 @@ public static class DiagnosticDescriptors
 		DiagnosticSeverity.Warning,
 		isEnabledByDefault: true);
 
+	public static readonly DiagnosticDescriptor FullEntityImage = new(
+		id: "XPC3005",
+		title: "Full entity image registration",
+		messageFormat: "'{0}' registered without specifying attributes will capture all entity attributes. Consider specifying only the attributes your handler needs for better performance.",
+		category: Category,
+		defaultSeverity: DiagnosticSeverity.Warning,
+		isEnabledByDefault: true,
+		description: "Registering an image without specifying attributes causes Dynamics 365 to serialize all entity attributes into the image, which may impact performance. Specify only the attributes your handler needs.",
+		helpLinkUri: $"{HelpLinkBaseUri}/XPC3005.md");
+
 	public static readonly DiagnosticDescriptor GenerationError = new(
 		id: "XPC5002",
 		title: "Failed to generate wrapper classes",
