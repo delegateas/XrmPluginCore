@@ -1,3 +1,12 @@
+## Release 1.2.7
+
+### New Rules
+
+Rule ID | Category | Severity | Notes
+--------|----------|----------|-------
+XPC3004 | XrmPluginCore.SourceGenerator | Error    | XPC3004 Do not use LocalPluginContext as TService in RegisterStep
+XPC3005 | XrmPluginCore.SourceGenerator | Warning  | XPC3005 Full entity image registration without specifying attributes
+
 ## Release 1.2.0
 
 ### New Rules

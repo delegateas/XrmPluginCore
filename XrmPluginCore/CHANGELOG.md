@@ -1,3 +1,8 @@
+### v1.2.7 - 22 April 2026
+* Add: Ability to generate Pre and Post images with all attributes
+* Add: Error XPC3004: Do not use LocalPluginContext as TService in RegisterStep
+* Add: Warning XPC3005: Full entity image registration without specifying attributes
+
 ### v1.2.6 - 27 February 2026
 * Add: Add using directives for generated image namespaces
 * Fix: Handle ambiguous PreImage/PostImage usings with aliases
