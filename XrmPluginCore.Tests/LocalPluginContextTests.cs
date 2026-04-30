@@ -22,8 +22,10 @@ public class LocalPluginContextTests
 		var context = new LocalPluginContext(serviceProvider);
 
 		// Assert
-		context.PluginExecutionContext.Should().Be(mockProvider.PluginExecutionContext);
 		tracingService.Should().NotBeNull();
+
+		context.ServiceProvider.Should().Be(serviceProvider);
+		context.PluginExecutionContext.Should().Be(mockProvider.PluginExecutionContext);
 		context.TracingService.Should().Be(tracingService);
 		context.OrganizationService.Should().Be(mockProvider.OrganizationService);
 		context.OrganizationAdminService.Should().Be(mockProvider.OrganizationAdminService);
