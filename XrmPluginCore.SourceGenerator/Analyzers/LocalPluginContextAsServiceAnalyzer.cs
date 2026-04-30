@@ -82,20 +82,14 @@ public class LocalPluginContextAsServiceAnalyzer : DiagnosticAnalyzer
 
 		var actionArg = arguments[2].Expression;
 
-		// Only fire for method groups, not lambdas
-		if (actionArg is LambdaExpressionSyntax)
-		{
-			return;
-		}
+		bool isLocalPluginContextUsage = actionArg is LambdaExpressionSyntax lambda
+			? LambdaHasExplicitLocalPluginContextParameter(context, lambda)
+			: context.SemanticModel.GetMemberGroup(actionArg)
+				.OfType<IMethodSymbol>()
+				.Any(m => m.Parameters.Length == 1
+						  && m.Parameters[0].Type.ToDisplayString() == LocalPluginContextFullName);
 
-		// Get all methods in the method group and check if any take LocalPluginContext
-		var memberGroup = context.SemanticModel.GetMemberGroup(actionArg);
-		var hasLocalPluginContextParam = memberGroup
-			.OfType<IMethodSymbol>()
-			.Any(m => m.Parameters.Length == 1
-					  && m.Parameters[0].Type.ToDisplayString() == LocalPluginContextFullName);
-
-		if (!hasLocalPluginContextParam)
+		if (!isLocalPluginContextUsage)
 		{
 			return;
 		}
@@ -105,5 +99,25 @@ public class LocalPluginContextAsServiceAnalyzer : DiagnosticAnalyzer
 			DiagnosticDescriptors.LocalPluginContextAsService,
 			invocation.GetLocation(),
 			entityTypeName));
+	}
+
+	private static bool LambdaHasExplicitLocalPluginContextParameter(
+		SyntaxNodeAnalysisContext context,
+		LambdaExpressionSyntax lambda)
+	{
+		// Only parenthesized lambdas can have explicit parameter types: (LocalPluginContext ctx) => ...
+		if (lambda is not ParenthesizedLambdaExpressionSyntax { ParameterList.Parameters.Count: 1 } paren)
+		{
+			return false;
+		}
+
+		var paramTypeSyntax = paren.ParameterList.Parameters[0].Type;
+		if (paramTypeSyntax == null)
+		{
+			return false;
+		}
+
+		var typeInfo = context.SemanticModel.GetTypeInfo(paramTypeSyntax);
+		return typeInfo.Type?.ToDisplayString() == LocalPluginContextFullName;
 	}
 }

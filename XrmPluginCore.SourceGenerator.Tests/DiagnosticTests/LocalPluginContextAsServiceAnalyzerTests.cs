@@ -58,11 +58,13 @@ namespace TestNamespace
 		diagnostic.GetMessage().Should().Contain("LocalPluginContext");
 	}
 
-	[Fact]
-	public async Task Should_Report_XPC3004_When_LocalPluginContext_Used_As_TService_With_Lambda()
+	[Theory]
+	[InlineData("RegisterStep<Contact, LocalPluginContext>", "ctx => ctx.TracingService.Trace(\"hello\")")]
+	[InlineData("RegisterStep<Contact>", "(LocalPluginContext ctx) => ctx.TracingService.Trace(\"hello\")")]
+	public async Task Should_Report_XPC3004_When_LocalPluginContext_Used_As_TService_With_Lambda(string registerStep, string lambda)
 	{
 		// Arrange
-		const string pluginSource = """
+		string pluginSource = $$"""
 
 using XrmPluginCore;
 using XrmPluginCore.Enums;
@@ -75,10 +77,10 @@ namespace TestNamespace
     {
         public TestPlugin()
         {
-            RegisterStep<Contact, LocalPluginContext>(
+            {{registerStep}}(
                 EventOperation.Update,
                 ExecutionStage.PostOperation,
-                ctx => ctx.TracingService.Trace("hello"));
+                {{lambda}});
         }
 
         protected override IServiceCollection OnBeforeBuildServiceProvider(IServiceCollection services)
