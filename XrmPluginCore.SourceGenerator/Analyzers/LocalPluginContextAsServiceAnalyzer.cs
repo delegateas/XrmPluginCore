@@ -3,6 +3,7 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
 using System.Collections.Immutable;
+using System.Linq;
 using XrmPluginCore.SourceGenerator.Helpers;
 
 namespace XrmPluginCore.SourceGenerator.Analyzers;
@@ -35,12 +36,23 @@ public class LocalPluginContextAsServiceAnalyzer : DiagnosticAnalyzer
 			return;
 		}
 
-		// Only fire for exactly 2 type args: RegisterStep<TEntity, TService>
-		if (genericName.TypeArgumentList.Arguments.Count != 2)
-		{
-			return;
-		}
+		var typeArgCount = genericName.TypeArgumentList.Arguments.Count;
 
+		if (typeArgCount == 2)
+		{
+			CheckExplicitLocalPluginContextTypeArg(context, invocation, genericName);
+		}
+		else if (typeArgCount == 1)
+		{
+			CheckImplicitLocalPluginContextMethodGroup(context, invocation, genericName);
+		}
+	}
+
+	private static void CheckExplicitLocalPluginContextTypeArg(
+		SyntaxNodeAnalysisContext context,
+		InvocationExpressionSyntax invocation,
+		GenericNameSyntax genericName)
+	{
 		// Use semantic model to check full type name (avoids false positives on user-defined LocalPluginContext)
 		var serviceTypeArg = genericName.TypeArgumentList.Arguments[1];
 		var typeInfo = context.SemanticModel.GetTypeInfo(serviceTypeArg);
@@ -51,6 +63,44 @@ public class LocalPluginContextAsServiceAnalyzer : DiagnosticAnalyzer
 
 		var entityTypeName = genericName.TypeArgumentList.Arguments[0].ToString();
 
+		context.ReportDiagnostic(Diagnostic.Create(
+			DiagnosticDescriptors.LocalPluginContextAsService,
+			invocation.GetLocation(),
+			entityTypeName));
+	}
+
+	private static void CheckImplicitLocalPluginContextMethodGroup(
+		SyntaxNodeAnalysisContext context,
+		InvocationExpressionSyntax invocation,
+		GenericNameSyntax genericName)
+	{
+		var arguments = invocation.ArgumentList.Arguments;
+		if (arguments.Count < 3)
+		{
+			return;
+		}
+
+		var actionArg = arguments[2].Expression;
+
+		// Only fire for method groups, not lambdas
+		if (actionArg is LambdaExpressionSyntax)
+		{
+			return;
+		}
+
+		// Get all methods in the method group and check if any take LocalPluginContext
+		var memberGroup = context.SemanticModel.GetMemberGroup(actionArg);
+		var hasLocalPluginContextParam = memberGroup
+			.OfType<IMethodSymbol>()
+			.Any(m => m.Parameters.Length == 1
+					  && m.Parameters[0].Type.ToDisplayString() == LocalPluginContextFullName);
+
+		if (!hasLocalPluginContextParam)
+		{
+			return;
+		}
+
+		var entityTypeName = genericName.TypeArgumentList.Arguments[0].ToString();
 		context.ReportDiagnostic(Diagnostic.Create(
 			DiagnosticDescriptors.LocalPluginContextAsService,
 			invocation.GetLocation(),
