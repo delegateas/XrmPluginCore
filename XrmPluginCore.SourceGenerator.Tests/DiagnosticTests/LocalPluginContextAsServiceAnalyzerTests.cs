@@ -17,7 +17,7 @@ public class LocalPluginContextAsServiceAnalyzerTests : CodeFixTestBase
 	[Theory]
 	[InlineData("RegisterStep<Contact, LocalPluginContext>")]
 	[InlineData("RegisterStep<Contact>")]
-	public async Task Should_Report_XPC3004_When_LocalPluginContext_Explicitly_Specified(string registerStep)
+	public async Task Should_Report_XPC3004_When_LocalPluginContext_Specified(string registerStep)
 	{
 		// Arrange
 		string pluginSource = $$"""
@@ -33,7 +33,7 @@ namespace TestNamespace
     {
         public TestPlugin()
         {
-            ${{registerStep}}(
+            {{registerStep}}(
                 EventOperation.Update,
                 ExecutionStage.PostOperation,
                 Execute);
@@ -195,7 +195,7 @@ namespace TestNamespace
     {
         public TestPlugin()
         {
-            ${{registerStep}}(
+            {{registerStep}}(
                 EventOperation.Update,
                 ExecutionStage.PostOperation,
                 Execute);
