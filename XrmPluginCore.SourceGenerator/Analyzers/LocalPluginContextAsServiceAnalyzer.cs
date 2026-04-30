@@ -84,10 +84,7 @@ public class LocalPluginContextAsServiceAnalyzer : DiagnosticAnalyzer
 
 		bool isLocalPluginContextUsage = actionArg is LambdaExpressionSyntax lambda
 			? LambdaHasExplicitLocalPluginContextParameter(context, lambda)
-			: context.SemanticModel.GetMemberGroup(actionArg)
-				.OfType<IMethodSymbol>()
-				.Any(m => m.Parameters.Length == 1
-						  && m.Parameters[0].Type.ToDisplayString() == LocalPluginContextFullName);
+			: MethodGroupUsesLocalPluginContext(context, actionArg);
 
 		if (!isLocalPluginContextUsage)
 		{
@@ -99,6 +96,29 @@ public class LocalPluginContextAsServiceAnalyzer : DiagnosticAnalyzer
 			DiagnosticDescriptors.LocalPluginContextAsService,
 			invocation.GetLocation(),
 			entityTypeName));
+	}
+
+	private static bool MethodGroupUsesLocalPluginContext(
+		SyntaxNodeAnalysisContext context,
+		ExpressionSyntax actionArg)
+	{
+		// We intentionally use GetMemberGroup rather than GetSymbolInfo.Symbol here.
+		//
+		// RegisterStep<TEntity> takes Action<IExtendedServiceProvider>. Plugin also inherits
+		// IPlugin.Execute(IServiceProvider), so the method group "Execute" always contains at least
+		// two candidates. Because IExtendedServiceProvider : IServiceProvider, the inherited
+		// Execute(IServiceProvider) satisfies the delegate via contravariance — GetSymbolInfo.Symbol
+		// resolves to that method, not to the user's Execute(LocalPluginContext). Using Symbol as
+		// the primary check would therefore suppress the diagnostic precisely in the cases where it
+		// is most needed: the user defined Execute(LocalPluginContext) intending to use it, but the
+		// compiler silently picked the base-class method instead.
+		//
+		// GetMemberGroup returns the full candidate set regardless of conversion success, so it
+		// correctly detects the LocalPluginContext overload even in this inherited-method scenario.
+		return context.SemanticModel.GetMemberGroup(actionArg)
+			.OfType<IMethodSymbol>()
+			.Any(m => m.Parameters.Length == 1
+					  && m.Parameters[0].Type.ToDisplayString() == LocalPluginContextFullName);
 	}
 
 	private static bool LambdaHasExplicitLocalPluginContextParameter(
