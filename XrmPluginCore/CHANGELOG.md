@@ -1,4 +1,4 @@
-### 1.2.8 - 30 April 2026
+### v1.2.8 - 30 April 2026
 * Fix: Set ServiceProvider property on LocalPluginContext
 * Fix: XPC3004: Detect and report usage of LocalPluginContext when implicitly passed
 
