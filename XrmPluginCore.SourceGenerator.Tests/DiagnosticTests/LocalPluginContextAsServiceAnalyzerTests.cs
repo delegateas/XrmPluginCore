@@ -14,11 +14,13 @@ namespace XrmPluginCore.SourceGenerator.Tests.DiagnosticTests;
 /// </summary>
 public class LocalPluginContextAsServiceAnalyzerTests : CodeFixTestBase
 {
-	[Fact]
-	public async Task Should_Report_XPC3004_When_LocalPluginContext_Explicitly_Specified()
+	[Theory]
+	[InlineData("RegisterStep<Contact, LocalPluginContext>")]
+	[InlineData("RegisterStep<Contact>")]
+	public async Task Should_Report_XPC3004_When_LocalPluginContext_Specified(string registerStep)
 	{
 		// Arrange
-		const string pluginSource = """
+		string pluginSource = $$"""
 
 using XrmPluginCore;
 using XrmPluginCore.Enums;
@@ -31,7 +33,7 @@ namespace TestNamespace
     {
         public TestPlugin()
         {
-            RegisterStep<Contact, LocalPluginContext>(
+            {{registerStep}}(
                 EventOperation.Update,
                 ExecutionStage.PostOperation,
                 Execute);
@@ -56,11 +58,13 @@ namespace TestNamespace
 		diagnostic.GetMessage().Should().Contain("LocalPluginContext");
 	}
 
-	[Fact]
-	public async Task Should_Report_XPC3004_When_LocalPluginContext_Used_As_TService_With_Lambda()
+	[Theory]
+	[InlineData("RegisterStep<Contact, LocalPluginContext>", "ctx => ctx.TracingService.Trace(\"hello\")")]
+	[InlineData("RegisterStep<Contact>", "(LocalPluginContext ctx) => ctx.TracingService.Trace(\"hello\")")]
+	public async Task Should_Report_XPC3004_When_LocalPluginContext_Used_As_TService_With_Lambda(string registerStep, string lambda)
 	{
 		// Arrange
-		const string pluginSource = """
+		string pluginSource = $$"""
 
 using XrmPluginCore;
 using XrmPluginCore.Enums;
@@ -73,10 +77,10 @@ namespace TestNamespace
     {
         public TestPlugin()
         {
-            RegisterStep<Contact, LocalPluginContext>(
+            {{registerStep}}(
                 EventOperation.Update,
                 ExecutionStage.PostOperation,
-                ctx => ctx.TracingService.Trace("hello"));
+                {{lambda}});
         }
 
         protected override IServiceCollection OnBeforeBuildServiceProvider(IServiceCollection services)
@@ -174,11 +178,13 @@ namespace TestNamespace
 		diagnostics.Should().NotContain(d => d.Id == "XPC3004");
 	}
 
-	[Fact]
-	public async Task CodeFix_Should_Rewrite_To_RegisterPluginStep()
+	[Theory]
+	[InlineData("RegisterStep<Contact, LocalPluginContext>")]
+	[InlineData("RegisterStep<Contact>")]
+	public async Task CodeFix_Should_Rewrite_To_RegisterPluginStep(string registerStep)
 	{
 		// Arrange
-		const string pluginSource = """
+		string pluginSource = $$"""
 
 using XrmPluginCore;
 using XrmPluginCore.Enums;
@@ -191,7 +197,7 @@ namespace TestNamespace
     {
         public TestPlugin()
         {
-            RegisterStep<Contact, LocalPluginContext>(
+            {{registerStep}}(
                 EventOperation.Update,
                 ExecutionStage.PostOperation,
                 Execute);
@@ -216,7 +222,7 @@ namespace TestNamespace
 
 		// Assert
 		fixedSource.Should().Contain("RegisterPluginStep<Contact>");
-		fixedSource.Should().NotContain("RegisterStep<Contact, LocalPluginContext>");
+		fixedSource.Should().NotContain(registerStep);
 	}
 
 	[Fact]

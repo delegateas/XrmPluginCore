@@ -1,3 +1,7 @@
+### 1.2.8 - 30 April 2026
+* Fix: Set ServiceProvider property on LocalPluginContext
+* Fix: XPC3004: Detect and report usage of LocalPluginContext when implicitly passed
+
 ### v1.2.7 - 22 April 2026
 * Add: Ability to generate Pre and Post images with all attributes
 * Add: Error XPC3004: Do not use LocalPluginContext as TService in RegisterStep

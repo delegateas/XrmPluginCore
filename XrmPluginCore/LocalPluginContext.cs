@@ -23,6 +23,9 @@ namespace XrmPluginCore
 				throw new ArgumentNullException(nameof(serviceProvider));
 			}
 
+			// Store the service provider reference.
+			ServiceProvider = serviceProvider;
+
 			// Obtain the execution context service from the service provider.
 			PluginExecutionContext = serviceProvider.GetService<IPluginExecutionContext>();
 
