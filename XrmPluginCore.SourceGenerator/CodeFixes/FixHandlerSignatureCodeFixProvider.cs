@@ -195,9 +195,11 @@ public class FixHandlerSignatureCodeFixProvider : CodeFixProvider
 				continue;
 			}
 
-			// Detect ambiguity
-			var ambiguity = SyntaxFactoryHelper.DetectImageAmbiguity(methodRoot, imageNamespace);
-			var newParameters = SyntaxFactoryHelper.CreateImageParameterList(hasPreImage, hasPostImage, ambiguity.needsAlias ? ambiguity.alias : null);
+			// Always qualify the image parameters with the namespace alias.
+			var alias = string.IsNullOrEmpty(imageNamespace)
+				? null
+				: SyntaxFactoryHelper.GetAliasForImageNamespace(imageNamespace);
+			var newParameters = SyntaxFactoryHelper.CreateImageParameterList(hasPreImage, hasPostImage, alias);
 
 			// Build a set of (containingTypeName, methodName) pairs to replace
 			var targets = new HashSet<(string typeName, string method)>();
@@ -224,15 +226,9 @@ public class FixHandlerSignatureCodeFixProvider : CodeFixProvider
 				}
 			}
 
-			// Handle usings
-			if (ambiguity.needsAlias)
-			{
-				newRoot = SyntaxFactoryHelper.ConvertToAliasedUsingsAndQualifyRefs(newRoot, imageNamespace);
-			}
-			else
-			{
-				newRoot = SyntaxFactoryHelper.AddUsingDirectiveIfMissing(newRoot, imageNamespace);
-			}
+			// Always emit the aliased using and requalify existing image references.
+			var treeSemanticModel = compilation.GetSemanticModel(tree);
+			newRoot = SyntaxFactoryHelper.ApplyAliasedImageUsings(newRoot, imageNamespace, treeSemanticModel);
 
 			solution = solution.WithDocumentSyntaxRoot(methodDocument.Id, newRoot);
 		}
