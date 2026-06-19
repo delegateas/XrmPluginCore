@@ -161,6 +161,69 @@ public class DiagnosticReportingTests
 	}
 
 	[Fact]
+	public async Task Should_Not_Report_XPC4001_When_Handler_Method_Is_Inherited_From_Base_Interface()
+	{
+		// Arrange - the handler method is declared on a grandparent interface in a
+		// multi-level inheritance chain (ITestService : IMidService : IBaseService).
+		// The method must still be detected via the transitive AllInterfaces walk.
+		const string pluginSource = """
+
+			using XrmPluginCore;
+			using XrmPluginCore.Enums;
+			using Microsoft.Extensions.DependencyInjection;
+			using TestNamespace;
+
+			namespace TestNamespace
+			{
+			    public class TestPlugin : Plugin
+			    {
+			        public TestPlugin()
+			        {
+			            RegisterStep<Account, ITestService>(EventOperation.Update, ExecutionStage.PostOperation,
+			                service => service.Process)
+			                .WithPreImage(x => x.Name);
+			        }
+
+			        protected override IServiceCollection OnBeforeBuildServiceProvider(IServiceCollection services)
+			        {
+			            return services.AddScoped<ITestService, TestService>();
+			        }
+			    }
+
+			    public interface IBaseService
+			    {
+			        void Process();
+			    }
+
+			    public interface IMidService : IBaseService
+			    {
+			    }
+
+			    public interface ITestService : IMidService
+			    {
+			    }
+
+			    public class TestService : ITestService
+			    {
+			        public void Process() { }
+			    }
+			}
+			""";
+
+		var source = TestFixtures.GetCompleteSource(pluginSource);
+
+		// Act - Run analyzer instead of generator
+		var diagnostics = await GetAnalyzerDiagnosticsAsync(source, new HandlerMethodNotFoundAnalyzer());
+
+		// Assert
+		var errorDiagnostics = diagnostics
+			.Where(d => d.Id == "XPC4001")
+			.ToArray();
+
+		errorDiagnostics.Should().BeEmpty("XPC4001 should not be reported when the handler method is inherited from a base interface");
+	}
+
+	[Fact]
 	public async Task Should_Report_XPC4002_When_Handler_Missing_PreImage_Parameter()
 	{
 		// Arrange - WithPreImage is registered but handler takes no parameters
