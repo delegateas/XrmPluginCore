@@ -1114,6 +1114,210 @@ public class DiagnosticReportingTests
 		warnings.Should().BeEmpty("XPC3005 should NOT be reported when WithPostImage() is called with specific attributes");
 	}
 
+	[Theory]
+	[InlineData("IPluginPreImage<Account> preImage")]
+	[InlineData("IPluginPreImage preImage")]
+	[InlineData("IPluginImage<Account> preImage")]
+	[InlineData("IPluginImage preImage")]
+	public async Task Should_Not_Report_Signature_Mismatch_When_Handler_Uses_Shared_PreImage_Interface(string parameter)
+	{
+		// Arrange - handler accepts a shared image interface instead of the concrete PreImage
+		var pluginSource = $$"""
+
+			using XrmPluginCore;
+			using XrmPluginCore.Enums;
+			using Microsoft.Extensions.DependencyInjection;
+			using TestNamespace;
+			using TestNamespace.PluginRegistrations.TestPlugin.AccountUpdatePostOperation;
+
+			namespace TestNamespace
+			{
+			    public class TestPlugin : Plugin
+			    {
+			        public TestPlugin()
+			        {
+			            RegisterStep<Account, ITestService>(EventOperation.Update, ExecutionStage.PostOperation,
+			                nameof(ITestService.HandleUpdate))
+			                .WithPreImage(x => x.Name);
+			        }
+
+			        protected override IServiceCollection OnBeforeBuildServiceProvider(IServiceCollection services)
+			        {
+			            return services.AddScoped<ITestService, TestService>();
+			        }
+			    }
+
+			    public interface ITestService
+			    {
+			        void HandleUpdate({{parameter}});
+			    }
+
+			    public class TestService : ITestService
+			    {
+			        public void HandleUpdate({{parameter}}) { }
+			    }
+			}
+			""";
+
+		var source = TestFixtures.GetCompleteSource(pluginSource);
+
+		// Act
+		var diagnostics = await GetAnalyzerDiagnosticsAsync(source, new HandlerSignatureMismatchAnalyzer());
+
+		// Assert - no signature mismatch should be reported for valid shared interfaces
+		diagnostics
+			.Where(d => d.Id == "XPC4002" || d.Id == "XPC4003")
+			.Should().BeEmpty($"a handler parameter of type '{parameter}' should be accepted");
+	}
+
+	[Fact]
+	public async Task Should_Not_Report_Signature_Mismatch_When_Both_Images_Use_Shared_Interfaces()
+	{
+		// Arrange - both images registered, handler uses the typed Pre/Post interfaces
+		const string pluginSource = """
+
+			using XrmPluginCore;
+			using XrmPluginCore.Enums;
+			using Microsoft.Extensions.DependencyInjection;
+			using TestNamespace;
+
+			namespace TestNamespace
+			{
+			    public class TestPlugin : Plugin
+			    {
+			        public TestPlugin()
+			        {
+			            RegisterStep<Account, ITestService>(EventOperation.Update, ExecutionStage.PostOperation,
+			                nameof(ITestService.HandleUpdate))
+			                .WithPreImage(x => x.Name)
+			                .WithPostImage(x => x.Name);
+			        }
+
+			        protected override IServiceCollection OnBeforeBuildServiceProvider(IServiceCollection services)
+			        {
+			            return services.AddScoped<ITestService, TestService>();
+			        }
+			    }
+
+			    public interface ITestService
+			    {
+			        void HandleUpdate(IPluginPreImage<Account> pre, IPluginPostImage<Account> post);
+			    }
+
+			    public class TestService : ITestService
+			    {
+			        public void HandleUpdate(IPluginPreImage<Account> pre, IPluginPostImage<Account> post) { }
+			    }
+			}
+			""";
+
+		var source = TestFixtures.GetCompleteSource(pluginSource);
+
+		var diagnostics = await GetAnalyzerDiagnosticsAsync(source, new HandlerSignatureMismatchAnalyzer());
+
+		diagnostics
+			.Where(d => d.Id == "XPC4002" || d.Id == "XPC4003")
+			.Should().BeEmpty("typed Pre/Post image interfaces should be accepted for both images");
+	}
+
+	[Fact]
+	public async Task Should_Report_Signature_Mismatch_When_Generic_Image_Interface_Has_Wrong_Entity()
+	{
+		// Arrange - generic interface with an entity type that does not match the registered TEntity
+		const string pluginSource = """
+
+			using XrmPluginCore;
+			using XrmPluginCore.Enums;
+			using Microsoft.Extensions.DependencyInjection;
+			using TestNamespace;
+
+			namespace TestNamespace
+			{
+			    public class TestPlugin : Plugin
+			    {
+			        public TestPlugin()
+			        {
+			            RegisterStep<Account, ITestService>(EventOperation.Update, ExecutionStage.PostOperation,
+			                nameof(ITestService.HandleUpdate))
+			                .WithPreImage(x => x.Name);
+			        }
+
+			        protected override IServiceCollection OnBeforeBuildServiceProvider(IServiceCollection services)
+			        {
+			            return services.AddScoped<ITestService, TestService>();
+			        }
+			    }
+
+			    public interface ITestService
+			    {
+			        void HandleUpdate(IPluginPreImage<Contact> preImage);
+			    }
+
+			    public class TestService : ITestService
+			    {
+			        public void HandleUpdate(IPluginPreImage<Contact> preImage) { }
+			    }
+			}
+			""";
+
+		var source = TestFixtures.GetCompleteSource(pluginSource);
+
+		var diagnostics = await GetAnalyzerDiagnosticsAsync(source, new HandlerSignatureMismatchAnalyzer());
+
+		diagnostics
+			.Where(d => d.Id == "XPC4002" || d.Id == "XPC4003")
+			.Should().NotBeEmpty("a generic image interface with the wrong entity type should be rejected");
+	}
+
+	[Fact]
+	public async Task Should_Report_Signature_Mismatch_When_PostImage_Interface_Used_For_PreImage()
+	{
+		// Arrange - PreImage registered but handler asks for IPluginPostImage (wrong kind)
+		const string pluginSource = """
+
+			using XrmPluginCore;
+			using XrmPluginCore.Enums;
+			using Microsoft.Extensions.DependencyInjection;
+			using TestNamespace;
+
+			namespace TestNamespace
+			{
+			    public class TestPlugin : Plugin
+			    {
+			        public TestPlugin()
+			        {
+			            RegisterStep<Account, ITestService>(EventOperation.Update, ExecutionStage.PostOperation,
+			                nameof(ITestService.HandleUpdate))
+			                .WithPreImage(x => x.Name);
+			        }
+
+			        protected override IServiceCollection OnBeforeBuildServiceProvider(IServiceCollection services)
+			        {
+			            return services.AddScoped<ITestService, TestService>();
+			        }
+			    }
+
+			    public interface ITestService
+			    {
+			        void HandleUpdate(IPluginPostImage<Account> postImage);
+			    }
+
+			    public class TestService : ITestService
+			    {
+			        public void HandleUpdate(IPluginPostImage<Account> postImage) { }
+			    }
+			}
+			""";
+
+		var source = TestFixtures.GetCompleteSource(pluginSource);
+
+		var diagnostics = await GetAnalyzerDiagnosticsAsync(source, new HandlerSignatureMismatchAnalyzer());
+
+		diagnostics
+			.Where(d => d.Id == "XPC4002" || d.Id == "XPC4003")
+			.Should().NotBeEmpty("the post-image interface should not satisfy a registered pre-image");
+	}
+
 	private static async Task<ImmutableArray<Diagnostic>> GetAnalyzerDiagnosticsAsync(string source, DiagnosticAnalyzer analyzer)
 	{
 		var compilation = CompilationHelper.CreateCompilation(source);

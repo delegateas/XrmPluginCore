@@ -37,7 +37,8 @@ public class CompilationTests
 		result.Success.Should().BeTrue();
 
 		// Create test entity
-		var entity = new Entity("account")
+		var accountId = Guid.NewGuid();
+		var entity = new Entity("account", accountId)
 		{
 			["name"] = "Test Account",
 			["revenue"] = new Money(100000)
@@ -64,6 +65,18 @@ public class CompilationTests
 		revenueProperty.Should().NotBeNull();
 		var revenueValue = revenueProperty!.GetValue(preImageInstance) as decimal?;
 		revenueValue!.Should().Be(100000);
+
+		// Id is always exposed (from the Entity base type)
+		var idProperty = preImageType.GetProperty("Id");
+		idProperty.Should().NotBeNull("Id should always be exposed on generated images");
+		idProperty!.PropertyType.Should().Be(typeof(Guid));
+		idProperty.GetValue(preImageInstance).Should().Be(accountId);
+
+		// LogicalName is always exposed (from the Entity base type)
+		var logicalNameProperty = preImageType.GetProperty("LogicalName");
+		logicalNameProperty.Should().NotBeNull("LogicalName should always be exposed on generated images");
+		logicalNameProperty!.PropertyType.Should().Be(typeof(string));
+		logicalNameProperty.GetValue(preImageInstance).Should().Be("account");
 	}
 
 	[Fact]
@@ -216,5 +229,66 @@ public class CompilationTests
 		var createActionMethod = actionWrapperType.GetMethod("CreateAction");
 		createActionMethod.Should().NotBeNull("CreateAction method should exist");
 		createActionMethod!.IsStatic.Should().BeFalse("CreateAction should be an instance method since ActionWrapper implements IActionWrapper");
+	}
+
+	[Fact]
+	public void Should_Compile_When_Handler_Uses_Shared_Image_Interfaces()
+	{
+		// Arrange - the generated ActionWrapper must still compile when it passes the concrete
+		// PreImage/PostImage to a handler that declares the shared image interfaces as parameters.
+		const string pluginSource = """
+
+			using XrmPluginCore;
+			using XrmPluginCore.Enums;
+			using Microsoft.Extensions.DependencyInjection;
+			using TestNamespace;
+
+			namespace TestNamespace
+			{
+			    public class TestPlugin : Plugin
+			    {
+			        public TestPlugin()
+			        {
+			            RegisterStep<Account, ITestService>(EventOperation.Update, ExecutionStage.PostOperation,
+			                nameof(ITestService.HandleUpdate))
+			                .WithPreImage(x => x.Name)
+			                .WithPostImage(x => x.Name);
+			        }
+
+			        protected override IServiceCollection OnBeforeBuildServiceProvider(IServiceCollection services)
+			        {
+			            return services.AddScoped<ITestService, TestService>();
+			        }
+			    }
+
+			    public interface ITestService
+			    {
+			        void HandleUpdate(IPluginPreImage<Account> pre, IPluginPostImage<Account> post);
+			    }
+
+			    public class TestService : ITestService
+			    {
+			        public void HandleUpdate(IPluginPreImage<Account> pre, IPluginPostImage<Account> post)
+			        {
+			            // Access via the type-safe interface
+			            var before = pre.Entity.Name;
+			            var after = post.Entity.Name;
+
+			            // Access via the non-generic base interface (shared helper scenario)
+			            IPluginImage shared = pre;
+			            var raw = shared.Entity;
+			        }
+			    }
+			}
+			""";
+
+		var source = TestFixtures.GetCompleteSource(pluginSource);
+
+		// Act
+		var result = GeneratorTestHelper.RunGeneratorAndCompile(source);
+
+		// Assert
+		result.Success.Should().BeTrue(
+			because: $"compilation should succeed. Errors: {string.Join(", ", result.Errors ?? [])}");
 	}
 }

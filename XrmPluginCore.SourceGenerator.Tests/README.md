@@ -62,7 +62,7 @@ Tests for code generation structure and content:
   - Property generation with correct types
   - ToEntity<T>() method
   - GetUnderlyingEntity() method
-  - IEntityImageWrapper interface implementation
+  - IPluginImage / IPluginPreImage / IPluginPostImage interface implementation
 
 ### IntegrationTests/
 End-to-end tests that verify generated code compiles and runs:
@@ -213,7 +213,7 @@ Current test coverage includes:
 - ✅ Property types (string, Money, OptionSetValue, EntityReference)
 - ✅ ToEntity<T>() method
 - ✅ GetUnderlyingEntity() method
-- ✅ IEntityImageWrapper interface
+- ✅ IPluginImage / IPluginPreImage / IPluginPostImage interfaces
 
 **Integration (~6 tests)**
 - ✅ Compilation success

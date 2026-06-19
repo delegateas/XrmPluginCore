@@ -16,9 +16,14 @@ internal static class Constants
 	public const string WithPostImageMethodName = "WithPostImage";
 	public const string AddImageMethodName = "AddImage";
 
-	// Image types
+	// Image types (concrete generated wrapper class names)
 	public const string PreImageTypeName = "PreImage";
 	public const string PostImageTypeName = "PostImage";
+
+	// Shared image interfaces (declared in XrmPluginCore)
+	public const string PluginImageInterfaceName = "IPluginImage";
+	public const string PreImageInterfaceName = "IPluginPreImage";
+	public const string PostImageInterfaceName = "IPluginPostImage";
 
 	// Diagnostic property keys (passed from analyzers to code fix providers)
 	public const string PropertyServiceType = "ServiceType";
