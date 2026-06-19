@@ -11,22 +11,36 @@ internal static class TypeHelper
 {
 	/// <summary>
 	/// Gets all methods with the specified name, including inherited methods.
+	/// For classes this walks the base type chain; for interfaces it also includes
+	/// members inherited from base interfaces (which are exposed via AllInterfaces, not BaseType).
 	/// </summary>
 	public static IMethodSymbol[] GetAllMethodsIncludingInherited(ITypeSymbol type, string methodName)
 	{
 		var methods = new List<IMethodSymbol>();
-		var currentType = type;
-		while (currentType != null)
+
+		void AddMethods(ITypeSymbol from)
 		{
-			foreach (var member in currentType.GetMembers(methodName))
+			foreach (var member in from.GetMembers(methodName))
 			{
 				if (member is IMethodSymbol method)
 				{
 					methods.Add(method);
 				}
 			}
+		}
 
+		var currentType = type;
+		while (currentType != null)
+		{
+			AddMethods(currentType);
 			currentType = currentType.BaseType;
+		}
+
+		// Interfaces don't expose inherited members via BaseType; their base
+		// interfaces (transitively) are available through AllInterfaces.
+		foreach (var inheritedInterface in type.AllInterfaces)
+		{
+			AddMethods(inheritedInterface);
 		}
 
 		return methods.ToArray();
