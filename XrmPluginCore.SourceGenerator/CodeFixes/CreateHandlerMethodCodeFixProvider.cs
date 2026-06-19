@@ -22,7 +22,7 @@ public class CreateHandlerMethodCodeFixProvider : CodeFixProvider
 		ImmutableArray.Create(DiagnosticDescriptors.HandlerMethodNotFound.Id);
 
 	public sealed override FixAllProvider GetFixAllProvider() =>
-		WellKnownFixAllProviders.BatchFixer;
+		AliasedImageUsingsFixAllProvider.Instance;
 
 	public sealed override async Task RegisterCodeFixesAsync(CodeFixContext context)
 	{
@@ -150,7 +150,7 @@ public class CreateHandlerMethodCodeFixProvider : CodeFixProvider
 		return solution.WithDocumentSyntaxRoot(interfaceDocument.Id, newRoot);
 	}
 
-	private static MethodDeclarationSyntax CreateMethodDeclaration(string methodName, bool hasPreImage, bool hasPostImage, string qualifier = null)
+	internal static MethodDeclarationSyntax CreateMethodDeclaration(string methodName, bool hasPreImage, bool hasPostImage, string qualifier = null)
 	{
 		return SyntaxFactory.MethodDeclaration(
 				SyntaxFactory.PredefinedType(SyntaxFactory.Token(SyntaxKind.VoidKeyword)),
@@ -161,7 +161,7 @@ public class CreateHandlerMethodCodeFixProvider : CodeFixProvider
 			.WithTrailingTrivia(SyntaxFactory.ElasticCarriageReturnLineFeed);
 	}
 
-	private static async Task<InterfaceDeclarationSyntax> FindInterfaceDeclarationAsync(
+	internal static async Task<InterfaceDeclarationSyntax> FindInterfaceDeclarationAsync(
 		Solution solution,
 		INamedTypeSymbol typeSymbol,
 		CancellationToken cancellationToken)

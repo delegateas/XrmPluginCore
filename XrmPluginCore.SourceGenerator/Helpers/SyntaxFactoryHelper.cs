@@ -178,6 +178,31 @@ internal static class SyntaxFactoryHelper
 	}
 
 	/// <summary>
+	/// Multi-namespace variant of <see cref="ApplyAliasedImageUsings(SyntaxNode, string, SemanticModel)"/>.
+	/// Adds every distinct aliased image using needed and requalifies every reference in a single pass.
+	/// Used by the FixAll path so consolidating N registrations funnels through the same engine as a
+	/// single fix.
+	/// </summary>
+	/// <param name="root">The compilation unit (document root) to rewrite.</param>
+	/// <param name="imageNamespaces">The image-registration namespaces to alias and add.</param>
+	/// <param name="semanticModel">The semantic model for <paramref name="root"/>'s tree (pre-rewrite).</param>
+	public static SyntaxNode ApplyAliasedImageUsings(SyntaxNode root, IEnumerable<string> imageNamespaces, SemanticModel semanticModel)
+	{
+		if (imageNamespaces == null)
+		{
+			return root;
+		}
+
+		var namespaces = imageNamespaces.Where(ns => !string.IsNullOrEmpty(ns)).Distinct().ToList();
+		if (namespaces.Count == 0)
+		{
+			return root;
+		}
+
+		return ConvertToAliasedUsingsAndQualifyRefs(root, namespaces, semanticModel);
+	}
+
+	/// <summary>
 	/// Converts existing plain image usings to aliased form, qualifies all bare PreImage/PostImage
 	/// type references, and adds the new aliased using.
 	/// </summary>
@@ -189,6 +214,21 @@ internal static class SyntaxFactoryHelper
 	/// references are left unqualified.
 	/// </param>
 	public static SyntaxNode ConvertToAliasedUsingsAndQualifyRefs(SyntaxNode root, string newImageNamespace, SemanticModel semanticModel)
+		=> ConvertToAliasedUsingsAndQualifyRefs(root, new[] { newImageNamespace }, semanticModel);
+
+	/// <summary>
+	/// Converts existing plain image usings to aliased form, qualifies all bare PreImage/PostImage
+	/// type references, and adds an aliased using for each of <paramref name="newImageNamespaces"/>.
+	/// This is the single engine shared by the single-fix and FixAll code paths.
+	/// </summary>
+	/// <param name="root">The compilation unit (document root) to rewrite.</param>
+	/// <param name="newImageNamespaces">The image-registration namespaces to alias and add.</param>
+	/// <param name="semanticModel">
+	/// The semantic model for <paramref name="root"/>'s original (pre-rewrite) tree, used to resolve
+	/// which alias a bare PreImage/PostImage reference belongs to. May be null, in which case bare
+	/// references are left unqualified.
+	/// </param>
+	private static SyntaxNode ConvertToAliasedUsingsAndQualifyRefs(SyntaxNode root, IReadOnlyCollection<string> newImageNamespaces, SemanticModel semanticModel)
 	{
 		if (root is not CompilationUnitSyntax compilationUnit)
 		{
@@ -211,32 +251,48 @@ internal static class SyntaxFactoryHelper
 			}
 		}
 
-		// Also include the new namespace
-		if (!string.IsNullOrEmpty(newImageNamespace))
+		// Also include each new namespace
+		foreach (var newImageNamespace in newImageNamespaces)
 		{
-			plainNamespaceToAlias[newImageNamespace] = GetLastNamespaceSegment(newImageNamespace);
+			if (!string.IsNullOrEmpty(newImageNamespace))
+			{
+				plainNamespaceToAlias[newImageNamespace] = GetLastNamespaceSegment(newImageNamespace);
+			}
 		}
 
 		// Rewrite the tree
 		var rewriter = new ImageAmbiguityRewriter(plainNamespaceToAlias, semanticModel);
 		var newRoot = rewriter.Visit(root);
 
-		// Add the new aliased using if not already present
-		if (newRoot is CompilationUnitSyntax newCompUnit && !string.IsNullOrEmpty(newImageNamespace))
+		// Add each new aliased using if not already present
+		if (newRoot is CompilationUnitSyntax newCompUnit)
 		{
-			var newAlias = GetLastNamespaceSegment(newImageNamespace);
-			var alreadyExists = newCompUnit.Usings.Any(u =>
-				u.Alias?.Name.ToString() == newAlias ||
-				u.Name?.ToString() == newImageNamespace);
-
-			if (!alreadyExists)
+			var usingsToAdd = new List<UsingDirectiveSyntax>();
+			foreach (var newImageNamespace in newImageNamespaces)
 			{
-				var aliasedUsing = SyntaxFactory.UsingDirective(
-						SyntaxFactory.NameEquals(SyntaxFactory.IdentifierName(newAlias)),
-						SyntaxFactory.ParseName(newImageNamespace))
-					.WithTrailingTrivia(SyntaxFactory.CarriageReturnLineFeed);
+				if (string.IsNullOrEmpty(newImageNamespace))
+				{
+					continue;
+				}
 
-				newRoot = newCompUnit.AddUsings(aliasedUsing);
+				var newAlias = GetLastNamespaceSegment(newImageNamespace);
+				var alreadyExists = newCompUnit.Usings.Any(u =>
+						u.Alias?.Name.ToString() == newAlias ||
+						u.Name?.ToString() == newImageNamespace) ||
+					usingsToAdd.Any(u => u.Alias?.Name.ToString() == newAlias);
+
+				if (!alreadyExists)
+				{
+					usingsToAdd.Add(SyntaxFactory.UsingDirective(
+							SyntaxFactory.NameEquals(SyntaxFactory.IdentifierName(newAlias)),
+							SyntaxFactory.ParseName(newImageNamespace))
+						.WithTrailingTrivia(SyntaxFactory.CarriageReturnLineFeed));
+				}
+			}
+
+			if (usingsToAdd.Count > 0)
+			{
+				newRoot = newCompUnit.AddUsings(usingsToAdd.ToArray());
 			}
 		}
 

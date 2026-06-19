@@ -25,7 +25,7 @@ public class FixHandlerSignatureCodeFixProvider : CodeFixProvider
 			DiagnosticDescriptors.HandlerSignatureMismatchError.Id);
 
 	public sealed override FixAllProvider GetFixAllProvider() =>
-		WellKnownFixAllProviders.BatchFixer;
+		AliasedImageUsingsFixAllProvider.Instance;
 
 	public sealed override async Task RegisterCodeFixesAsync(CodeFixContext context)
 	{
