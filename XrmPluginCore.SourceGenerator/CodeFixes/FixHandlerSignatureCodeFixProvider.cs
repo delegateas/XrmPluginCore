@@ -213,8 +213,14 @@ public class FixHandlerSignatureCodeFixProvider : CodeFixProvider
 				}
 			}
 
+			// Emit the aliased using and requalify existing image references FIRST, on the original
+			// tree, so the rewriter resolves bare references against a semantic model whose nodes still
+			// match. The replacement parameters below are already alias-qualified, so the requalifier
+			// leaves them untouched.
+			var treeSemanticModel = compilation.GetSemanticModel(tree);
+			var newRoot = SyntaxFactoryHelper.ApplyAliasedImageUsings(methodRoot, imageNamespace, treeSemanticModel);
+
 			// Replace all matching method declarations one at a time, re-finding after each
-			SyntaxNode newRoot = methodRoot;
 			foreach (var target in targets)
 			{
 				var current = newRoot.DescendantNodes().OfType<MethodDeclarationSyntax>()
@@ -225,10 +231,6 @@ public class FixHandlerSignatureCodeFixProvider : CodeFixProvider
 					newRoot = newRoot.ReplaceNode(current, current.WithParameterList(newParameters));
 				}
 			}
-
-			// Always emit the aliased using and requalify existing image references.
-			var treeSemanticModel = compilation.GetSemanticModel(tree);
-			newRoot = SyntaxFactoryHelper.ApplyAliasedImageUsings(newRoot, imageNamespace, treeSemanticModel);
 
 			solution = solution.WithDocumentSyntaxRoot(methodDocument.Id, newRoot);
 		}

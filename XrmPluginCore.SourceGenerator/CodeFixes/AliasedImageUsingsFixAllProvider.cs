@@ -244,7 +244,10 @@ internal sealed class AliasedImageUsingsFixAllProvider : FixAllProvider
 			return solution;
 		}
 
-		var newRoot = root;
+		// One consolidated always-aliased using rewrite FIRST, on the original tree, so the rewriter
+		// resolves bare references against a semantic model whose nodes still match. All structural
+		// edits below produce already alias-qualified parameters, so requalification skips them.
+		var newRoot = SyntaxFactoryHelper.ApplyAliasedImageUsings(root, batch.Namespaces, semanticModel);
 
 		// Fix existing handler signatures (interface + implementations) to their alias-qualified form.
 		foreach (var edit in DistinctEdits(batch.SignatureEdits))
@@ -271,9 +274,6 @@ internal sealed class AliasedImageUsingsFixAllProvider : FixAllProvider
 				newRoot = newRoot.ReplaceNode(interfaceDeclaration, interfaceDeclaration.AddMembers(methodDeclaration));
 			}
 		}
-
-		// One consolidated always-aliased using rewrite for every namespace touched in this document.
-		newRoot = SyntaxFactoryHelper.ApplyAliasedImageUsings(newRoot, batch.Namespaces, semanticModel);
 
 		return solution.WithDocumentSyntaxRoot(documentId, newRoot);
 	}

@@ -139,13 +139,21 @@ public class CreateHandlerMethodCodeFixProvider : CodeFixProvider
 
 		var methodDeclaration = CreateMethodDeclaration(methodName, hasPreImage, hasPostImage, alias);
 
-		var newInterface = interfaceDeclaration.AddMembers(methodDeclaration);
-		var newRoot = interfaceRoot.ReplaceNode(interfaceDeclaration, newInterface);
-
-		// Always emit the aliased using and requalify existing image references. The interface may live
-		// in a different tree than the trigger, so resolve its semantic model from the compilation.
+		// Emit the aliased using and requalify existing image references FIRST, on the original tree,
+		// so the rewriter resolves bare references against a semantic model whose nodes still match.
+		// The created method's parameters are already alias-qualified, so requalification skips them.
+		// The interface may live in a different tree than the trigger, so resolve its semantic model
+		// from the compilation.
 		var interfaceSemanticModel = semanticModel.Compilation.GetSemanticModel(interfaceRoot.SyntaxTree);
-		newRoot = SyntaxFactoryHelper.ApplyAliasedImageUsings(newRoot, imageNamespace, interfaceSemanticModel);
+		var newRoot = SyntaxFactoryHelper.ApplyAliasedImageUsings(interfaceRoot, imageNamespace, interfaceSemanticModel);
+
+		// Then add the method to the (re-found) interface declaration.
+		var targetInterface = newRoot.DescendantNodes().OfType<InterfaceDeclarationSyntax>()
+			.FirstOrDefault(i => i.Identifier.Text == interfaceDeclaration.Identifier.Text);
+		if (targetInterface != null)
+		{
+			newRoot = newRoot.ReplaceNode(targetInterface, targetInterface.AddMembers(methodDeclaration));
+		}
 
 		return solution.WithDocumentSyntaxRoot(interfaceDocument.Id, newRoot);
 	}
