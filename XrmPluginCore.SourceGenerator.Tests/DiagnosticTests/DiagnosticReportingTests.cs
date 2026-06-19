@@ -163,8 +163,9 @@ public class DiagnosticReportingTests
 	[Fact]
 	public async Task Should_Not_Report_XPC4001_When_Handler_Method_Is_Inherited_From_Base_Interface()
 	{
-		// Arrange - the handler method is declared on a base interface that the
-		// service interface inherits from. The method must still be detected.
+		// Arrange - the handler method is declared on a grandparent interface in a
+		// multi-level inheritance chain (ITestService : IMidService : IBaseService).
+		// The method must still be detected via the transitive AllInterfaces walk.
 		const string pluginSource = """
 
 			using XrmPluginCore;
@@ -194,7 +195,11 @@ public class DiagnosticReportingTests
 			        void Process();
 			    }
 
-			    public interface ITestService : IBaseService
+			    public interface IMidService : IBaseService
+			    {
+			    }
+
+			    public interface ITestService : IMidService
 			    {
 			    }
 

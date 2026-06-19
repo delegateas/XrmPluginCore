@@ -37,10 +37,16 @@ internal static class TypeHelper
 		}
 
 		// Interfaces don't expose inherited members via BaseType; their base
-		// interfaces (transitively) are available through AllInterfaces.
-		foreach (var inheritedInterface in type.AllInterfaces)
+		// interfaces (transitively) are available through AllInterfaces. We only
+		// do this for interface inputs - for classes the implementing methods live
+		// on the class/base chain, and walking AllInterfaces would surface
+		// (unimplemented) interface declaration methods.
+		if (type.TypeKind == TypeKind.Interface)
 		{
-			AddMethods(inheritedInterface);
+			foreach (var inheritedInterface in type.AllInterfaces)
+			{
+				AddMethods(inheritedInterface);
+			}
 		}
 
 		return methods.ToArray();
