@@ -132,24 +132,20 @@ public class CreateHandlerMethodCodeFixProvider : CodeFixProvider
 			return solution;
 		}
 
-		// Detect ambiguity before creating the method
-		var (needsAlias, alias) = SyntaxFactoryHelper.DetectImageAmbiguity(interfaceRoot, imageNamespace);
+		// Always qualify the image parameters with the namespace alias.
+		var alias = string.IsNullOrEmpty(imageNamespace)
+			? null
+			: SyntaxFactoryHelper.GetAliasForImageNamespace(imageNamespace);
 
-		// Create the method declaration with qualifier if ambiguous
-		var methodDeclaration = CreateMethodDeclaration(methodName, hasPreImage, hasPostImage, needsAlias ? alias : null);
+		var methodDeclaration = CreateMethodDeclaration(methodName, hasPreImage, hasPostImage, alias);
 
 		var newInterface = interfaceDeclaration.AddMembers(methodDeclaration);
 		var newRoot = interfaceRoot.ReplaceNode(interfaceDeclaration, newInterface);
 
-		// Handle usings
-		if (needsAlias)
-		{
-			newRoot = SyntaxFactoryHelper.ConvertToAliasedUsingsAndQualifyRefs(newRoot, imageNamespace);
-		}
-		else
-		{
-			newRoot = SyntaxFactoryHelper.AddUsingDirectiveIfMissing(newRoot, imageNamespace);
-		}
+		// Always emit the aliased using and requalify existing image references. The interface may live
+		// in a different tree than the trigger, so resolve its semantic model from the compilation.
+		var interfaceSemanticModel = semanticModel.Compilation.GetSemanticModel(interfaceRoot.SyntaxTree);
+		newRoot = SyntaxFactoryHelper.ApplyAliasedImageUsings(newRoot, imageNamespace, interfaceSemanticModel);
 
 		return solution.WithDocumentSyntaxRoot(interfaceDocument.Id, newRoot);
 	}
