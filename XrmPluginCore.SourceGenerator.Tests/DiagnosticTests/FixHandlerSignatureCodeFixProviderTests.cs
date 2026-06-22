@@ -633,6 +633,76 @@ public class FixHandlerSignatureCodeFixProviderTests : CodeFixTestBase
 		AssertNoAmbiguousReferences(fixedSource);
 	}
 
+	[Fact]
+	public async Task Should_Add_Standard_Alias_When_Namespace_Imported_Under_Different_Alias()
+	{
+		// Arrange - The image namespace is already imported, but under a NON-standard alias ("Foo").
+		// The emitted parameter type uses the standard alias (the last namespace segment), so the fix
+		// must still add the standard aliased using - otherwise the qualified type fails to resolve.
+		const string source = """
+			using System;
+			using System.ComponentModel;
+			using Microsoft.Xrm.Sdk;
+			using XrmPluginCore;
+			using XrmPluginCore.Enums;
+			using Microsoft.Extensions.DependencyInjection;
+			using XrmPluginCore.Tests.Context.BusinessDomain;
+			using Foo = TestNamespace.PluginRegistrations.TestPlugin.AccountUpdatePostOperation;
+
+			namespace TestNamespace
+			{
+			    public class TestPlugin : Plugin
+			    {
+			        public TestPlugin()
+			        {
+			            RegisterStep<Account, ITestService>(EventOperation.Update, ExecutionStage.PostOperation,
+			                nameof(ITestService.HandleUpdate))
+			                .AddFilteredAttributes(x => x.Name)
+			                .WithPreImage(x => x.Name, x => x.Revenue);
+			        }
+
+			        protected override IServiceCollection OnBeforeBuildServiceProvider(IServiceCollection services)
+			        {
+			            return services.AddScoped<ITestService, TestService>();
+			        }
+			    }
+
+			    public interface ITestService
+			    {
+			        void HandleUpdate();
+			    }
+
+			    public class TestService : ITestService
+			    {
+			        public void HandleUpdate() { }
+			    }
+			}
+
+			namespace TestNamespace.PluginRegistrations.TestPlugin.AccountUpdatePostOperation
+			{
+			    public sealed class PreImage { }
+			    public sealed class PostImage { }
+			}
+			""";
+
+		// Act
+		var fixedSource = await ApplyCodeFixAsync(source);
+
+		// Assert - Signature uses the standard alias
+		CountOccurrences(fixedSource, "void HandleUpdate(AccountUpdatePostOperation.PreImage preImage)").Should().Be(2);
+
+		// Assert - The standard aliased using is added even though "Foo" already imports the namespace
+		CountOccurrences(fixedSource, "using AccountUpdatePostOperation = TestNamespace.PluginRegistrations.TestPlugin.AccountUpdatePostOperation;")
+			.Should().Be(1, "the standard alias must be present so the qualified parameter type resolves");
+
+		// Assert - The pre-existing non-standard alias is left untouched
+		CountOccurrences(fixedSource, "using Foo = TestNamespace.PluginRegistrations.TestPlugin.AccountUpdatePostOperation;")
+			.Should().Be(1, "the existing alias should not be removed");
+
+		// Assert - Compiles cleanly: no ambiguity AND no unresolved standard alias
+		AssertCompilesWithoutReferenceErrors(fixedSource);
+	}
+
 	private static void AssertNoAmbiguousReferences(string source)
 	{
 		var compilation = CompilationHelper.CreateCompilation(source);
@@ -641,6 +711,19 @@ public class FixHandlerSignatureCodeFixProviderTests : CodeFixTestBase
 			.Select(d => d.GetMessage())
 			.ToList();
 		ambiguous.Should().BeEmpty("the fixed source should not contain ambiguous references");
+	}
+
+	private static void AssertCompilesWithoutReferenceErrors(string source)
+	{
+		var compilation = CompilationHelper.CreateCompilation(source);
+
+		// CS0104 = ambiguous reference; CS0246/CS0234 = unresolved type / namespace member, which is
+		// how a missing alias (qualified type whose alias was never added) surfaces.
+		var errors = compilation.GetDiagnostics()
+			.Where(d => d.Id is "CS0104" or "CS0246" or "CS0234")
+			.Select(d => d.GetMessage())
+			.ToList();
+		errors.Should().BeEmpty("the fixed source should resolve all image references");
 	}
 
 	private static int CountOccurrences(string source, string search)

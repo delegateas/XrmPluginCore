@@ -276,9 +276,15 @@ internal static class SyntaxFactoryHelper
 				}
 
 				var newAlias = GetLastNamespaceSegment(newImageNamespace);
+
+				// The standard alias is "already present" only if some using binds exactly that alias
+				// name, or a plain (non-aliased) using imports the namespace (which the rewriter above
+				// would already have converted to the standard alias). A using that imports the same
+				// namespace under a DIFFERENT alias does NOT count: the emitted parameter types are
+				// qualified with the standard alias, so we must still add it or the code won't compile.
 				var alreadyExists = newCompUnit.Usings.Any(u =>
 						u.Alias?.Name.ToString() == newAlias ||
-						u.Name?.ToString() == newImageNamespace) ||
+						(u.Alias == null && u.Name?.ToString() == newImageNamespace)) ||
 					usingsToAdd.Any(u => u.Alias?.Name.ToString() == newAlias);
 
 				if (!alreadyExists)

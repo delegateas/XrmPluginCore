@@ -318,6 +318,79 @@ public class CreateHandlerMethodCodeFixProviderTests : CodeFixTestBase
 		AssertNoAmbiguousReferences(fixedSource);
 	}
 
+	[Fact]
+	public async Task Should_Add_Method_To_Correct_Interface_When_Names_Collide()
+	{
+		// Arrange - A decoy interface with the SAME simple name lives in another namespace and is
+		// declared FIRST in the document. The registered service is TestNamespace.ITestService. The
+		// fix must add the method to the registered interface, not the first one matching by name.
+		const string source = """
+			using System;
+			using System.ComponentModel;
+			using Microsoft.Xrm.Sdk;
+			using XrmPluginCore;
+			using XrmPluginCore.Enums;
+			using Microsoft.Extensions.DependencyInjection;
+			using XrmPluginCore.Tests.Context.BusinessDomain;
+
+			namespace DecoyNamespace
+			{
+			    public interface ITestService
+			    {
+			        void SomethingElse();
+			    }
+			}
+
+			namespace TestNamespace
+			{
+			    public class TestPlugin : Plugin
+			    {
+			        public TestPlugin()
+			        {
+			            RegisterStep<Account, ITestService>(EventOperation.Update, ExecutionStage.PostOperation,
+			                "HandleUpdate")
+			                .AddFilteredAttributes(x => x.Name)
+			                .WithPreImage(x => x.Name, x => x.Revenue);
+			        }
+
+			        protected override IServiceCollection OnBeforeBuildServiceProvider(IServiceCollection services)
+			        {
+			            return services.AddScoped<ITestService, TestService>();
+			        }
+			    }
+
+			    public interface ITestService
+			    {
+			    }
+
+			    public class TestService : ITestService
+			    {
+			    }
+			}
+
+			namespace TestNamespace.PluginRegistrations.TestPlugin.AccountUpdatePostOperation
+			{
+			    public sealed class PreImage { }
+			    public sealed class PostImage { }
+			}
+			""";
+
+		// Act
+		var fixedSource = await ApplyCodeFixAsync(source);
+
+		// Assert - The method landed on the registered interface, not the decoy
+		var compilation = CompilationHelper.CreateCompilation(fixedSource);
+		var registered = compilation.GetTypeByMetadataName("TestNamespace.ITestService");
+		var decoy = compilation.GetTypeByMetadataName("DecoyNamespace.ITestService");
+
+		registered.Should().NotBeNull();
+		decoy.Should().NotBeNull();
+		registered!.GetMembers("HandleUpdate").Should().HaveCount(1, "the method must be added to the registered interface");
+		decoy!.GetMembers("HandleUpdate").Should().BeEmpty("the method must not be added to the same-named decoy interface");
+
+		AssertNoAmbiguousReferences(fixedSource);
+	}
+
 	private static void AssertNoAmbiguousReferences(string source)
 	{
 		var compilation = CompilationHelper.CreateCompilation(source);

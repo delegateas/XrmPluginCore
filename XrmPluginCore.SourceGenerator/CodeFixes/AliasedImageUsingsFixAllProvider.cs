@@ -25,6 +25,10 @@ internal sealed class AliasedImageUsingsFixAllProvider : FixAllProvider
 {
 	public static readonly AliasedImageUsingsFixAllProvider Instance = new();
 
+	// User-facing label shown in the FixAll UI. The equivalence key is a stable identity token and is
+	// not suitable as a title.
+	private const string Title = "Fix all image handler signatures";
+
 	private AliasedImageUsingsFixAllProvider()
 	{
 	}
@@ -45,10 +49,9 @@ internal sealed class AliasedImageUsingsFixAllProvider : FixAllProvider
 		}
 
 		var solution = fixAllContext.Solution;
-		var title = fixAllContext.CodeActionEquivalenceKey ?? "Fix all image handlers";
 
 		return CodeAction.Create(
-			title,
+			Title,
 			c => FixAllAsync(solution, diagnostics, c),
 			equivalenceKey: fixAllContext.CodeActionEquivalenceKey);
 	}

@@ -139,17 +139,29 @@ public class CreateHandlerMethodCodeFixProvider : CodeFixProvider
 
 		var methodDeclaration = CreateMethodDeclaration(methodName, hasPreImage, hasPostImage, alias);
 
-		// Emit the aliased using and requalify existing image references FIRST, on the original tree,
-		// so the rewriter resolves bare references against a semantic model whose nodes still match.
-		// The created method's parameters are already alias-qualified, so requalification skips them.
-		// The interface may live in a different tree than the trigger, so resolve its semantic model
-		// from the compilation.
-		var interfaceSemanticModel = semanticModel.Compilation.GetSemanticModel(interfaceRoot.SyntaxTree);
-		var newRoot = SyntaxFactoryHelper.ApplyAliasedImageUsings(interfaceRoot, imageNamespace, interfaceSemanticModel);
+		// Annotate the exact interface node so we can locate it precisely after the using rewrite,
+		// rather than re-finding by identifier text (which is ambiguous when several interfaces share
+		// a name across namespaces or as nested types).
+		var interfaceAnnotation = new SyntaxAnnotation();
+		var annotatedRoot = interfaceRoot.ReplaceNode(
+			interfaceDeclaration,
+			interfaceDeclaration.WithAdditionalAnnotations(interfaceAnnotation));
 
-		// Then add the method to the (re-found) interface declaration.
-		var targetInterface = newRoot.DescendantNodes().OfType<InterfaceDeclarationSyntax>()
-			.FirstOrDefault(i => i.Identifier.Text == interfaceDeclaration.Identifier.Text);
+		// Emit the aliased using and requalify existing image references FIRST, so the rewriter
+		// resolves bare references against a semantic model whose nodes still match. Annotating the
+		// node above produced a new tree, so build the semantic model from a compilation with that
+		// tree swapped in — the annotation doesn't affect binding, so references resolve identically.
+		// The created method's parameters are already alias-qualified, so requalification skips them.
+		// The interface may live in a different tree than the trigger.
+		var annotatedTree = annotatedRoot.SyntaxTree;
+		var annotatedCompilation = semanticModel.Compilation.ReplaceSyntaxTree(interfaceRoot.SyntaxTree, annotatedTree);
+		var interfaceSemanticModel = annotatedCompilation.GetSemanticModel(annotatedTree);
+		var newRoot = SyntaxFactoryHelper.ApplyAliasedImageUsings(annotatedRoot, imageNamespace, interfaceSemanticModel);
+
+		// Then add the method to the annotated interface declaration.
+		var targetInterface = newRoot.GetAnnotatedNodes(interfaceAnnotation)
+			.OfType<InterfaceDeclarationSyntax>()
+			.FirstOrDefault();
 		if (targetInterface != null)
 		{
 			newRoot = newRoot.ReplaceNode(targetInterface, targetInterface.AddMembers(methodDeclaration));
