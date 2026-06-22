@@ -155,8 +155,8 @@ using XrmPluginCore;
 		string imageType)
 	{
 		var interfaceName = imageType == Constants.PostImageTypeName
-			? "IPluginPostImage"
-			: "IPluginPreImage";
+			? Constants.PostImageInterfaceName
+			: Constants.PreImageInterfaceName;
 
 		return
 			$"{L1}/// <summary>\n" +

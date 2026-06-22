@@ -14,20 +14,20 @@ namespace XrmPluginCore;
 /// </summary>
 public interface IPluginImage
 {
-    /// <summary>
-    /// The unique identifier (primary key) of the record the image was captured for.
-    /// </summary>
-    Guid Id { get; }
+	/// <summary>
+	/// The unique identifier (primary key) of the record the image was captured for.
+	/// </summary>
+	Guid Id { get; }
 
-    /// <summary>
-    /// The logical name of the entity captured in the image.
-    /// </summary>
-    string LogicalName { get; }
+	/// <summary>
+	/// The logical name of the entity captured in the image.
+	/// </summary>
+	string LogicalName { get; }
 
-    /// <summary>
-    /// The underlying entity captured in the image.
-    /// </summary>
-    Entity Entity { get; }
+	/// <summary>
+	/// The underlying entity captured in the image.
+	/// </summary>
+	Entity Entity { get; }
 }
 
 /// <summary>
@@ -36,10 +36,10 @@ public interface IPluginImage
 /// <typeparam name="TEntity">The early-bound entity type captured in the image.</typeparam>
 public interface IPluginImage<out TEntity> : IPluginImage where TEntity : Entity
 {
-    /// <summary>
-    /// The strongly-typed entity captured in the image.
-    /// </summary>
-    new TEntity Entity { get; }
+	/// <summary>
+	/// The strongly-typed entity captured in the image.
+	/// </summary>
+	new TEntity Entity { get; }
 }
 
 /// <summary>

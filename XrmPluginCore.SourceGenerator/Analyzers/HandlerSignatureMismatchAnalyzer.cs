@@ -85,12 +85,12 @@ public class HandlerSignatureMismatchAnalyzer : DiagnosticAnalyzer
 			return;
 		}
 
-		// Resolve the registered entity type name (TEntity) for validating typed image interfaces
+		// Resolve the registered entity type (TEntity) for validating typed image interfaces
 		var entityTypeSyntax = genericName.TypeArgumentList.Arguments[0];
-		var entityTypeName = context.SemanticModel.GetTypeInfo(entityTypeSyntax).Type?.Name;
+		var entityType = context.SemanticModel.GetTypeInfo(entityTypeSyntax).Type;
 
 		// Check if any overload matches the expected signature
-		var hasMatchingOverload = methods.Any(method => SignatureMatches(method, hasPreImage, hasPostImage, entityTypeName));
+		var hasMatchingOverload = methods.Any(method => SignatureMatches(method, hasPreImage, hasPostImage, entityType));
 		if (hasMatchingOverload)
 		{
 			return;
@@ -169,7 +169,7 @@ public class HandlerSignatureMismatchAnalyzer : DiagnosticAnalyzer
 		return true;
 	}
 
-	private static bool SignatureMatches(IMethodSymbol method, bool hasPreImage, bool hasPostImage, string entityTypeName)
+	private static bool SignatureMatches(IMethodSymbol method, bool hasPreImage, bool hasPostImage, ITypeSymbol entityType)
 	{
 		var parameters = method.Parameters;
 		var expectedParamCount = (hasPreImage ? 1 : 0) + (hasPostImage ? 1 : 0);
@@ -188,7 +188,7 @@ public class HandlerSignatureMismatchAnalyzer : DiagnosticAnalyzer
 				return false;
 			}
 
-			if (!IsImageParameter(parameters[paramIndex], Constants.PreImageTypeName, Constants.PreImageInterfaceName, entityTypeName))
+			if (!IsImageParameter(parameters[paramIndex], Constants.PreImageTypeName, Constants.PreImageInterfaceName, entityType))
 			{
 				return false;
 			}
@@ -203,7 +203,7 @@ public class HandlerSignatureMismatchAnalyzer : DiagnosticAnalyzer
 				return false;
 			}
 
-			if (!IsImageParameter(parameters[paramIndex], Constants.PostImageTypeName, Constants.PostImageInterfaceName, entityTypeName))
+			if (!IsImageParameter(parameters[paramIndex], Constants.PostImageTypeName, Constants.PostImageInterfaceName, entityType))
 			{
 				return false;
 			}
@@ -222,7 +222,7 @@ public class HandlerSignatureMismatchAnalyzer : DiagnosticAnalyzer
 	/// For the generic interfaces, the type argument must match the registered entity type, otherwise the
 	/// generated ActionWrapper would fail to compile when passing the concrete image.
 	/// </summary>
-	private static bool IsImageParameter(IParameterSymbol parameter, string expectedWrapperType, string expectedInterfaceName, string entityTypeName)
+	private static bool IsImageParameter(IParameterSymbol parameter, string expectedWrapperType, string expectedInterfaceName, ITypeSymbol entityType)
 	{
 		var type = parameter.Type;
 
@@ -248,7 +248,9 @@ public class HandlerSignatureMismatchAnalyzer : DiagnosticAnalyzer
 		if (type is INamedTypeSymbol named && named.IsGenericType)
 		{
 			var argument = named.TypeArguments.Length == 1 ? named.TypeArguments[0] : null;
-			return argument != null && entityTypeName != null && argument.Name == entityTypeName;
+			return argument != null
+				&& entityType != null
+				&& SymbolEqualityComparer.Default.Equals(argument, entityType);
 		}
 
 		return true;
