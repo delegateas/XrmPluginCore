@@ -1,6 +1,8 @@
-### v1.3.0 - 19 June 2026
+### v1.3.0 - 22 June 2026
 * Add: `IPluginImage`, `IPluginImage<TEntity>`, `IPluginPreImage`/`IPluginPreImage<TEntity>` and `IPluginPostImage`/`IPluginPostImage<TEntity>` interfaces for generated images. Handler methods can now accept these interface types so functionality can be shared across the per-registration concrete image types. The generic variants expose a type-safe `Entity` property.
 * Add: Generated images (and `IPluginImage`) now always expose the record's `Id` (primary key) and `LogicalName`, since they are available on every entity image.
+* Fix: Detect handler methods inherited from base interfaces
+* Fix: Always generate aliased usings
 * Breaking: Removed `IEntityImageWrapper<T>`; generated images now implement `IPluginPreImage<TEntity>`/`IPluginPostImage<TEntity>` instead. Replace any usage of `IEntityImageWrapper<T>` with `IPluginImage<TEntity>`.
 
 ### v1.2.8 - 30 April 2026
