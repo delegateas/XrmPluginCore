@@ -146,10 +146,89 @@ internal static class SyntaxFactoryHelper
 	}
 
 	/// <summary>
+	/// Returns the alias used for an image-registration namespace: its last dot-separated segment.
+	/// </summary>
+	public static string GetAliasForImageNamespace(string ns) => GetLastNamespaceSegment(ns);
+
+	/// <summary>
+	/// Backward-compatible overload without a semantic model. Bare PreImage/PostImage references are
+	/// left unqualified (no semantic resolution). Prefer the overload that takes a <see cref="SemanticModel"/>.
+	/// </summary>
+	public static SyntaxNode ConvertToAliasedUsingsAndQualifyRefs(SyntaxNode root, string newImageNamespace)
+		=> ConvertToAliasedUsingsAndQualifyRefs(root, newImageNamespace, semanticModel: null);
+
+	/// <summary>
+	/// Always emits the aliased using for <paramref name="imageNamespace"/> and re-qualifies/aliases
+	/// every existing image-registration using in the tree. This is the single shared entry point used
+	/// by the code-fix providers; alias-qualified parameter lists are produced separately via
+	/// <see cref="CreateImageParameterList(bool, bool, string)"/>.
+	/// </summary>
+	/// <param name="root">The compilation unit (document root) to rewrite.</param>
+	/// <param name="imageNamespace">The image-registration namespace to alias and add.</param>
+	/// <param name="semanticModel">The semantic model for <paramref name="root"/>'s tree (pre-rewrite).</param>
+	public static SyntaxNode ApplyAliasedImageUsings(SyntaxNode root, string imageNamespace, SemanticModel semanticModel)
+	{
+		if (string.IsNullOrEmpty(imageNamespace))
+		{
+			// The analyzer only sets the image namespace when an expected one exists; nothing to do.
+			return root;
+		}
+
+		return ConvertToAliasedUsingsAndQualifyRefs(root, imageNamespace, semanticModel);
+	}
+
+	/// <summary>
+	/// Multi-namespace variant of <see cref="ApplyAliasedImageUsings(SyntaxNode, string, SemanticModel)"/>.
+	/// Adds every distinct aliased image using needed and requalifies every reference in a single pass.
+	/// Used by the FixAll path so consolidating N registrations funnels through the same engine as a
+	/// single fix.
+	/// </summary>
+	/// <param name="root">The compilation unit (document root) to rewrite.</param>
+	/// <param name="imageNamespaces">The image-registration namespaces to alias and add.</param>
+	/// <param name="semanticModel">The semantic model for <paramref name="root"/>'s tree (pre-rewrite).</param>
+	public static SyntaxNode ApplyAliasedImageUsings(SyntaxNode root, IEnumerable<string> imageNamespaces, SemanticModel semanticModel)
+	{
+		if (imageNamespaces == null)
+		{
+			return root;
+		}
+
+		var namespaces = imageNamespaces.Where(ns => !string.IsNullOrEmpty(ns)).Distinct().ToList();
+		if (namespaces.Count == 0)
+		{
+			return root;
+		}
+
+		return ConvertToAliasedUsingsAndQualifyRefs(root, namespaces, semanticModel);
+	}
+
+	/// <summary>
 	/// Converts existing plain image usings to aliased form, qualifies all bare PreImage/PostImage
 	/// type references, and adds the new aliased using.
 	/// </summary>
-	public static SyntaxNode ConvertToAliasedUsingsAndQualifyRefs(SyntaxNode root, string newImageNamespace)
+	/// <param name="root">The compilation unit (document root) to rewrite.</param>
+	/// <param name="newImageNamespace">The image-registration namespace to alias and add.</param>
+	/// <param name="semanticModel">
+	/// The semantic model for <paramref name="root"/>'s original (pre-rewrite) tree, used to resolve
+	/// which alias a bare PreImage/PostImage reference belongs to. May be null, in which case bare
+	/// references are left unqualified.
+	/// </param>
+	public static SyntaxNode ConvertToAliasedUsingsAndQualifyRefs(SyntaxNode root, string newImageNamespace, SemanticModel semanticModel)
+		=> ConvertToAliasedUsingsAndQualifyRefs(root, new[] { newImageNamespace }, semanticModel);
+
+	/// <summary>
+	/// Converts existing plain image usings to aliased form, qualifies all bare PreImage/PostImage
+	/// type references, and adds an aliased using for each of <paramref name="newImageNamespaces"/>.
+	/// This is the single engine shared by the single-fix and FixAll code paths.
+	/// </summary>
+	/// <param name="root">The compilation unit (document root) to rewrite.</param>
+	/// <param name="newImageNamespaces">The image-registration namespaces to alias and add.</param>
+	/// <param name="semanticModel">
+	/// The semantic model for <paramref name="root"/>'s original (pre-rewrite) tree, used to resolve
+	/// which alias a bare PreImage/PostImage reference belongs to. May be null, in which case bare
+	/// references are left unqualified.
+	/// </param>
+	private static SyntaxNode ConvertToAliasedUsingsAndQualifyRefs(SyntaxNode root, IReadOnlyCollection<string> newImageNamespaces, SemanticModel semanticModel)
 	{
 		if (root is not CompilationUnitSyntax compilationUnit)
 		{
@@ -172,32 +251,54 @@ internal static class SyntaxFactoryHelper
 			}
 		}
 
-		// Also include the new namespace
-		if (!string.IsNullOrEmpty(newImageNamespace))
+		// Also include each new namespace
+		foreach (var newImageNamespace in newImageNamespaces)
 		{
-			plainNamespaceToAlias[newImageNamespace] = GetLastNamespaceSegment(newImageNamespace);
+			if (!string.IsNullOrEmpty(newImageNamespace))
+			{
+				plainNamespaceToAlias[newImageNamespace] = GetLastNamespaceSegment(newImageNamespace);
+			}
 		}
 
 		// Rewrite the tree
-		var rewriter = new ImageAmbiguityRewriter(plainNamespaceToAlias);
+		var rewriter = new ImageAmbiguityRewriter(plainNamespaceToAlias, semanticModel);
 		var newRoot = rewriter.Visit(root);
 
-		// Add the new aliased using if not already present
-		if (newRoot is CompilationUnitSyntax newCompUnit && !string.IsNullOrEmpty(newImageNamespace))
+		// Add each new aliased using if not already present
+		if (newRoot is CompilationUnitSyntax newCompUnit)
 		{
-			var newAlias = GetLastNamespaceSegment(newImageNamespace);
-			var alreadyExists = newCompUnit.Usings.Any(u =>
-				u.Alias?.Name.ToString() == newAlias ||
-				u.Name?.ToString() == newImageNamespace);
-
-			if (!alreadyExists)
+			var usingsToAdd = new List<UsingDirectiveSyntax>();
+			foreach (var newImageNamespace in newImageNamespaces)
 			{
-				var aliasedUsing = SyntaxFactory.UsingDirective(
-						SyntaxFactory.NameEquals(SyntaxFactory.IdentifierName(newAlias)),
-						SyntaxFactory.ParseName(newImageNamespace))
-					.WithTrailingTrivia(SyntaxFactory.CarriageReturnLineFeed);
+				if (string.IsNullOrEmpty(newImageNamespace))
+				{
+					continue;
+				}
 
-				newRoot = newCompUnit.AddUsings(aliasedUsing);
+				var newAlias = GetLastNamespaceSegment(newImageNamespace);
+
+				// The standard alias is "already present" only if some using binds exactly that alias
+				// name, or a plain (non-aliased) using imports the namespace (which the rewriter above
+				// would already have converted to the standard alias). A using that imports the same
+				// namespace under a DIFFERENT alias does NOT count: the emitted parameter types are
+				// qualified with the standard alias, so we must still add it or the code won't compile.
+				var alreadyExists = newCompUnit.Usings.Any(u =>
+						u.Alias?.Name.ToString() == newAlias ||
+						(u.Alias == null && u.Name?.ToString() == newImageNamespace)) ||
+					usingsToAdd.Any(u => u.Alias?.Name.ToString() == newAlias);
+
+				if (!alreadyExists)
+				{
+					usingsToAdd.Add(SyntaxFactory.UsingDirective(
+							SyntaxFactory.NameEquals(SyntaxFactory.IdentifierName(newAlias)),
+							SyntaxFactory.ParseName(newImageNamespace))
+						.WithTrailingTrivia(SyntaxFactory.CarriageReturnLineFeed));
+				}
+			}
+
+			if (usingsToAdd.Count > 0)
+			{
+				newRoot = newCompUnit.AddUsings(usingsToAdd.ToArray());
 			}
 		}
 
@@ -235,16 +336,14 @@ internal static class SyntaxFactoryHelper
 	{
 		private readonly Dictionary<string, string> _plainNamespaceToAlias;
 
-		// Reverse map: for each bare type name, which alias qualifies it
-		// Built from existing usings only (not the new one being added)
-		private readonly Dictionary<string, string> _typeToExistingAlias;
+		// Semantic model for the original (pre-rewrite) tree, used to resolve which image
+		// namespace a bare PreImage/PostImage reference actually binds to. May be null.
+		private readonly SemanticModel _semanticModel;
 
-		public ImageAmbiguityRewriter(Dictionary<string, string> plainNamespaceToAlias)
+		public ImageAmbiguityRewriter(Dictionary<string, string> plainNamespaceToAlias, SemanticModel semanticModel)
 		{
 			_plainNamespaceToAlias = plainNamespaceToAlias;
-
-			// Build type-to-alias map for qualifying existing bare references
-			_typeToExistingAlias = new Dictionary<string, string>();
+			_semanticModel = semanticModel;
 		}
 
 		public override SyntaxNode VisitUsingDirective(UsingDirectiveSyntax node)
@@ -257,9 +356,6 @@ internal static class SyntaxFactoryHelper
 			var ns = node.Name?.ToString();
 			if (ns != null && _plainNamespaceToAlias.TryGetValue(ns, out var alias))
 			{
-				// Track which alias maps to which namespace for qualifying references
-				_typeToExistingAlias[ns] = alias;
-
 				// Convert to aliased using
 				return SyntaxFactory.UsingDirective(
 						SyntaxFactory.NameEquals(SyntaxFactory.IdentifierName(alias)),
@@ -299,16 +395,13 @@ internal static class SyntaxFactoryHelper
 				return base.VisitIdentifierName(node);
 			}
 
-			// Find the alias for this type reference based on the existing usings that were converted
-			// We need to figure out which alias applies to this bare reference.
-			// The bare reference was valid under the old plain using, so find which converted namespace it belonged to.
-			string matchingAlias = null;
-			foreach (var kvp in _typeToExistingAlias)
-			{
-				matchingAlias = kvp.Value;
-				break; // There should be exactly one existing plain image using at this point
-			}
-
+			// Resolve which image namespace this bare reference binds to via the semantic model
+			// (built from the original, pre-rewrite tree). Only qualify when it resolves uniquely
+			// to a single image-registration namespace whose alias we know. If the reference is
+			// ambiguous or unresolved, leave it unqualified so it surfaces as a normal compile error
+			// rather than guessing — this keeps requalification correct with any number of plain
+			// image usings in the file.
+			var matchingAlias = ResolveImageAlias(node);
 			if (matchingAlias == null)
 			{
 				return base.VisitIdentifierName(node);
@@ -322,6 +415,29 @@ internal static class SyntaxFactoryHelper
 			return qualifiedName
 				.WithLeadingTrivia(node.GetLeadingTrivia())
 				.WithTrailingTrivia(node.GetTrailingTrivia());
+		}
+
+		private string ResolveImageAlias(IdentifierNameSyntax node)
+		{
+			if (_semanticModel == null)
+			{
+				return null;
+			}
+
+			var symbol = _semanticModel.GetSymbolInfo(node).Symbol;
+			if (symbol == null)
+			{
+				// Ambiguous (e.g. CS0104) or otherwise unresolved — do not guess.
+				return null;
+			}
+
+			var containingNamespace = symbol.ContainingNamespace?.ToDisplayString();
+			if (containingNamespace != null && _plainNamespaceToAlias.TryGetValue(containingNamespace, out var alias))
+			{
+				return alias;
+			}
+
+			return null;
 		}
 	}
 }

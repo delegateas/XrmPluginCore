@@ -3,6 +3,7 @@ using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Diagnostics;
+using System.Collections.Immutable;
 using XrmPluginCore.SourceGenerator.Tests.Helpers;
 
 namespace XrmPluginCore.SourceGenerator.Tests.DiagnosticTests;
@@ -80,6 +81,75 @@ public abstract class CodeFixTestBase
 		var newText = await changedDocument!.GetTextAsync();
 
 		return newText.ToString();
+	}
+
+	/// <summary>
+	/// Applies the code fix provider's FixAll provider across every matching diagnostic in the
+	/// document (Document scope), exercising the custom <c>FixAllProvider</c> rather than a single
+	/// per-diagnostic fix.
+	/// </summary>
+	protected static async Task<string> ApplyFixAllAsync(
+		string source,
+		DiagnosticAnalyzer analyzer,
+		CodeFixProvider codeFixProvider,
+		string equivalenceKey,
+		params string[] diagnosticIds)
+	{
+		var document = CreateDocument(source);
+
+		// Compute diagnostics against the document's own compilation so their locations reference the
+		// document's syntax tree (the FixAll provider maps locations back to documents).
+		var compilation = await document.Project.GetCompilationAsync();
+		var compilationWithAnalyzers = compilation!.WithAnalyzers([analyzer]);
+		var analyzerDiagnostics = await compilationWithAnalyzers.GetAnalyzerDiagnosticsAsync();
+		var diagnostics = analyzerDiagnostics.Where(d => diagnosticIds.Contains(d.Id)).ToImmutableArray();
+
+		if (diagnostics.IsEmpty)
+		{
+			return source;
+		}
+
+		var fixAllProvider = codeFixProvider.GetFixAllProvider()!;
+		var fixAllContext = new FixAllContext(
+			document,
+			codeFixProvider,
+			FixAllScope.Document,
+			equivalenceKey,
+			diagnosticIds,
+			new FixAllDiagnosticProvider(diagnostics),
+			CancellationToken.None);
+
+		var codeAction = await fixAllProvider.GetFixAsync(fixAllContext);
+		if (codeAction == null)
+		{
+			return source;
+		}
+
+		var operations = await codeAction.GetOperationsAsync(CancellationToken.None);
+		var changedSolution = operations.OfType<ApplyChangesOperation>().Single().ChangedSolution;
+		var changedDocument = changedSolution.GetDocument(document.Id);
+		var newText = await changedDocument!.GetTextAsync();
+
+		return newText.ToString();
+	}
+
+	private sealed class FixAllDiagnosticProvider : FixAllContext.DiagnosticProvider
+	{
+		private readonly ImmutableArray<Diagnostic> _diagnostics;
+
+		public FixAllDiagnosticProvider(ImmutableArray<Diagnostic> diagnostics)
+		{
+			_diagnostics = diagnostics;
+		}
+
+		public override Task<IEnumerable<Diagnostic>> GetDocumentDiagnosticsAsync(Document document, CancellationToken cancellationToken)
+			=> Task.FromResult<IEnumerable<Diagnostic>>(_diagnostics);
+
+		public override Task<IEnumerable<Diagnostic>> GetAllDiagnosticsAsync(Project project, CancellationToken cancellationToken)
+			=> Task.FromResult<IEnumerable<Diagnostic>>(_diagnostics);
+
+		public override Task<IEnumerable<Diagnostic>> GetProjectDiagnosticsAsync(Project project, CancellationToken cancellationToken)
+			=> Task.FromResult<IEnumerable<Diagnostic>>(Enumerable.Empty<Diagnostic>());
 	}
 
 	protected static async Task<List<CodeAction>> GetCodeActionsAsync(

@@ -1,7 +1,9 @@
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Microsoft.CodeAnalysis.Text;
 using System.Linq;
+using System.Threading;
 
 namespace XrmPluginCore.SourceGenerator.Helpers;
 
@@ -107,6 +109,38 @@ internal static class RegisterStepHelper
 		}
 
 		return false;
+	}
+
+	/// <summary>
+	/// Resolves the service type symbol (the second generic argument of a RegisterStep call) from a
+	/// diagnostic location. Returns null if no enclosing RegisterStep call is found or the type cannot
+	/// be resolved.
+	/// </summary>
+	public static INamedTypeSymbol ResolveServiceType(
+		SyntaxNode root,
+		SemanticModel semanticModel,
+		TextSpan diagnosticSpan,
+		CancellationToken cancellationToken)
+	{
+		var diagnosticNode = root.FindNode(diagnosticSpan);
+		var registerStepInvocation = diagnosticNode.AncestorsAndSelf()
+			.OfType<InvocationExpressionSyntax>()
+			.FirstOrDefault(i => IsRegisterStepCall(i, out _));
+
+		if (registerStepInvocation == null)
+		{
+			return null;
+		}
+
+		var genericName = GetGenericName(registerStepInvocation);
+		if (genericName == null || genericName.TypeArgumentList.Arguments.Count < 2)
+		{
+			return null;
+		}
+
+		var serviceTypeSyntax = genericName.TypeArgumentList.Arguments[1];
+		var typeInfo = semanticModel.GetTypeInfo(serviceTypeSyntax, cancellationToken);
+		return typeInfo.Type as INamedTypeSymbol;
 	}
 
 	/// <summary>

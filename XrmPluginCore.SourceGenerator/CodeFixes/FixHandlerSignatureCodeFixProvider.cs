@@ -25,7 +25,7 @@ public class FixHandlerSignatureCodeFixProvider : CodeFixProvider
 			DiagnosticDescriptors.HandlerSignatureMismatchError.Id);
 
 	public sealed override FixAllProvider GetFixAllProvider() =>
-		WellKnownFixAllProviders.BatchFixer;
+		AliasedImageUsingsFixAllProvider.Instance;
 
 	public sealed override async Task RegisterCodeFixesAsync(CodeFixContext context)
 	{
@@ -195,9 +195,11 @@ public class FixHandlerSignatureCodeFixProvider : CodeFixProvider
 				continue;
 			}
 
-			// Detect ambiguity
-			var ambiguity = SyntaxFactoryHelper.DetectImageAmbiguity(methodRoot, imageNamespace);
-			var newParameters = SyntaxFactoryHelper.CreateImageParameterList(hasPreImage, hasPostImage, ambiguity.needsAlias ? ambiguity.alias : null);
+			// Always qualify the image parameters with the namespace alias.
+			var alias = string.IsNullOrEmpty(imageNamespace)
+				? null
+				: SyntaxFactoryHelper.GetAliasForImageNamespace(imageNamespace);
+			var newParameters = SyntaxFactoryHelper.CreateImageParameterList(hasPreImage, hasPostImage, alias);
 
 			// Build a set of (containingTypeName, methodName) pairs to replace
 			var targets = new HashSet<(string typeName, string method)>();
@@ -211,8 +213,14 @@ public class FixHandlerSignatureCodeFixProvider : CodeFixProvider
 				}
 			}
 
+			// Emit the aliased using and requalify existing image references FIRST, on the original
+			// tree, so the rewriter resolves bare references against a semantic model whose nodes still
+			// match. The replacement parameters below are already alias-qualified, so the requalifier
+			// leaves them untouched.
+			var treeSemanticModel = compilation.GetSemanticModel(tree);
+			var newRoot = SyntaxFactoryHelper.ApplyAliasedImageUsings(methodRoot, imageNamespace, treeSemanticModel);
+
 			// Replace all matching method declarations one at a time, re-finding after each
-			SyntaxNode newRoot = methodRoot;
 			foreach (var target in targets)
 			{
 				var current = newRoot.DescendantNodes().OfType<MethodDeclarationSyntax>()
@@ -222,16 +230,6 @@ public class FixHandlerSignatureCodeFixProvider : CodeFixProvider
 				{
 					newRoot = newRoot.ReplaceNode(current, current.WithParameterList(newParameters));
 				}
-			}
-
-			// Handle usings
-			if (ambiguity.needsAlias)
-			{
-				newRoot = SyntaxFactoryHelper.ConvertToAliasedUsingsAndQualifyRefs(newRoot, imageNamespace);
-			}
-			else
-			{
-				newRoot = SyntaxFactoryHelper.AddUsingDirectiveIfMissing(newRoot, imageNamespace);
 			}
 
 			solution = solution.WithDocumentSyntaxRoot(methodDocument.Id, newRoot);

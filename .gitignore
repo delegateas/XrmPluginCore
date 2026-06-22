@@ -401,3 +401,6 @@ FodyWeavers.xsd
 
 # Claude local settings
 .claude/*.local.json
+
+# Conducktor local files
+.conducktor/

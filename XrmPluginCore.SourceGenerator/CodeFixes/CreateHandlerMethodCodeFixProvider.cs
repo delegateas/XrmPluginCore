@@ -22,7 +22,7 @@ public class CreateHandlerMethodCodeFixProvider : CodeFixProvider
 		ImmutableArray.Create(DiagnosticDescriptors.HandlerMethodNotFound.Id);
 
 	public sealed override FixAllProvider GetFixAllProvider() =>
-		WellKnownFixAllProviders.BatchFixer;
+		AliasedImageUsingsFixAllProvider.Instance;
 
 	public sealed override async Task RegisterCodeFixesAsync(CodeFixContext context)
 	{
@@ -132,29 +132,45 @@ public class CreateHandlerMethodCodeFixProvider : CodeFixProvider
 			return solution;
 		}
 
-		// Detect ambiguity before creating the method
-		var (needsAlias, alias) = SyntaxFactoryHelper.DetectImageAmbiguity(interfaceRoot, imageNamespace);
+		// Always qualify the image parameters with the namespace alias.
+		var alias = string.IsNullOrEmpty(imageNamespace)
+			? null
+			: SyntaxFactoryHelper.GetAliasForImageNamespace(imageNamespace);
 
-		// Create the method declaration with qualifier if ambiguous
-		var methodDeclaration = CreateMethodDeclaration(methodName, hasPreImage, hasPostImage, needsAlias ? alias : null);
+		var methodDeclaration = CreateMethodDeclaration(methodName, hasPreImage, hasPostImage, alias);
 
-		var newInterface = interfaceDeclaration.AddMembers(methodDeclaration);
-		var newRoot = interfaceRoot.ReplaceNode(interfaceDeclaration, newInterface);
+		// Annotate the exact interface node so we can locate it precisely after the using rewrite,
+		// rather than re-finding by identifier text (which is ambiguous when several interfaces share
+		// a name across namespaces or as nested types).
+		var interfaceAnnotation = new SyntaxAnnotation();
+		var annotatedRoot = interfaceRoot.ReplaceNode(
+			interfaceDeclaration,
+			interfaceDeclaration.WithAdditionalAnnotations(interfaceAnnotation));
 
-		// Handle usings
-		if (needsAlias)
+		// Emit the aliased using and requalify existing image references FIRST, so the rewriter
+		// resolves bare references against a semantic model whose nodes still match. Annotating the
+		// node above produced a new tree, so build the semantic model from a compilation with that
+		// tree swapped in — the annotation doesn't affect binding, so references resolve identically.
+		// The created method's parameters are already alias-qualified, so requalification skips them.
+		// The interface may live in a different tree than the trigger.
+		var annotatedTree = annotatedRoot.SyntaxTree;
+		var annotatedCompilation = semanticModel.Compilation.ReplaceSyntaxTree(interfaceRoot.SyntaxTree, annotatedTree);
+		var interfaceSemanticModel = annotatedCompilation.GetSemanticModel(annotatedTree);
+		var newRoot = SyntaxFactoryHelper.ApplyAliasedImageUsings(annotatedRoot, imageNamespace, interfaceSemanticModel);
+
+		// Then add the method to the annotated interface declaration.
+		var targetInterface = newRoot.GetAnnotatedNodes(interfaceAnnotation)
+			.OfType<InterfaceDeclarationSyntax>()
+			.FirstOrDefault();
+		if (targetInterface != null)
 		{
-			newRoot = SyntaxFactoryHelper.ConvertToAliasedUsingsAndQualifyRefs(newRoot, imageNamespace);
-		}
-		else
-		{
-			newRoot = SyntaxFactoryHelper.AddUsingDirectiveIfMissing(newRoot, imageNamespace);
+			newRoot = newRoot.ReplaceNode(targetInterface, targetInterface.AddMembers(methodDeclaration));
 		}
 
 		return solution.WithDocumentSyntaxRoot(interfaceDocument.Id, newRoot);
 	}
 
-	private static MethodDeclarationSyntax CreateMethodDeclaration(string methodName, bool hasPreImage, bool hasPostImage, string qualifier = null)
+	internal static MethodDeclarationSyntax CreateMethodDeclaration(string methodName, bool hasPreImage, bool hasPostImage, string qualifier = null)
 	{
 		return SyntaxFactory.MethodDeclaration(
 				SyntaxFactory.PredefinedType(SyntaxFactory.Token(SyntaxKind.VoidKeyword)),
@@ -165,7 +181,7 @@ public class CreateHandlerMethodCodeFixProvider : CodeFixProvider
 			.WithTrailingTrivia(SyntaxFactory.ElasticCarriageReturnLineFeed);
 	}
 
-	private static async Task<InterfaceDeclarationSyntax> FindInterfaceDeclarationAsync(
+	internal static async Task<InterfaceDeclarationSyntax> FindInterfaceDeclarationAsync(
 		Solution solution,
 		INamedTypeSymbol typeSymbol,
 		CancellationToken cancellationToken)
