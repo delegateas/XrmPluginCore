@@ -85,8 +85,12 @@ public class HandlerSignatureMismatchAnalyzer : DiagnosticAnalyzer
 			return;
 		}
 
+		// Resolve the registered entity type (TEntity) for validating typed image interfaces
+		var entityTypeSyntax = genericName.TypeArgumentList.Arguments[0];
+		var entityType = context.SemanticModel.GetTypeInfo(entityTypeSyntax).Type;
+
 		// Check if any overload matches the expected signature
-		var hasMatchingOverload = methods.Any(method => SignatureMatches(method, hasPreImage, hasPostImage));
+		var hasMatchingOverload = methods.Any(method => SignatureMatches(method, hasPreImage, hasPostImage, entityType));
 		if (hasMatchingOverload)
 		{
 			return;
@@ -165,7 +169,7 @@ public class HandlerSignatureMismatchAnalyzer : DiagnosticAnalyzer
 		return true;
 	}
 
-	private static bool SignatureMatches(IMethodSymbol method, bool hasPreImage, bool hasPostImage)
+	private static bool SignatureMatches(IMethodSymbol method, bool hasPreImage, bool hasPostImage, ITypeSymbol entityType)
 	{
 		var parameters = method.Parameters;
 		var expectedParamCount = (hasPreImage ? 1 : 0) + (hasPostImage ? 1 : 0);
@@ -184,7 +188,7 @@ public class HandlerSignatureMismatchAnalyzer : DiagnosticAnalyzer
 				return false;
 			}
 
-			if (!IsImageParameter(parameters[paramIndex], Constants.PreImageTypeName))
+			if (!IsImageParameter(parameters[paramIndex], Constants.PreImageTypeName, Constants.PreImageInterfaceName, entityType))
 			{
 				return false;
 			}
@@ -199,7 +203,7 @@ public class HandlerSignatureMismatchAnalyzer : DiagnosticAnalyzer
 				return false;
 			}
 
-			if (!IsImageParameter(parameters[paramIndex], Constants.PostImageTypeName))
+			if (!IsImageParameter(parameters[paramIndex], Constants.PostImageTypeName, Constants.PostImageInterfaceName, entityType))
 			{
 				return false;
 			}
@@ -208,8 +212,47 @@ public class HandlerSignatureMismatchAnalyzer : DiagnosticAnalyzer
 		return true;
 	}
 
-	private static bool IsImageParameter(IParameterSymbol parameter, string expectedImageType)
+	/// <summary>
+	/// Determines whether a handler parameter is a valid image parameter. A parameter is valid when it is:
+	/// <list type="bullet">
+	/// <item>the concrete generated wrapper type (PreImage / PostImage), or</item>
+	/// <item>one of the shared XrmPluginCore image interfaces matching the image kind
+	/// (IPluginImage / IPluginPreImage / IPluginPostImage, generic or non-generic).</item>
+	/// </list>
+	/// For the generic interfaces, the type argument must match the registered entity type, otherwise the
+	/// generated ActionWrapper would fail to compile when passing the concrete image.
+	/// </summary>
+	private static bool IsImageParameter(IParameterSymbol parameter, string expectedWrapperType, string expectedInterfaceName, ITypeSymbol entityType)
 	{
-		return parameter.Type.Name == expectedImageType;
+		var type = parameter.Type;
+
+		// Concrete generated wrapper (PreImage / PostImage) - entity correctness is guaranteed by its namespace.
+		if (type.Name == expectedWrapperType)
+		{
+			return true;
+		}
+
+		// Shared image interfaces - must be declared in XrmPluginCore.
+		if (type.ContainingNamespace?.ToString() != Constants.PluginNamespace)
+		{
+			return false;
+		}
+
+		// The non-generic base interface matches the kind, but not a more specific opposite kind.
+		if (type.Name != Constants.PluginImageInterfaceName && type.Name != expectedInterfaceName)
+		{
+			return false;
+		}
+
+		// For generic interfaces, the entity type argument must match the registered entity.
+		if (type is INamedTypeSymbol named && named.IsGenericType)
+		{
+			var argument = named.TypeArguments.Length == 1 ? named.TypeArguments[0] : null;
+			return argument != null
+				&& entityType != null
+				&& SymbolEqualityComparer.Default.Equals(argument, entityType);
+		}
+
+		return true;
 	}
 }

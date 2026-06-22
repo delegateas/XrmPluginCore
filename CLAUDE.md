@@ -193,41 +193,79 @@ public class AccountService
 
 #### Generated Code Example
 
-The source generator creates wrapper classes in isolated namespaces:
+The source generator creates wrapper classes in isolated namespaces. Each wrapper holds the strongly-typed entity and implements the shared image interfaces (see [Image Interfaces](#image-interfaces) below):
 
 ```csharp
 // Generated in: {Namespace}.PluginRegistrations.AccountPlugin.AccountUpdatePostOperation
 namespace YourNamespace.PluginRegistrations.AccountPlugin.AccountUpdatePostOperation
 {
-    public sealed class PreImage
+    public sealed class PreImage : IPluginPreImage<YourNamespace.Account>
     {
-        private readonly Entity entity;
-
         public PreImage(Entity entity)
         {
-            this.entity = entity ?? throw new ArgumentNullException(nameof(entity));
+            Entity = entity.ToEntity<YourNamespace.Account>();
         }
 
-        public string Name => entity.GetAttributeValue<string>("name");
-        public decimal? Revenue => entity.GetAttributeValue<decimal?>("revenue");
+        public YourNamespace.Account Entity { get; }
 
-        public T ToEntity<T>() where T : Entity => entity.ToEntity<T>();
+        Microsoft.Xrm.Sdk.Entity IPluginImage.Entity => this.Entity;
+
+        public System.Guid Id => Entity.Id;
+        public string LogicalName => Entity.LogicalName;
+
+        public string Name => Entity.Name;
+        public decimal? Revenue => Entity.Revenue;
     }
 
-    public sealed class PostImage
+    public sealed class PostImage : IPluginPostImage<YourNamespace.Account>
     {
-        private readonly Entity entity;
-
         public PostImage(Entity entity)
         {
-            this.entity = entity ?? throw new ArgumentNullException(nameof(entity));
+            Entity = entity.ToEntity<YourNamespace.Account>();
         }
 
-        public string Name => entity.GetAttributeValue<string>("name");
-        public string Accountnumber => entity.GetAttributeValue<string>("accountnumber");
+        public YourNamespace.Account Entity { get; }
 
-        public T ToEntity<T>() where T : Entity => entity.ToEntity<T>();
+        Microsoft.Xrm.Sdk.Entity IPluginImage.Entity => this.Entity;
+
+        public System.Guid Id => Entity.Id;
+        public string LogicalName => Entity.LogicalName;
+
+        public string Name => Entity.Name;
+        public string AccountNumber => Entity.AccountNumber;
     }
+}
+```
+
+#### Image Interfaces
+
+Every generated image implements a small interface hierarchy declared in `XrmPluginCore`:
+
+| Interface | `Entity` property type | Purpose |
+| --- | --- | --- |
+| `IPluginImage` | `Microsoft.Xrm.Sdk.Entity` | Non-generic base; lowest common denominator for fully generic helpers |
+| `IPluginImage<TEntity>` | `TEntity` (early-bound) | Type-safe access to the entity |
+| `IPluginPreImage` / `IPluginPreImage<TEntity>` | (inherited) | Identifies a pre-image |
+| `IPluginPostImage` / `IPluginPostImage<TEntity>` | (inherited) | Identifies a post-image |
+
+The non-generic `IPluginImage` also exposes the members that are always available on any entity image, regardless of which attributes were registered: `Id` (`Guid`, the primary key) and `LogicalName` (`string`).
+
+Because each registration generates its **own** `PreImage`/`PostImage` type in its own namespace, these interfaces let you write shared logic that works across multiple registrations. A handler method may declare its parameters using any of the matching interfaces instead of the concrete generated type — the source generator accepts them and validates the kind (pre vs post) and, for the generic variants, the entity type:
+
+```csharp
+public class AccountService
+{
+    // Concrete generated types (most specific)
+    public void HandleUpdate(PreImage pre, PostImage post) { }
+}
+
+public static class AuditHelper
+{
+    // Works for the Pre or Post image of ANY registration on Account
+    public static void Log(IPluginImage<Account> image) { /* image.Entity is an Account */ }
+
+    // Works for any image of any entity
+    public static void LogRaw(IPluginImage image) { /* image.Entity is an Entity */ }
 }
 ```
 
@@ -249,6 +287,7 @@ All three methods are valid and supported. `WithPreImage` and `WithPostImage` ar
 - **No runtime overhead**: Simple property accessors, no reflection at access time
 - **Null safety**: Missing attributes return null instead of throwing exceptions
 - **Namespace isolation**: Each step gets its own namespace, preventing naming conflicts
+- **Shared interfaces**: `IPluginImage`/`IPluginPreImage`/`IPluginPostImage` (and generic variants) let handler methods share logic across the per-registration concrete image types
 
 ### Dependency Injection
 

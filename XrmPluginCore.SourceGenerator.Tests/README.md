@@ -60,9 +60,9 @@ Tests for code generation structure and content:
 - `WrapperClassGenerationTests.cs` - Verifies generated wrapper class structure
   - PreImage/PostImage class structure
   - Property generation with correct types
-  - ToEntity<T>() method
-  - GetUnderlyingEntity() method
-  - IEntityImageWrapper interface implementation
+  - Strongly-typed `Entity` property
+  - Always-available `Id` and `LogicalName` members
+  - IPluginImage / IPluginPreImage / IPluginPostImage interface implementation
 
 ### IntegrationTests/
 End-to-end tests that verify generated code compiles and runs:
@@ -211,9 +211,9 @@ Current test coverage includes:
 - ✅ PostImage class structure
 - ✅ Both classes in same namespace
 - ✅ Property types (string, Money, OptionSetValue, EntityReference)
-- ✅ ToEntity<T>() method
-- ✅ GetUnderlyingEntity() method
-- ✅ IEntityImageWrapper interface
+- ✅ Strongly-typed `Entity` property
+- ✅ Always-available `Id` and `LogicalName` members
+- ✅ IPluginImage / IPluginPreImage / IPluginPostImage interfaces
 
 **Integration (~6 tests)**
 - ✅ Compilation success

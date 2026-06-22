@@ -62,9 +62,16 @@ internal static class WrapperClassGenerator
 			metadata.ExecutionStage,
 			image.ImageType));
 
-		// Generate properties for each image attribute
+		// Generate properties for each image attribute.
+		// Skip attributes that map to "Id"/"LogicalName" - they are always exposed via the synthetic
+		// IPluginImage members (forwarding to the Entity base type).
 		foreach (var attr in image.Attributes)
 		{
+			if (attr.PropertyName == "Id" || attr.PropertyName == "LogicalName")
+			{
+				continue;
+			}
+
 			sb.Append(GetPropertyTemplate(attr.TypeName, attr.PropertyName, attr.XmlDocumentation));
 		}
 
@@ -145,18 +152,34 @@ using XrmPluginCore;
 		string entityTypeFullName,
 		string eventOperation,
 		string executionStage,
-		string imageType) =>
-		$"{L1}/// <summary>\n" +
-		$"{L1}/// Type-safe wrapper for {entityTypeName} {eventOperation} {executionStage} {imageType}\n" +
-		$"{L1}/// </summary>\n" +
-		$"{L1}[CompilerGenerated]\n" +
-		$"{L1}public sealed class {className} : IEntityImageWrapper<{entityTypeFullName}>\n" +
-		$"{L1}{{\n" +
-		$"{L2}public {className}(Entity entity)\n" +
-		$"{L2}{{\n" +
-		$"{L3}Entity = entity.ToEntity<{entityTypeFullName}>();\n" +
-		$"{L2}}}\n\n" +
-		$"{L2}public {entityTypeFullName} Entity {{ get; }}\n\n";
+		string imageType)
+	{
+		var interfaceName = imageType == Constants.PostImageTypeName
+			? Constants.PostImageInterfaceName
+			: Constants.PreImageInterfaceName;
+
+		return
+			$"{L1}/// <summary>\n" +
+			$"{L1}/// Type-safe wrapper for {entityTypeName} {eventOperation} {executionStage} {imageType}\n" +
+			$"{L1}/// </summary>\n" +
+			$"{L1}[CompilerGenerated]\n" +
+			$"{L1}public sealed class {className} : {interfaceName}<{entityTypeFullName}>\n" +
+			$"{L1}{{\n" +
+			$"{L2}public {className}(Entity entity)\n" +
+			$"{L2}{{\n" +
+			$"{L3}Entity = entity.ToEntity<{entityTypeFullName}>();\n" +
+			$"{L2}}}\n\n" +
+			$"{L2}public {entityTypeFullName} Entity {{ get; }}\n\n" +
+			$"{L2}Microsoft.Xrm.Sdk.Entity IPluginImage.Entity => this.Entity;\n\n" +
+			$"{L2}/// <summary>\n" +
+			$"{L2}/// The unique identifier (primary key) of the record the image was captured for.\n" +
+			$"{L2}/// </summary>\n" +
+			$"{L2}public System.Guid Id => Entity.Id;\n\n" +
+			$"{L2}/// <summary>\n" +
+			$"{L2}/// The logical name of the entity captured in the image.\n" +
+			$"{L2}/// </summary>\n" +
+			$"{L2}public string LogicalName => Entity.LogicalName;\n\n";
+	}
 
 	private static string GetPropertyTemplate(string propertyType, string propertyName, string xmlDoc)
 	{

@@ -27,7 +27,7 @@ public partial class WrapperClassGenerationTests
 		var generatedSource = result.GeneratedTrees[0].GetText().ToString();
 
 		// Verify class structure
-		generatedSource.Should().Contain($"public sealed class PreImage : IEntityImageWrapper<{ContextNamespace}.Account>");
+		generatedSource.Should().Contain($"public sealed class PreImage : IPluginPreImage<{ContextNamespace}.Account>");
 		generatedSource.Should().Contain($"public {ContextNamespace}.Account Entity {{ get; }}");
 		generatedSource.Should().Contain("public PreImage(Entity entity)");
 		generatedSource.Should().Contain($"Entity = entity.ToEntity<{ContextNamespace}.Account>();");
@@ -55,7 +55,7 @@ public partial class WrapperClassGenerationTests
 		var generatedSource = result.GeneratedTrees[0].GetText().ToString();
 
 		// Verify class structure
-		generatedSource.Should().Contain($"public sealed class PostImage : IEntityImageWrapper<{ContextNamespace}.Account>");
+		generatedSource.Should().Contain($"public sealed class PostImage : IPluginPostImage<{ContextNamespace}.Account>");
 		generatedSource.Should().Contain($"public {ContextNamespace}.Account Entity {{ get; }}");
 		generatedSource.Should().Contain("public PostImage(Entity entity)");
 		generatedSource.Should().Contain($"Entity = entity.ToEntity<{ContextNamespace}.Account>();");
@@ -93,8 +93,8 @@ public partial class WrapperClassGenerationTests
 		namespaceCount.Should().Be(1, "all classes should be in the same namespace");
 
 		// All classes should exist
-		generatedSource.Should().Contain($"public sealed class PreImage : IEntityImageWrapper<{ContextNamespace}.Account>");
-		generatedSource.Should().Contain($"public sealed class PostImage : IEntityImageWrapper<{ContextNamespace}.Account>");
+		generatedSource.Should().Contain($"public sealed class PreImage : IPluginPreImage<{ContextNamespace}.Account>");
+		generatedSource.Should().Contain($"public sealed class PostImage : IPluginPostImage<{ContextNamespace}.Account>");
 		generatedSource.Should().Contain("internal sealed class ActionWrapper : IActionWrapper");
 	}
 
@@ -129,7 +129,7 @@ public partial class WrapperClassGenerationTests
 	}
 
 	[Fact]
-	public void Should_Implement_IEntityWrapper_interface()
+	public void Should_Implement_IPluginImage_interface()
 	{
 		// Arrange
 		var source = TestFixtures.GetCompleteSource(
@@ -143,8 +143,11 @@ public partial class WrapperClassGenerationTests
 		var generatedSource = result.GeneratedTrees[0].GetText().ToString();
 
 		// Entity property should be public and of the early-bound type
-		generatedSource.Should().Contain($": IEntityImageWrapper<{ContextNamespace}.Account>");
+		generatedSource.Should().Contain($": IPluginPreImage<{ContextNamespace}.Account>");
 		generatedSource.Should().Contain($"public {ContextNamespace}.Account Entity {{ get; }}");
+		generatedSource.Should().Contain("Microsoft.Xrm.Sdk.Entity IPluginImage.Entity => this.Entity;");
+		generatedSource.Should().Contain("public System.Guid Id => Entity.Id;");
+		generatedSource.Should().Contain("public string LogicalName => Entity.LogicalName;");
 		generatedSource.Should().Contain($"Entity = entity.ToEntity<{ContextNamespace}.Account>();");
 	}
 
@@ -346,7 +349,7 @@ public partial class WrapperClassGenerationTests
 		var generatedSource = result.GeneratedTrees[0].GetText().ToString();
 
 		// Verify PreImage class is generated
-		generatedSource.Should().Contain($"public sealed class PreImage : IEntityImageWrapper<{ContextNamespace}.Account>");
+		generatedSource.Should().Contain($"public sealed class PreImage : IPluginPreImage<{ContextNamespace}.Account>");
 
 		// Verify that multiple entity properties are present (full entity = all properties)
 		generatedSource.Should().Contain("public string? Name => Entity.Name;");
@@ -373,7 +376,7 @@ public partial class WrapperClassGenerationTests
 		var generatedSource = result.GeneratedTrees[0].GetText().ToString();
 
 		// Verify PostImage class is generated
-		generatedSource.Should().Contain($"public sealed class PostImage : IEntityImageWrapper<{ContextNamespace}.Account>");
+		generatedSource.Should().Contain($"public sealed class PostImage : IPluginPostImage<{ContextNamespace}.Account>");
 
 		// Verify that multiple entity properties are present (full entity = all properties)
 		generatedSource.Should().Contain("public string? Name => Entity.Name;");
