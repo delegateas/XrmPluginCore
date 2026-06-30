@@ -112,6 +112,53 @@ public class CustomApiHandlerDiagnosticsTests : CodeFixTestBase
 	}
 
 	[Fact]
+	public async Task Should_Report_XPC3006_When_Api_Name_Is_Not_Constant()
+	{
+		const string source = """
+			using XrmPluginCore;
+			using XrmPluginCore.Enums;
+			using Microsoft.Extensions.DependencyInjection;
+
+			namespace TestNamespace
+			{
+			    public class SomeApi : Plugin
+			    {
+			        public SomeApi()
+			        {
+			            var name = System.Guid.NewGuid().ToString();
+			            RegisterAPI<CallbackService>(name, nameof(CallbackService.Handle))
+			                .AddResponseProperty("StatusCode", CustomApiParameterType.Integer);
+			        }
+
+			        protected override IServiceCollection OnBeforeBuildServiceProvider(IServiceCollection services)
+			            => services.AddScoped<CallbackService>();
+			    }
+
+			    public class CallbackService
+			    {
+			        public object Handle() => null;
+			    }
+			}
+			""";
+
+		var diagnostics = await GetDiagnosticsAsync(source, new CustomApiNameNotConstantAnalyzer());
+
+		diagnostics.Should().ContainSingle(d => d.Id == "XPC3006")
+			.Which.Severity.Should().Be(DiagnosticSeverity.Warning);
+	}
+
+	[Fact]
+	public async Task Should_Not_Report_XPC3006_When_Api_Name_Is_Nameof()
+	{
+		var source = WrapPlugin(RegistrationWithParams, serviceBody: "public SomeApiResponse Handle(SomeApiRequest request) => new SomeApiResponse(0);")
+			+ GeneratedTypes;
+
+		var diagnostics = await GetDiagnosticsAsync(source, new CustomApiNameNotConstantAnalyzer());
+
+		diagnostics.Should().NotContain(d => d.Id == "XPC3006");
+	}
+
+	[Fact]
 	public async Task Should_Report_XPC3001_For_String_Literal_Handler()
 	{
 		const string registration = """

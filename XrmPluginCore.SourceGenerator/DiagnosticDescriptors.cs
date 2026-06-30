@@ -98,6 +98,16 @@ public static class DiagnosticDescriptors
 		isEnabledByDefault: true,
 		helpLinkUri: $"{HelpLinkBaseUri}/XPC4003.md");
 
+	public static readonly DiagnosticDescriptor CustomApiNameNotConstant = new(
+		id: "XPC3006",
+		title: "Custom API name must be a compile-time constant",
+		messageFormat: "Custom API name must be a compile-time constant (use nameof(...) or a string literal) so the source generator can emit the request/response types and ActionWrapper",
+		category: Category,
+		defaultSeverity: DiagnosticSeverity.Warning,
+		isEnabledByDefault: true,
+		description: "The typed RegisterAPI<TService>(name, handlerMethodName) overload requires a constant name so the generated classes can be named after the API. A non-constant name produces no generated ActionWrapper and fails at runtime.",
+		helpLinkUri: $"{HelpLinkBaseUri}/XPC3006.md");
+
 	public static readonly DiagnosticDescriptor CustomApiHandlerMethodNotFound = new(
 		id: "XPC4004",
 		title: "Custom API handler method not found",

@@ -334,6 +334,7 @@ public class CallbackService
 
 | Rule | Severity | Meaning |
 | --- | --- | --- |
+| XPC3006 | Warning | Custom API name must be a compile-time constant (`nameof`/`const`/literal) for generation |
 | XPC4004 | Error | Custom API handler method not found on the service type (code fix creates it) |
 | XPC4005 | Warning | Handler signature doesn't match the declared parameters, generated types don't exist yet |
 | XPC4006 | Error | Handler signature doesn't match, generated types exist (code fix corrects it) |

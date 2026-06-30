@@ -202,6 +202,7 @@ The source generator includes analyzers that help catch common issues at compile
 | [XPC3002](XrmPluginCore.SourceGenerator/rules/XPC3002.md) | Info | Consider using modern image registration API |
 | [XPC3003](XrmPluginCore.SourceGenerator/rules/XPC3003.md) | Warning | Image registration without method reference |
 | [XPC3004](XrmPluginCore.SourceGenerator/rules/XPC3004.md) | Error | Do not use LocalPluginContext as TService in RegisterStep |
+| [XPC3006](XrmPluginCore.SourceGenerator/rules/XPC3006.md) | Warning | Custom API name must be a compile-time constant |
 | [XPC4001](XrmPluginCore.SourceGenerator/rules/XPC4001.md) | Error | Handler method not found |
 | [XPC4002](XrmPluginCore.SourceGenerator/rules/XPC4002.md) | Warning | Handler signature does not match registered images |
 | [XPC4003](XrmPluginCore.SourceGenerator/rules/XPC4003.md) | Error | Handler signature does not match registered images |
