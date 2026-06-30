@@ -283,6 +283,101 @@ namespace TestNamespace
 		""";
 
 	/// <summary>
+	/// Plugin whose PreImage registers a mix of normal and deprecated ([Obsolete]) attributes.
+	/// The handler does NOT access the deprecated attribute, so any deprecation warning must
+	/// originate from calling code — never from the generated image class.
+	/// </summary>
+	public const string PluginWithObsoleteImageAttributes = """
+
+		using XrmPluginCore;
+		using XrmPluginCore.Abstractions;
+		using XrmPluginCore.Enums;
+		using Microsoft.Extensions.DependencyInjection;
+		using TestNamespace;
+		using TestNamespace.PluginRegistrations.TestPlugin.AccountUpdatePostOperation;
+
+		namespace TestNamespace
+		{
+		    public class TestPlugin : Plugin
+		    {
+		        public TestPlugin()
+		        {
+		            RegisterStep<Account, ITestService>(EventOperation.Update, ExecutionStage.PostOperation,
+		                nameof(ITestService.HandleAccountUpdate))
+		                .AddFilteredAttributes(x => x.Name)
+		                .WithPreImage(x => x.Name, x => x.ctx_DeprecatedField);
+		        }
+
+		        protected override IServiceCollection OnBeforeBuildServiceProvider(IServiceCollection services)
+		        {
+		            return services.AddScoped<ITestService, TestService>();
+		        }
+		    }
+
+		    public interface ITestService
+		    {
+		        void HandleAccountUpdate(PreImage preImage);
+		    }
+
+		    public class TestService : ITestService
+		    {
+		        public void HandleAccountUpdate(PreImage preImage)
+		        {
+		            // Only touches a non-deprecated member.
+		            var name = preImage.Name;
+		        }
+		    }
+		}
+		""";
+
+	/// <summary>
+	/// Plugin whose handler reads a deprecated ([Obsolete]) image attribute, so the deprecation
+	/// warning is expected to surface here, in the calling code.
+	/// </summary>
+	public const string PluginAccessingObsoleteImageAttribute = """
+
+		using XrmPluginCore;
+		using XrmPluginCore.Abstractions;
+		using XrmPluginCore.Enums;
+		using Microsoft.Extensions.DependencyInjection;
+		using TestNamespace;
+		using TestNamespace.PluginRegistrations.TestPlugin.AccountUpdatePostOperation;
+
+		namespace TestNamespace
+		{
+		    public class TestPlugin : Plugin
+		    {
+		        public TestPlugin()
+		        {
+		            RegisterStep<Account, ITestService>(EventOperation.Update, ExecutionStage.PostOperation,
+		                nameof(ITestService.HandleAccountUpdate))
+		                .AddFilteredAttributes(x => x.Name)
+		                .WithPreImage(x => x.Name, x => x.ctx_DeprecatedField);
+		        }
+
+		        protected override IServiceCollection OnBeforeBuildServiceProvider(IServiceCollection services)
+		        {
+		            return services.AddScoped<ITestService, TestService>();
+		        }
+		    }
+
+		    public interface ITestService
+		    {
+		        void HandleAccountUpdate(PreImage preImage);
+		    }
+
+		    public class TestService : ITestService
+		    {
+		        public void HandleAccountUpdate(PreImage preImage)
+		        {
+		            // Accessing the deprecated member here SHOULD raise CS0612 in this calling code.
+		            var legacy = preImage.ctx_DeprecatedField;
+		        }
+		    }
+		}
+		""";
+
+	/// <summary>
 	/// Plugin using old AddImage API for backward compatibility testing.
 	/// </summary>
 	public const string PluginWithLegacyAddImage =

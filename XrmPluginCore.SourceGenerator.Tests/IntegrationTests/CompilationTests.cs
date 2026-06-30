@@ -1,4 +1,5 @@
 using FluentAssertions;
+using Microsoft.CodeAnalysis;
 using Microsoft.Xrm.Sdk;
 using XrmPluginCore.SourceGenerator.Tests.Helpers;
 using Xunit;
@@ -290,5 +291,80 @@ public class CompilationTests
 		// Assert
 		result.Success.Should().BeTrue(
 			because: $"compilation should succeed. Errors: {string.Join(", ", result.Errors ?? [])}");
+	}
+
+	[Fact]
+	public void Should_Not_Emit_Obsolete_Warnings_From_Generated_Image_Code()
+	{
+		// Arrange - image explicitly registers deprecated ([Obsolete]) attributes
+		var source = TestFixtures.GetCompleteSource(
+			TestFixtures.PluginWithObsoleteImageAttributes);
+
+		// Act
+		var result = GeneratorTestHelper.RunGenerator(
+			CompilationHelper.CreateCompilation(source));
+
+		// Assert - no CS0612/CS0618 may originate from the auto-generated image class. (The registration
+		// lambdas `x => x.LegacyField` legitimately warn in the user's own code; those are not generated.)
+		var generatedTrees = result.GeneratedTrees;
+		var obsoleteInGenerated = result.OutputCompilation.GetDiagnostics()
+			.Where(d => d.Id is "CS0612" or "CS0618")
+			.Where(d => d.Location.SourceTree != null && generatedTrees.Contains(d.Location.SourceTree))
+			.ToArray();
+
+		obsoleteInGenerated.Should().BeEmpty(
+			because: $"generated image code must not raise deprecation warnings. Found: {string.Join(", ", obsoleteInGenerated.Select(d => $"{d.Id} @ {d.Location.GetLineSpan()}"))}");
+	}
+
+	[Fact]
+	public void Should_Not_Emit_Obsolete_Warnings_For_Implicit_Full_Entity_Image()
+	{
+		// Arrange - WithPreImage() with no arguments implicitly captures ALL entity attributes,
+		// including deprecated ([Obsolete]) ones, without the user naming them anywhere.
+		var source = TestFixtures.GetCompleteSource(
+			TestFixtures.PluginWithFullEntityPreImage);
+
+		// Act
+		var result = GeneratorTestHelper.RunGenerator(
+			CompilationHelper.CreateCompilation(source));
+
+		// Assert - nothing should warn: the user never referenced a deprecated member and the
+		// generated accessors mirror the [Obsolete] attribute, so no warning leaks from generated code.
+		var obsoleteDiagnostics = result.OutputCompilation.GetDiagnostics()
+			.Where(d => d.Id is "CS0612" or "CS0618")
+			.ToArray();
+
+		obsoleteDiagnostics.Should().BeEmpty(
+			because: $"implicitly captured deprecated attributes must not produce warnings. Found: {string.Join(", ", obsoleteDiagnostics.Select(d => $"{d.Id} @ {d.Location.GetLineSpan()}"))}");
+	}
+
+	[Fact]
+	public void Should_Push_Obsolete_Warning_To_Calling_Code()
+	{
+		// Arrange - the handler reads a deprecated image attribute
+		var source = TestFixtures.GetCompleteSource(
+			TestFixtures.PluginAccessingObsoleteImageAttribute);
+
+		var compilation = CompilationHelper.CreateCompilation(source);
+
+		// Act
+		var result = GeneratorTestHelper.RunGenerator(compilation);
+
+		// Assert
+		var generatedTrees = result.GeneratedTrees;
+		var userTree = result.OutputCompilation.SyntaxTrees
+			.Single(tree => !generatedTrees.Contains(tree));
+
+		var obsoleteDiagnostics = result.OutputCompilation.GetDiagnostics()
+			.Where(d => d.Id == "CS0612")
+			.ToArray();
+
+		// The warning exists...
+		obsoleteDiagnostics.Should().NotBeEmpty("accessing a deprecated image member should raise CS0612");
+
+		// ...and it points at the calling code, never the auto-generated image class.
+		obsoleteDiagnostics.Should().OnlyContain(
+			d => d.Location.SourceTree == userTree,
+			"the deprecation warning must surface in the calling code, not the generated image class");
 	}
 }
