@@ -19,24 +19,16 @@ namespace XrmPluginCore.Helpers
 				return "_";
 			}
 
-			var sb = new StringBuilder(value.Length);
-			for (var i = 0; i < value.Length; i++)
+			var sb = new StringBuilder(value.Length + 1);
+			foreach (var c in value)
 			{
-				var c = value[i];
-				var isLetterOrUnderscore = char.IsLetter(c) || c == '_';
-				var isDigit = char.IsDigit(c);
-
-				if (isLetterOrUnderscore || (isDigit && i > 0))
-				{
-					sb.Append(c);
-				}
-				else
-				{
-					sb.Append('_');
-				}
+				// Keep letters, digits and underscores; replace anything else. Digits are kept here (even
+				// at the start) so they are preserved rather than collapsed - the leading-digit case is
+				// handled by the prefix below.
+				sb.Append(char.IsLetterOrDigit(c) || c == '_' ? c : '_');
 			}
 
-			// An identifier cannot start with a digit
+			// An identifier cannot start with a digit; prefix with '_' so the original digit is preserved.
 			if (char.IsDigit(value[0]))
 			{
 				sb.Insert(0, '_');

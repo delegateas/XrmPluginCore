@@ -71,6 +71,22 @@ public class TypeSafeCustomApiTests
 	}
 
 	[Fact]
+	public void Execute_ShouldDiscoverWrapper_ForDigitStartingApiName()
+	{
+		// The API name "1DigitApi" sanitizes to "_1DigitApi". This passes only if the runtime's
+		// discovery sanitizer and the generator's emission sanitizer agree on the result.
+		var customApi = new DigitNamedCustomApi();
+		var mockProvider = new MockServiceProvider();
+		var outputParameters = new ParameterCollection();
+		mockProvider.SetupOutputParameters(outputParameters);
+
+		customApi.Execute(mockProvider.ServiceProvider);
+
+		outputParameters.Should().ContainKey("StatusCode");
+		outputParameters["StatusCode"].Should().Be(200);
+	}
+
+	[Fact]
 	public void Registration_ShouldContainDeclaredParameters()
 	{
 		// Arrange

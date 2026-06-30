@@ -209,6 +209,47 @@ public class CustomApiClassGenerationTests
 	}
 
 	[Fact]
+	public void Should_Preserve_Leading_Digit_In_Sanitized_Class_Names()
+	{
+		// An API name that starts with a digit is not a valid identifier. The generator prefixes a single
+		// '_' rather than dropping the digit, so "1CustomApi" -> "_1CustomApi" (not "__CustomApi"), which
+		// also keeps names that differ only by their leading digit distinct.
+		const string source = """
+			using XrmPluginCore;
+			using XrmPluginCore.Enums;
+			using Microsoft.Extensions.DependencyInjection;
+
+			namespace TestNamespace
+			{
+			    public class SomeApi : Plugin
+			    {
+			        public SomeApi()
+			        {
+			            RegisterAPI<CallbackService>("1CustomApi", nameof(CallbackService.Handle))
+			                .AddResponseProperty("StatusCode", CustomApiParameterType.Integer);
+			        }
+
+			        protected override IServiceCollection OnBeforeBuildServiceProvider(IServiceCollection services)
+			            => services.AddScoped<CallbackService>();
+			    }
+
+			    public class CallbackService
+			    {
+			        public _1CustomApiResponse Handle() => new _1CustomApiResponse(0);
+			    }
+			}
+			""";
+
+		var result = GeneratorTestHelper.RunCustomApiGenerator(CompilationHelper.CreateCompilation(source));
+		var generated = result.GeneratedTrees[0].GetText().ToString();
+
+		generated.Should().Contain("public sealed class _1CustomApiResponse");
+		generated.Should().Contain("internal sealed class _1CustomApiActionWrapper");
+		// The digit is preserved, not collapsed into a second underscore
+		generated.Should().NotContain("__CustomApi");
+	}
+
+	[Fact]
 	public void Should_Not_Generate_For_Action_Based_RegisterAPI()
 	{
 		// The action-based RegisterAPI overload (not the typed handler-name overload) must not trigger generation.
