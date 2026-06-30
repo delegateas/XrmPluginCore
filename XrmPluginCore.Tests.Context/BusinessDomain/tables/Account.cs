@@ -927,6 +927,20 @@ public partial class Account : ExtendedEntity
     }
 
     /// <summary>
+    /// <para>This field should generate as deprecated in XrmContext</para>
+    /// <para>Display Name: ZZ_Deprecated Field</para>
+    /// </summary>
+    [AttributeLogicalName("ctx_deprecatedfield")]
+    [DisplayName("ZZ_Deprecated Field")]
+    [ObsoleteAttribute()]
+    [MaxLength(100)]
+    public string? ctx_DeprecatedField
+    {
+        get => GetAttributeValue<string?>("ctx_deprecatedfield");
+        set => SetAttributeValue("ctx_deprecatedfield", value);
+    }
+
+    /// <summary>
     /// <para>Select the size category or range of the account for segmentation and reporting purposes.</para>
     /// <para>Display Name: Customer Size</para>
     /// </summary>
@@ -1915,6 +1929,14 @@ public partial class Account : ExtendedEntity
     {
         get => GetRelatedEntities<Contact>("contact_customer_accounts", null);
         set => SetRelatedEntities("contact_customer_accounts", null, value);
+    }
+
+    [RelationshipSchemaName("ctx_account_contact")]
+    [RelationshipMetadata("ManyToMany", "accountid", "contact", "contactid", "Entity1")]
+    public IEnumerable<Contact> ctx_account_contact
+    {
+        get => GetRelatedEntities<Contact>("ctx_account_contact", null);
+        set => SetRelatedEntities("ctx_account_contact", null, value);
     }
 
     [AttributeLogicalName("msa_managingpartnerid")]

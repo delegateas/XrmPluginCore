@@ -10,9 +10,11 @@ public enum contact_statecode
 {
     [EnumMember]
     [OptionSetMetadata("Active", 1033)]
+    [OptionSetMetadata("Aktiv", 1030)]
     Active = 0,
 
     [EnumMember]
     [OptionSetMetadata("Inactive", 1033)]
+    [OptionSetMetadata("Inaktiv", 1030)]
     Inactive = 1,
 }

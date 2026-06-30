@@ -10,5 +10,6 @@ public enum account_accountratingcode
 {
     [EnumMember]
     [OptionSetMetadata("Default Value", 1033)]
+    [OptionSetMetadata("Standardværdi", 1030)]
     DefaultValue = 1,
 }

@@ -10,17 +10,21 @@ public enum contact_familystatuscode
 {
     [EnumMember]
     [OptionSetMetadata("Single", 1033)]
+    [OptionSetMetadata("Single", 1030)]
     Single = 1,
 
     [EnumMember]
     [OptionSetMetadata("Married", 1033)]
+    [OptionSetMetadata("Gift", 1030)]
     Married = 2,
 
     [EnumMember]
     [OptionSetMetadata("Divorced", 1033)]
+    [OptionSetMetadata("Skilt", 1030)]
     Divorced = 3,
 
     [EnumMember]
     [OptionSetMetadata("Widowed", 1033)]
+    [OptionSetMetadata("Enkestand", 1030)]
     Widowed = 4,
 }

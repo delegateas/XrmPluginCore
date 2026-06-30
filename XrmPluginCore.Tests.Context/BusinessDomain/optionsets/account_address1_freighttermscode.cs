@@ -10,9 +10,11 @@ public enum account_address1_freighttermscode
 {
     [EnumMember]
     [OptionSetMetadata("FOB", 1033)]
+    [OptionSetMetadata("FOB", 1030)]
     FOB = 1,
 
     [EnumMember]
     [OptionSetMetadata("No Charge", 1033)]
+    [OptionSetMetadata("Uden beregning", 1030)]
     NoCharge = 2,
 }
