@@ -305,7 +305,7 @@ public class CompilationTests
 			CompilationHelper.CreateCompilation(source));
 
 		// Assert - no CS0612/CS0618 may originate from the auto-generated image class. (The registration
-		// lambdas `x => x.LegacyField` legitimately warn in the user's own code; those are not generated.)
+		// lambdas `x => x.ctx_DeprecatedField` legitimately warn in the user's own code; those are not generated.)
 		var generatedTrees = result.GeneratedTrees;
 		var obsoleteInGenerated = result.OutputCompilation.GetDiagnostics()
 			.Where(d => d.Id is "CS0612" or "CS0618")
