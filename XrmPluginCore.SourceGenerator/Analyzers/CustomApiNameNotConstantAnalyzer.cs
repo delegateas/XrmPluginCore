@@ -38,8 +38,8 @@ public class CustomApiNameNotConstantAnalyzer : DiagnosticAnalyzer
 			return;
 		}
 
-		var arguments = invocation.ArgumentList.Arguments;
-		if (arguments.Count < 1)
+		var nameArgument = RegisterApiHelper.GetNameArgument(invocation, context.SemanticModel);
+		if (nameArgument == null)
 		{
 			return;
 		}
@@ -52,6 +52,6 @@ public class CustomApiNameNotConstantAnalyzer : DiagnosticAnalyzer
 
 		context.ReportDiagnostic(Diagnostic.Create(
 			DiagnosticDescriptors.CustomApiNameNotConstant,
-			arguments[0].Expression.GetLocation()));
+			nameArgument.GetLocation()));
 	}
 }

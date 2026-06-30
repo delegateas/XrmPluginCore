@@ -34,11 +34,31 @@ internal static class RegisterStepHelper
 		var entityTypeInfo = semanticModel.GetTypeInfo(entityTypeSyntax);
 		var entityTypeName = entityTypeInfo.Type?.Name ?? "Unknown";
 
-		var arguments = invocation.ArgumentList.Arguments;
-		var operation = ExtractEnumValue(arguments[0].Expression);
-		var stage = ExtractEnumValue(arguments[1].Expression);
+		var (operationExpr, stageExpr) = GetOperationAndStageArguments(invocation, semanticModel);
+		if (operationExpr == null || stageExpr == null)
+		{
+			return null;
+		}
+
+		var operation = ExtractEnumValue(operationExpr);
+		var stage = ExtractEnumValue(stageExpr);
 
 		return $"{pluginNamespace}.PluginRegistrations.{pluginClassName}.{entityTypeName}{operation}{stage}";
+	}
+
+	/// <summary>
+	/// Resolves the <c>eventOperation</c> and <c>executionStage</c> argument expressions by parameter
+	/// name (so named/reordered arguments are honored). Either may be null when the call cannot be
+	/// resolved.
+	/// </summary>
+	public static (ExpressionSyntax operation, ExpressionSyntax stage) GetOperationAndStageArguments(
+		InvocationExpressionSyntax invocation,
+		SemanticModel semanticModel)
+	{
+		var bound = ArgumentBinder.Bind(invocation, semanticModel);
+		var operation = bound.TryGetValue(Constants.ParameterEventOperation, out var op) ? op : null;
+		var stage = bound.TryGetValue(Constants.ParameterExecutionStage, out var st) ? st : null;
+		return (operation, stage);
 	}
 
 	/// <summary>

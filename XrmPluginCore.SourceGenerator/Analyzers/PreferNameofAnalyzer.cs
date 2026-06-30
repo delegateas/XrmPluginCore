@@ -76,14 +76,17 @@ public class PreferNameofAnalyzer : DiagnosticAnalyzer
 				return null;
 			}
 
-			var arguments = invocation.ArgumentList.Arguments;
-			if (arguments.Count < 3)
+			// Resolve by parameter name so named/reordered arguments are honored. Only the typed
+			// handler-name overload has a 'handlerMethodName' parameter; the action overloads don't, so
+			// this returns null for them (their lambda argument is never a string literal anyway).
+			var handler = ArgumentBinder.GetArgument(invocation, semanticModel, Constants.ParameterHandlerMethodName);
+			if (handler == null)
 			{
 				return null;
 			}
 
 			serviceType = stepGeneric.TypeArgumentList.Arguments[1].ToString();
-			return arguments[2].Expression;
+			return handler;
 		}
 
 		if (RegisterApiHelper.IsRegisterApiCall(invocation, out var apiGeneric) &&
@@ -94,14 +97,14 @@ public class PreferNameofAnalyzer : DiagnosticAnalyzer
 				return null;
 			}
 
-			var arguments = invocation.ArgumentList.Arguments;
-			if (arguments.Count < 2)
+			var handler = RegisterApiHelper.GetHandlerArgument(invocation, semanticModel);
+			if (handler == null)
 			{
 				return null;
 			}
 
 			serviceType = apiGeneric.TypeArgumentList.Arguments[0].ToString();
-			return arguments[1].Expression;
+			return handler;
 		}
 
 		return null;

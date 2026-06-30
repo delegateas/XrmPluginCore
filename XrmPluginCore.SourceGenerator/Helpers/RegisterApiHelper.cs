@@ -53,28 +53,42 @@ internal static class RegisterApiHelper
 	}
 
 	/// <summary>
-	/// Resolves the API name (the first argument) as a compile-time constant string. Returns null when
-	/// it is not a constant.
+	/// Returns the <c>name</c> argument expression, resolved by parameter name (so named/reordered
+	/// arguments are honored). Returns null when absent.
+	/// </summary>
+	public static ExpressionSyntax GetNameArgument(InvocationExpressionSyntax invocation, SemanticModel semanticModel)
+		=> ArgumentBinder.GetArgument(invocation, semanticModel, Constants.ParameterName);
+
+	/// <summary>
+	/// Returns the <c>handlerMethodName</c> argument expression, resolved by parameter name. Returns null
+	/// when absent.
+	/// </summary>
+	public static ExpressionSyntax GetHandlerArgument(InvocationExpressionSyntax invocation, SemanticModel semanticModel)
+		=> ArgumentBinder.GetArgument(invocation, semanticModel, Constants.ParameterHandlerMethodName);
+
+	/// <summary>
+	/// Resolves the <c>name</c> argument as a compile-time constant string. Returns null when it is not a
+	/// constant.
 	/// </summary>
 	public static string GetApiName(InvocationExpressionSyntax invocation, SemanticModel semanticModel)
 	{
-		var arguments = invocation.ArgumentList.Arguments;
-		if (arguments.Count < 1)
+		var nameArgument = GetNameArgument(invocation, semanticModel);
+		if (nameArgument == null)
 		{
 			return null;
 		}
 
-		var constant = semanticModel.GetConstantValue(arguments[0].Expression);
+		var constant = semanticModel.GetConstantValue(nameArgument);
 		return constant.HasValue ? constant.Value as string : null;
 	}
 
 	/// <summary>
-	/// Extracts the handler method name (second argument) from nameof()/string literal.
+	/// Extracts the handler method name from the <c>handlerMethodName</c> argument (nameof()/string literal).
 	/// </summary>
-	public static string GetHandlerMethodName(InvocationExpressionSyntax invocation)
+	public static string GetHandlerMethodName(InvocationExpressionSyntax invocation, SemanticModel semanticModel)
 	{
-		var arguments = invocation.ArgumentList.Arguments;
-		return arguments.Count < 2 ? null : RegisterStepHelper.GetMethodName(arguments[1].Expression);
+		var handlerArgument = GetHandlerArgument(invocation, semanticModel);
+		return handlerArgument == null ? null : RegisterStepHelper.GetMethodName(handlerArgument);
 	}
 
 	/// <summary>

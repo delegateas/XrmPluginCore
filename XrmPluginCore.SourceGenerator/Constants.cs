@@ -21,6 +21,17 @@ internal static class Constants
 	public const string AddRequestParameterMethodName = "AddRequestParameter";
 	public const string AddResponsePropertyMethodName = "AddResponseProperty";
 
+	// RegisterStep / RegisterAPI parameter names. Arguments are resolved by parameter name (not ordinal
+	// position) so callers may legally use named arguments in any order.
+	public const string ParameterName = "name";
+	public const string ParameterHandlerMethodName = "handlerMethodName";
+	public const string ParameterAction = "action";
+	public const string ParameterEventOperation = "eventOperation";
+	public const string ParameterExecutionStage = "executionStage";
+	public const string ParameterUniqueName = "uniqueName";
+	public const string ParameterType = "type";
+	public const string ParameterIsOptional = "isOptional";
+
 	// Custom API generated class name suffixes (combined with the sanitized API name)
 	public const string RequestClassSuffix = "Request";
 	public const string ResponseClassSuffix = "Response";

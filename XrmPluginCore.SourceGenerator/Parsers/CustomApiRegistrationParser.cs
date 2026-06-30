@@ -80,7 +80,7 @@ internal static class CustomApiRegistrationParser
 			PluginClassName = classDeclaration.Identifier.Text,
 			ServiceTypeName = serviceType.Name,
 			ServiceTypeFullName = serviceType.ToDisplayString(),
-			HandlerMethodName = RegisterApiHelper.GetHandlerMethodName(invocation),
+			HandlerMethodName = RegisterApiHelper.GetHandlerMethodName(invocation, semanticModel),
 		};
 
 		foreach (var parameterCall in RegisterApiHelper.FindParameterInvocations(invocation))
@@ -112,10 +112,10 @@ internal static class CustomApiRegistrationParser
 		SemanticModel semanticModel,
 		bool isRequest)
 	{
-		var boundArguments = BindArguments(invocation, semanticModel);
+		var boundArguments = ArgumentBinder.Bind(invocation, semanticModel);
 
 		// uniqueName (first parameter) - must be a compile-time constant string.
-		if (!boundArguments.TryGetValue("uniqueName", out var uniqueNameExpr))
+		if (!boundArguments.TryGetValue(Constants.ParameterUniqueName, out var uniqueNameExpr))
 		{
 			return null;
 		}
@@ -127,12 +127,12 @@ internal static class CustomApiRegistrationParser
 		}
 
 		// type (CustomApiParameterType member access, or constant integer fallback).
-		var parameterType = boundArguments.TryGetValue("type", out var typeExpr)
+		var parameterType = boundArguments.TryGetValue(Constants.ParameterType, out var typeExpr)
 			? GetParameterTypeName(typeExpr, semanticModel)
 			: null;
 
 		var isOptional = isRequest
-			&& boundArguments.TryGetValue("isOptional", out var optionalExpr)
+			&& boundArguments.TryGetValue(Constants.ParameterIsOptional, out var optionalExpr)
 			&& semanticModel.GetConstantValue(optionalExpr) is { HasValue: true, Value: true };
 
 		var clrType = CustomApiParameterTypeMapper.GetClrType(parameterType);
@@ -149,48 +149,6 @@ internal static class CustomApiRegistrationParser
 			ClrType = clrType,
 			IsOptional = isOptional,
 		};
-	}
-
-	/// <summary>
-	/// Binds each argument expression to its parameter name (honoring named and positional arguments).
-	/// </summary>
-	private static Dictionary<string, ExpressionSyntax> BindArguments(
-		InvocationExpressionSyntax invocation,
-		SemanticModel semanticModel)
-	{
-		var result = new Dictionary<string, ExpressionSyntax>();
-
-		var symbolInfo = semanticModel.GetSymbolInfo(invocation);
-		var method = symbolInfo.Symbol as IMethodSymbol
-			?? symbolInfo.CandidateSymbols.OfType<IMethodSymbol>().FirstOrDefault();
-		if (method == null)
-		{
-			return result;
-		}
-
-		var arguments = invocation.ArgumentList.Arguments;
-		var positional = 0;
-		foreach (var argument in arguments)
-		{
-			IParameterSymbol parameter;
-			if (argument.NameColon != null)
-			{
-				var name = argument.NameColon.Name.Identifier.Text;
-				parameter = method.Parameters.FirstOrDefault(p => p.Name == name);
-			}
-			else
-			{
-				parameter = positional < method.Parameters.Length ? method.Parameters[positional] : null;
-				positional++;
-			}
-
-			if (parameter != null)
-			{
-				result[parameter.Name] = argument.Expression;
-			}
-		}
-
-		return result;
 	}
 
 	/// <summary>

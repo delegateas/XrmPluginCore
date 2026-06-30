@@ -38,14 +38,13 @@ public class CustomApiHandlerSignatureMismatchAnalyzer : DiagnosticAnalyzer
 			return;
 		}
 
-		var arguments = invocation.ArgumentList.Arguments;
-		if (arguments.Count < 2)
+		var handlerArgument = RegisterApiHelper.GetHandlerArgument(invocation, context.SemanticModel);
+		if (handlerArgument == null)
 		{
 			return;
 		}
 
-		var handlerArgument = arguments[1].Expression;
-		var methodName = RegisterApiHelper.GetHandlerMethodName(invocation);
+		var methodName = RegisterApiHelper.GetHandlerMethodName(invocation, context.SemanticModel);
 		if (methodName == null)
 		{
 			return;

@@ -115,16 +115,18 @@ internal static class CustomApiClassGenerator
 		if (metadata.HasRequest)
 		{
 			sb.AppendLine();
-			sb.AppendLine($"{L4}var request = new {metadata.RequestClassName}");
-			sb.AppendLine($"{L4}{{");
+			sb.AppendLine($"{L4}var request = new {metadata.RequestClassName}();");
 			foreach (var parameter in metadata.RequestParameters)
 			{
-				var castType = EffectiveType(parameter, metadata.NullableAnnotationsEnabled);
-				sb.AppendLine(
-					$"{L5}{EscapeIdentifier(parameter.PropertyName)} = context.InputParameters.Contains(\"{parameter.UniqueName}\") " +
-					$"? ({castType})context.InputParameters[\"{parameter.UniqueName}\"] : default,");
+				// ParameterCollection.TryGetValue<T> performs the type check and cast in one step; the
+				// property keeps its default when the input parameter is absent (e.g. optional parameters).
+				var marshalType = MarshalType(parameter);
+				var local = ToParameterName(parameter.PropertyName);
+				sb.AppendLine($"{L4}if (context.InputParameters.TryGetValue<{marshalType}>(\"{parameter.UniqueName}\", out var {local}))");
+				sb.AppendLine($"{L4}{{");
+				sb.AppendLine($"{L5}request.{EscapeIdentifier(parameter.PropertyName)} = {local};");
+				sb.AppendLine($"{L4}}}");
 			}
-			sb.AppendLine($"{L4}}};");
 		}
 
 		sb.AppendLine();
@@ -171,6 +173,17 @@ internal static class CustomApiClassGenerator
 	/// </summary>
 	private static string EscapeIdentifier(string identifier)
 		=> SyntaxFacts.GetKeywordKind(identifier) != SyntaxKind.None ? "@" + identifier : identifier;
+
+	/// <summary>
+	/// The generic argument to pass to <c>ParameterCollection.TryGetValue&lt;T&gt;</c>. The value stored in
+	/// InputParameters is boxed as the non-nullable underlying type for value types (and the bare reference
+	/// type otherwise), so the trailing nullable <c>?</c> of an optional value type is stripped here.
+	/// </summary>
+	private static string MarshalType(CustomApiParameterMetadata parameter)
+	{
+		var clrType = parameter.ClrType;
+		return clrType.EndsWith("?") ? clrType.Substring(0, clrType.Length - 1) : clrType;
+	}
 
 	private static string ToParameterName(string propertyName)
 	{

@@ -105,18 +105,26 @@ internal static class RegistrationParser
 			metadata.ServiceTypeFullName = serviceType.ToDisplayString();
 		}
 
-		// Extract EventOperation and ExecutionStage from arguments
-		var arguments = registerStepInvocation.ArgumentList.Arguments;
-		if (arguments.Count >= 2)
+		// Resolve EventOperation, ExecutionStage and the handler argument by parameter name so named or
+		// reordered arguments are honored (positional calls bind to the same parameters).
+		var boundArguments = ArgumentBinder.Bind(registerStepInvocation, semanticModel);
+
+		if (boundArguments.TryGetValue(Constants.ParameterEventOperation, out var operationExpr))
 		{
-			metadata.EventOperation = ExtractEnumValue(arguments[0].Expression);
-			metadata.ExecutionStage = ExtractEnumValue(arguments[1].Expression);
+			metadata.EventOperation = ExtractEnumValue(operationExpr);
 		}
 
-		// Extract method reference from 3rd argument if present
-		if (arguments.Count >= 3)
+		if (boundArguments.TryGetValue(Constants.ParameterExecutionStage, out var stageExpr))
 		{
-			metadata.HandlerMethodName = RegisterStepHelper.GetMethodName(arguments[2].Expression);
+			metadata.ExecutionStage = ExtractEnumValue(stageExpr);
+		}
+
+		// The handler argument is 'handlerMethodName' on the typed overload and 'action' on the
+		// lambda/action overloads; GetMethodName handles nameof, string literals and lambda bodies.
+		if (boundArguments.TryGetValue(Constants.ParameterHandlerMethodName, out var handlerExpr) ||
+			boundArguments.TryGetValue(Constants.ParameterAction, out handlerExpr))
+		{
+			metadata.HandlerMethodName = RegisterStepHelper.GetMethodName(handlerExpr);
 		}
 
 		// Find image calls

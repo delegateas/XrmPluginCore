@@ -54,8 +54,12 @@ public class CustomApiClassGenerationTests
 
 		generated.Should().Contain("internal sealed class SomeApiActionWrapper : IActionWrapper");
 		generated.Should().Contain("var service = serviceProvider.GetRequiredService<TestNamespace.CallbackService>();");
-		generated.Should().Contain("var request = new SomeApiRequest");
-		generated.Should().Contain("EntityLogicalName = context.InputParameters.Contains(\"EntityLogicalName\") ? (string?)context.InputParameters[\"EntityLogicalName\"] : default,");
+		generated.Should().Contain("var request = new SomeApiRequest();");
+		// InputParameters are read via the strongly-typed ParameterCollection.TryGetValue<T> overload
+		generated.Should().Contain("if (context.InputParameters.TryGetValue<string>(\"EntityLogicalName\", out var entityLogicalName))");
+		generated.Should().Contain("request.EntityLogicalName = entityLogicalName;");
+		// Optional value-type parameter uses the non-nullable underlying type as the generic argument
+		generated.Should().Contain("if (context.InputParameters.TryGetValue<int>(\"Count\", out var count))");
 		generated.Should().Contain("var response = service.Handle(request);");
 		generated.Should().Contain("context.OutputParameters[\"StatusCode\"] = response.StatusCode;");
 		generated.Should().Contain("context.OutputParameters[\"ErrorMessage\"] = response.ErrorMessage;");
@@ -171,8 +175,10 @@ public class CustomApiClassGenerationTests
 		// Property declarations
 		generated.Should().Contain("public string? @namespace { get; set; }");
 		generated.Should().Contain("public string? @event { get; set; }");
-		// Request object initializer (dictionary key stays the raw unique name)
-		generated.Should().Contain("@namespace = context.InputParameters.Contains(\"namespace\")");
+		// Request marshalling (dictionary key stays the raw unique name; the escaped identifier is used for
+		// both the out variable and the property assignment)
+		generated.Should().Contain("if (context.InputParameters.TryGetValue<string>(\"namespace\", out var @namespace))");
+		generated.Should().Contain("request.@namespace = @namespace;");
 		// Response constructor assignment is this-qualified so it sets the property, not the parameter
 		generated.Should().Contain("this.@event = @event;");
 		// Response member access in the wrapper
@@ -247,6 +253,55 @@ public class CustomApiClassGenerationTests
 		generated.Should().Contain("internal sealed class _1CustomApiActionWrapper");
 		// The digit is preserved, not collapsed into a second underscore
 		generated.Should().NotContain("__CustomApi");
+	}
+
+	[Fact]
+	public void Should_Resolve_Named_Arguments_In_Any_Order()
+	{
+		// Named arguments may legally be supplied in any order. The generator must resolve the API name,
+		// handler and each parameter's unique name by parameter name - not by ordinal position - otherwise
+		// it would pick the wrong values (or skip generation entirely).
+		const string source = """
+			using XrmPluginCore;
+			using XrmPluginCore.Enums;
+			using Microsoft.Extensions.DependencyInjection;
+
+			namespace TestNamespace
+			{
+			    public class SomeApi : Plugin
+			    {
+			        public SomeApi()
+			        {
+			            RegisterAPI<CallbackService>(handlerMethodName: nameof(CallbackService.Handle), name: nameof(SomeApi))
+			                .AddRequestParameter(type: CustomApiParameterType.Guid, uniqueName: "EntityId")
+			                .AddResponseProperty(type: CustomApiParameterType.Integer, uniqueName: "StatusCode");
+			        }
+
+			        protected override IServiceCollection OnBeforeBuildServiceProvider(IServiceCollection services)
+			            => services.AddScoped<CallbackService>();
+			    }
+
+			    public class CallbackService
+			    {
+			        public SomeApiResponse Handle(SomeApiRequest request) => new SomeApiResponse(0);
+			    }
+			}
+			""";
+
+		var result = GeneratorTestHelper.RunCustomApiGenerator(CompilationHelper.CreateCompilation(source));
+
+		result.GeneratedTrees.Should().NotBeEmpty();
+		var generated = result.GeneratedTrees[0].GetText().ToString();
+
+		// API name resolved from the named 'name' argument (the second one at the call site)
+		generated.Should().Contain("public sealed class SomeApiRequest");
+		generated.Should().Contain("public sealed class SomeApiResponse");
+		generated.Should().Contain("internal sealed class SomeApiActionWrapper");
+		// Parameter unique names resolved from the named 'uniqueName' argument (the second one)
+		generated.Should().Contain("public System.Guid EntityId { get; set; }");
+		generated.Should().Contain("public int StatusCode { get; set; }");
+		// Handler resolved from the named 'handlerMethodName' argument (the first one)
+		generated.Should().Contain("var response = service.Handle(request);");
 	}
 
 	[Fact]
