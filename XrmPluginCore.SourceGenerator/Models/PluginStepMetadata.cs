@@ -37,6 +37,9 @@ internal sealed class PluginStepMetadata
 	/// </summary>
 	public string HandlerMethodName { get; set; }
 
+	/// <summary>Whether the consuming compilation has nullable reference-type annotations enabled.</summary>
+	public bool NullableAnnotationsEnabled { get; set; }
+
 	/// <summary>
 	/// Diagnostics to report for this plugin step. Not included in equality comparison.
 	/// </summary>
@@ -70,7 +73,8 @@ internal sealed class PluginStepMetadata
 				&& Namespace == other.Namespace
 				&& ServiceTypeName == other.ServiceTypeName
 				&& ServiceTypeFullName == other.ServiceTypeFullName
-				&& HandlerMethodName == other.HandlerMethodName;
+				&& HandlerMethodName == other.HandlerMethodName
+				&& NullableAnnotationsEnabled == other.NullableAnnotationsEnabled;
 		}
 		return false;
 	}
@@ -89,6 +93,7 @@ internal sealed class PluginStepMetadata
 			hash = (hash * 31) + (ServiceTypeName?.GetHashCode() ?? 0);
 			hash = (hash * 31) + (ServiceTypeFullName?.GetHashCode() ?? 0);
 			hash = (hash * 31) + (HandlerMethodName?.GetHashCode() ?? 0);
+			hash = (hash * 31) + NullableAnnotationsEnabled.GetHashCode();
 			foreach (var img in Images)
 			{
 				hash = (hash * 31) + img.GetHashCode();

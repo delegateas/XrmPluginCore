@@ -417,6 +417,64 @@ namespace TestNamespace
 		""";
 
 	/// <summary>
+	/// A type-safe Custom API plugin and service. The Request/Response types referenced by the handler
+	/// are emitted by the CustomApiGenerator; this fixture only needs to declare the registration and a
+	/// matching handler. Use <paramref name="withRequest"/>/<paramref name="withResponse"/> to exercise
+	/// the signature-adaptation paths.
+	/// </summary>
+	public static string GetCustomApiPlugin(bool withRequest = true, bool withResponse = true)
+	{
+		var requestChain = withRequest
+			? """
+			            .AddRequestParameter("EntityLogicalName", CustomApiParameterType.String)
+			            .AddRequestParameter("EntityId", CustomApiParameterType.Guid)
+			            .AddRequestParameter("Count", CustomApiParameterType.Integer, isOptional: true)
+			"""
+			: string.Empty;
+
+		var responseChain = withResponse
+			? """
+			            .AddResponseProperty("StatusCode", CustomApiParameterType.Integer)
+			            .AddResponseProperty("ErrorMessage", CustomApiParameterType.String)
+			"""
+			: string.Empty;
+
+		var returnType = withResponse ? "SomeApiResponse" : "void";
+		var parameter = withRequest ? "SomeApiRequest request" : string.Empty;
+		var body = withResponse ? "=> new SomeApiResponse(0, string.Empty);" : "{ }";
+
+		return $$"""
+			using System;
+			using XrmPluginCore;
+			using XrmPluginCore.Enums;
+			using Microsoft.Extensions.DependencyInjection;
+
+			namespace TestNamespace
+			{
+			    public class SomeApi : Plugin
+			    {
+			        public SomeApi()
+			        {
+			            RegisterAPI<CallbackService>(nameof(SomeApi), nameof(CallbackService.Handle))
+			{{requestChain}}{{responseChain}}
+			                ;
+			        }
+
+			        protected override IServiceCollection OnBeforeBuildServiceProvider(IServiceCollection services)
+			        {
+			            return services.AddScoped<CallbackService>();
+			        }
+			    }
+
+			    public class CallbackService
+			    {
+			        public {{returnType}} Handle({{parameter}}) {{body}}
+			    }
+			}
+			""";
+	}
+
+	/// <summary>
 	/// Gets a complete compilable source with entity and plugin.
 	/// </summary>
 	public static string GetCompleteSource(string pluginSource)

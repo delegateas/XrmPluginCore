@@ -15,8 +15,19 @@ public static class GeneratorTestHelper
 	/// Runs the PluginImageGenerator on the provided compilation and returns the updated compilation.
 	/// </summary>
 	public static GeneratorRunResult RunGenerator(CSharpCompilation compilation)
+		=> RunGenerator(compilation, new PluginImageGenerator());
+
+	/// <summary>
+	/// Runs the CustomApiGenerator on the provided compilation and returns the updated compilation.
+	/// </summary>
+	public static GeneratorRunResult RunCustomApiGenerator(CSharpCompilation compilation)
+		=> RunGenerator(compilation, new CustomApiGenerator());
+
+	/// <summary>
+	/// Runs the specified incremental generator on the provided compilation and returns the result.
+	/// </summary>
+	public static GeneratorRunResult RunGenerator(CSharpCompilation compilation, IIncrementalGenerator generator)
 	{
-		var generator = new PluginImageGenerator();
 		// Pass the compilation's parse options to the driver so generated syntax trees use the same language version
 		var driver = CSharpGeneratorDriver.Create(
 			generators: [generator.AsSourceGenerator()],

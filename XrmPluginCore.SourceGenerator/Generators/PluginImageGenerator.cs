@@ -71,8 +71,10 @@ public class PluginImageGenerator : IIncrementalGenerator
 		if (!SyntaxHelper.InheritsFromPlugin(classDecl, semanticModel))
 			return null;
 
+		var nullableEnabled = Helpers.NullableHelper.AnnotationsEnabled(semanticModel.Compilation);
+
 		// Parse registrations (all heavy work here, in cacheable transform)
-		var metadataList = RegistrationParser.ParsePluginClass(classDecl, semanticModel);
+		var metadataList = RegistrationParser.ParsePluginClass(classDecl, semanticModel, nullableEnabled);
 		if (!metadataList.Any())
 			return null;
 
@@ -131,6 +133,7 @@ public class PluginImageGenerator : IIncrementalGenerator
 			ServiceTypeName = list[0].ServiceTypeName,
 			ServiceTypeFullName = list[0].ServiceTypeFullName,
 			HandlerMethodName = list[0].HandlerMethodName,
+			NullableAnnotationsEnabled = list[0].NullableAnnotationsEnabled,
 			Images = []
 		};
 

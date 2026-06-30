@@ -13,6 +13,7 @@ XrmPluginCore provides base functionality for developing plugins and custom APIs
 - **Context Wrappers**: Simplify access to plugin execution context
 - **Registration Utilities**: Easily register plugins and custom APIs
 - **Type-Safe Images**: Compile-time type safety for PreImages and PostImages via source generators
+- **Type-Safe Custom APIs**: Generated request/response classes for Custom APIs via source generators
 - **Compatibility**: Supports .NET Framework 4.6.2 and .NET 8
 
 ## Usage
@@ -201,9 +202,54 @@ The source generator includes analyzers that help catch common issues at compile
 | [XPC3002](XrmPluginCore.SourceGenerator/rules/XPC3002.md) | Info | Consider using modern image registration API |
 | [XPC3003](XrmPluginCore.SourceGenerator/rules/XPC3003.md) | Warning | Image registration without method reference |
 | [XPC3004](XrmPluginCore.SourceGenerator/rules/XPC3004.md) | Error | Do not use LocalPluginContext as TService in RegisterStep |
+| [XPC3006](XrmPluginCore.SourceGenerator/rules/XPC3006.md) | Warning | Custom API name must be a compile-time constant |
 | [XPC4001](XrmPluginCore.SourceGenerator/rules/XPC4001.md) | Error | Handler method not found |
 | [XPC4002](XrmPluginCore.SourceGenerator/rules/XPC4002.md) | Warning | Handler signature does not match registered images |
 | [XPC4003](XrmPluginCore.SourceGenerator/rules/XPC4003.md) | Error | Handler signature does not match registered images |
+| [XPC4004](XrmPluginCore.SourceGenerator/rules/XPC4004.md) | Error | Custom API handler method not found |
+| [XPC4005](XrmPluginCore.SourceGenerator/rules/XPC4005.md) | Warning | Custom API handler signature does not match registered parameters |
+| [XPC4006](XrmPluginCore.SourceGenerator/rules/XPC4006.md) | Error | Custom API handler signature does not match registered parameters |
+
+### Type-Safe Custom APIs
+
+The source generator also creates type-safe request/response classes for Custom APIs. Use the typed overload `RegisterAPI<TService>(name, handlerMethodName)` and declare the parameters with `AddRequestParameter`/`AddResponseProperty`. The generator emits a `{ApiName}Request` and `{ApiName}Response` class (named after the API, in your plugin's namespace) and wires up an `ActionWrapper` that reads `InputParameters` into the request and writes the returned response into `OutputParameters`.
+
+#### Quick Start
+
+```csharp
+public class SomeCustomApi : Plugin
+{
+    public SomeCustomApi()
+    {
+        RegisterAPI<CallbackService>(nameof(SomeCustomApi), nameof(CallbackService.SomeCustomApiMethod))
+            .AddRequestParameter("EntityLogicalName", CustomApiParameterType.String)
+            .AddRequestParameter("EntityId", CustomApiParameterType.Guid)
+            .AddResponseProperty("StatusCode", CustomApiParameterType.Integer)
+            .AddResponseProperty("ErrorMessage", CustomApiParameterType.String);
+        // Source generator validates that SomeCustomApiMethod accepts the request and returns the response
+    }
+
+    protected override IServiceCollection OnBeforeBuildServiceProvider(IServiceCollection services)
+        => services.AddScoped<CallbackService>();
+}
+
+public class CallbackService
+{
+    public SomeCustomApiResponse SomeCustomApiMethod(SomeCustomApiRequest request)
+    {
+        var id = request.EntityId;                 // strongly-typed, from InputParameters["EntityId"]
+        return new SomeCustomApiResponse(200, string.Empty);
+    }
+}
+```
+
+The generated `Request` exposes a settable property per request parameter; the `Response` exposes a settable property per response property plus an all-args constructor, so it can be built with `new SomeCustomApiResponse(200, "")` or an object initializer.
+
+- **Property names** come from the unique-name argument (e.g. `"EntityId"` → `EntityId`), which is also the `InputParameters`/`OutputParameters` key.
+- **Parameter types** map to CLR types (`String` → `string`, `Guid` → `System.Guid`, `Integer` → `int`, `Money` → `Money`, …). Optional value-type request parameters become nullable (`int?`).
+- **Signature adapts**: with no request parameters the handler takes no argument; with no response properties it returns `void`.
+
+The handler signature is enforced by analyzers (XPC4004/XPC4005/XPC4006), each with a code fix.
 
 ### Using the LocalPluginContext wrapper (Legacy)
 

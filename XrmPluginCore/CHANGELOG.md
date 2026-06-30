@@ -1,5 +1,12 @@
-### v1.3.1 - 30 June 2026
+### v1.4.0 - 30 June 2026
+* Add: Type-safe Custom API request/response wrappers. `RegisterAPI<TService>(name, handlerMethodName)` now generates `{ApiName}Request`/`{ApiName}Response` classes (named after the API, in the plugin's namespace) from the `AddRequestParameter`/`AddResponseProperty` declarations. The handler accepts the request and returns the response; a generated `ActionWrapper` marshals `InputParameters` into the request and the returned response into `OutputParameters`. When no request parameters are declared the handler takes no argument, and when no response properties are declared it returns `void`.
+* Add: Error XPC4004: Custom API handler method not found (with code fix to create the method).
+* Add: Warning XPC4005 / Error XPC4006: Custom API handler signature does not match the declared request parameters and response properties (with code fix to correct the signature).
+* Add: XPC3001 (Prefer `nameof` over string literal) now also covers the Custom API handler argument.
+* Add: Warning XPC3006: the typed `RegisterAPI<TService>(name, handlerMethodName)` overload requires a compile-time constant name (so the generated classes can be named after the API); a non-constant name is reported instead of silently skipping generation.
+* Add: The typed `RegisterAPI<TService>(name, handlerMethodName)` overload now throws `ArgumentException` when the name or handler method name is null or whitespace, so misconfigurations fail fast at registration instead of being silently treated as "no registration" at execution time.
 * Fix: Generated image properties now mirror the `[Obsolete]` attribute of the underlying entity property, so deprecation warnings (CS0612/CS0618) surface in the calling code instead of inside the auto-generated image class.
+* Fix: Generated code (images and Custom API request/response) now only emits nullable reference-type annotations (`string?`) and a `#nullable enable` directive when the consuming project has nullable reference types enabled. On projects without NRT (including .NET Framework / C# 7.3 defaults) the generated code is emitted without those annotations, keeping it compilable and warning-free. Nullable value types (`int?`) are always emitted.
 
 ### v1.3.0 - 22 June 2026
 * Add: `IPluginImage`, `IPluginImage<TEntity>`, `IPluginPreImage`/`IPluginPreImage<TEntity>` and `IPluginPostImage`/`IPluginPostImage<TEntity>` interfaces for generated images. Handler methods can now accept these interface types so functionality can be shared across the per-registration concrete image types. The generic variants expose a type-safe `Entity` property.

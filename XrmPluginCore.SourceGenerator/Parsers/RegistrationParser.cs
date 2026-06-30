@@ -18,7 +18,8 @@ internal static class RegistrationParser
 	/// </summary>
 	public static IEnumerable<PluginStepMetadata> ParsePluginClass(
 		ClassDeclarationSyntax classDeclaration,
-		SemanticModel semanticModel)
+		SemanticModel semanticModel,
+		bool nullableEnabled = false)
 	{
 		// Check if plugin class has a parameterless constructor
 		var hasParameterlessConstructor = classDeclaration.Members
@@ -48,7 +49,7 @@ internal static class RegistrationParser
 		// Find all RegisterStep invocations
 		foreach (var registerStep in SyntaxHelper.FindRegisterStepInvocations(constructor))
 		{
-			var metadata = ParseRegisterStepInvocation(registerStep, semanticModel, classDeclaration);
+			var metadata = ParseRegisterStepInvocation(registerStep, semanticModel, classDeclaration, nullableEnabled);
 			if (metadata != null)
 			{
 				yield return metadata;
@@ -62,7 +63,8 @@ internal static class RegistrationParser
 	private static PluginStepMetadata ParseRegisterStepInvocation(
 		InvocationExpressionSyntax registerStepInvocation,
 		SemanticModel semanticModel,
-		ClassDeclarationSyntax classDeclaration)
+		ClassDeclarationSyntax classDeclaration,
+		bool nullableEnabled)
 	{
 		// Get the symbol info to extract type arguments
 		var symbolInfo = semanticModel.GetSymbolInfo(registerStepInvocation);
@@ -91,7 +93,8 @@ internal static class RegistrationParser
 			EntityTypeName = entityType.Name,
 			EntityTypeFullName = entityType.ToDisplayString(),
 			Namespace = classDeclaration.GetNamespace(),
-			PluginClassName = classDeclaration.Identifier.Text
+			PluginClassName = classDeclaration.Identifier.Text,
+			NullableAnnotationsEnabled = nullableEnabled
 		};
 
 		// Extract service type from generic parameter TService (if present)
@@ -102,24 +105,32 @@ internal static class RegistrationParser
 			metadata.ServiceTypeFullName = serviceType.ToDisplayString();
 		}
 
-		// Extract EventOperation and ExecutionStage from arguments
-		var arguments = registerStepInvocation.ArgumentList.Arguments;
-		if (arguments.Count >= 2)
+		// Resolve EventOperation, ExecutionStage and the handler argument by parameter name so named or
+		// reordered arguments are honored (positional calls bind to the same parameters).
+		var boundArguments = ArgumentBinder.Bind(registerStepInvocation, semanticModel);
+
+		if (boundArguments.TryGetValue(Constants.ParameterEventOperation, out var operationExpr))
 		{
-			metadata.EventOperation = ExtractEnumValue(arguments[0].Expression);
-			metadata.ExecutionStage = ExtractEnumValue(arguments[1].Expression);
+			metadata.EventOperation = ExtractEnumValue(operationExpr);
 		}
 
-		// Extract method reference from 3rd argument if present
-		if (arguments.Count >= 3)
+		if (boundArguments.TryGetValue(Constants.ParameterExecutionStage, out var stageExpr))
 		{
-			metadata.HandlerMethodName = RegisterStepHelper.GetMethodName(arguments[2].Expression);
+			metadata.ExecutionStage = ExtractEnumValue(stageExpr);
+		}
+
+		// The handler argument is 'handlerMethodName' on the typed overload and 'action' on the
+		// lambda/action overloads; GetMethodName handles nameof, string literals and lambda bodies.
+		if (boundArguments.TryGetValue(Constants.ParameterHandlerMethodName, out var handlerExpr) ||
+			boundArguments.TryGetValue(Constants.ParameterAction, out handlerExpr))
+		{
+			metadata.HandlerMethodName = RegisterStepHelper.GetMethodName(handlerExpr);
 		}
 
 		// Find image calls
 		foreach (var imageCall in SyntaxHelper.FindImageInvocations(registerStepInvocation))
 		{
-			var imageMetadata = ParseImageInvocation(imageCall, entityType);
+			var imageMetadata = ParseImageInvocation(imageCall, entityType, nullableEnabled);
 			if (imageMetadata != null)
 			{
 				metadata.Images.Add(imageMetadata);
@@ -137,7 +148,8 @@ internal static class RegistrationParser
 	/// </summary>
 	private static ImageMetadata ParseImageInvocation(
 		InvocationExpressionSyntax imageInvocation,
-		ITypeSymbol entityType)
+		ITypeSymbol entityType,
+		bool nullableEnabled)
 	{
 		if (imageInvocation.Expression is not MemberAccessExpressionSyntax memberAccess)
 			return null;
@@ -224,7 +236,7 @@ internal static class RegistrationParser
 				if (treatAsAttribute)
 				{
 					// This is an attribute
-					var attrMetadata = GetAttributeMetadata(value, entityType);
+					var attrMetadata = GetAttributeMetadata(value, entityType, nullableEnabled);
 					if (attrMetadata != null)
 					{
 						imageMetadata.Attributes.Add(attrMetadata);
@@ -248,7 +260,7 @@ internal static class RegistrationParser
 		if (!imageMetadata.Attributes.Any() &&
 			(methodName == Constants.WithPreImageMethodName || methodName == Constants.WithPostImageMethodName))
 		{
-			imageMetadata.Attributes.AddRange(GetAllEntityAttributes(entityType));
+			imageMetadata.Attributes.AddRange(GetAllEntityAttributes(entityType, nullableEnabled));
 		}
 
 		return imageMetadata.Attributes.Any() ? imageMetadata : null;
@@ -258,12 +270,12 @@ internal static class RegistrationParser
 	/// Gets all attribute metadata for all entity properties that have an AttributeLogicalName attribute.
 	/// Used for full entity images where no specific attributes are specified.
 	/// </summary>
-	private static IEnumerable<AttributeMetadata> GetAllEntityAttributes(ITypeSymbol entityType)
+	private static IEnumerable<AttributeMetadata> GetAllEntityAttributes(ITypeSymbol entityType, bool nullableEnabled)
 	{
 		return entityType.GetMembers()
 			.OfType<IPropertySymbol>()
 			.Where(p => p.GetAttributes().Any(a => a.AttributeClass?.Name == Constants.LogicalNameAttributeName))
-			.Select(p => GetAttributeMetadata(p.Name, entityType))
+			.Select(p => GetAttributeMetadata(p.Name, entityType, nullableEnabled))
 			.Where(a => a != null);
 	}
 
@@ -272,7 +284,8 @@ internal static class RegistrationParser
 	/// </summary>
 	private static AttributeMetadata GetAttributeMetadata(
 		string propertyName,
-		ITypeSymbol entityType)
+		ITypeSymbol entityType,
+		bool nullableEnabled)
 	{
 		// Find the property in the entity type
 		var property = entityType.GetMembers(propertyName)
@@ -292,7 +305,9 @@ internal static class RegistrationParser
 		{
 			PropertyName = propertyName,
 			LogicalName = logicalName,
-			TypeName = property.Type.ToDisplayString(),
+			// Strip nullable-reference '?' when the consumer hasn't enabled NRT, so generated code stays
+			// valid on NRT-off / C# 7.3 consumers. Nullable value-type '?' is preserved.
+			TypeName = NullableHelper.DisplayType(property.Type, nullableEnabled),
 			XmlDocumentation = xmlDoc
 		};
 
@@ -425,6 +440,8 @@ internal static class SyntaxExtensions
 			node = node.Parent;
 		}
 
+		// No namespace declaration: emit generated types under a literal "GlobalNamespace". The runtime
+		// mirrors this fallback for wrapper discovery (Plugin.GlobalNamespaceFallback) - keep them in sync.
 		if (namespaces.Count == 0)
 			return "GlobalNamespace";
 
