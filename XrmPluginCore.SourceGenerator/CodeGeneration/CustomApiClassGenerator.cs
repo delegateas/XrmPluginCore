@@ -59,7 +59,7 @@ internal static class CustomApiClassGenerator
 
 		foreach (var parameter in metadata.RequestParameters)
 		{
-			sb.AppendLine($"{L2}public {EffectiveType(parameter, metadata.NullableAnnotationsEnabled)} {parameter.PropertyName} {{ get; set; }}");
+			sb.AppendLine($"{L2}public {EffectiveType(parameter, metadata.NullableAnnotationsEnabled)} {EscapeIdentifier(parameter.PropertyName)} {{ get; set; }}");
 		}
 
 		sb.AppendLine($"{L1}}}");
@@ -77,7 +77,7 @@ internal static class CustomApiClassGenerator
 
 		foreach (var property in metadata.ResponseProperties)
 		{
-			sb.AppendLine($"{L2}public {EffectiveType(property, metadata.NullableAnnotationsEnabled)} {property.PropertyName} {{ get; set; }}");
+			sb.AppendLine($"{L2}public {EffectiveType(property, metadata.NullableAnnotationsEnabled)} {EscapeIdentifier(property.PropertyName)} {{ get; set; }}");
 		}
 
 		sb.AppendLine();
@@ -87,7 +87,9 @@ internal static class CustomApiClassGenerator
 		sb.AppendLine($"{L2}{{");
 		foreach (var property in metadata.ResponseProperties)
 		{
-			sb.AppendLine($"{L3}{property.PropertyName} = {ToParameterName(property.PropertyName)};");
+			// Qualify with 'this.' so the assignment is unambiguous even when the property name and the
+			// constructor parameter name resolve to the same identifier (e.g. a lowercase unique name).
+			sb.AppendLine($"{L3}this.{EscapeIdentifier(property.PropertyName)} = {ToParameterName(property.PropertyName)};");
 		}
 		sb.AppendLine($"{L2}}}");
 
@@ -119,7 +121,7 @@ internal static class CustomApiClassGenerator
 			{
 				var castType = EffectiveType(parameter, metadata.NullableAnnotationsEnabled);
 				sb.AppendLine(
-					$"{L5}{parameter.PropertyName} = context.InputParameters.Contains(\"{parameter.UniqueName}\") " +
+					$"{L5}{EscapeIdentifier(parameter.PropertyName)} = context.InputParameters.Contains(\"{parameter.UniqueName}\") " +
 					$"? ({castType})context.InputParameters[\"{parameter.UniqueName}\"] : default,");
 			}
 			sb.AppendLine($"{L4}}};");
@@ -134,7 +136,7 @@ internal static class CustomApiClassGenerator
 			sb.AppendLine();
 			foreach (var property in metadata.ResponseProperties)
 			{
-				sb.AppendLine($"{L4}context.OutputParameters[\"{property.UniqueName}\"] = response.{property.PropertyName};");
+				sb.AppendLine($"{L4}context.OutputParameters[\"{property.UniqueName}\"] = response.{EscapeIdentifier(property.PropertyName)};");
 			}
 		}
 		else
@@ -162,6 +164,14 @@ internal static class CustomApiClassGenerator
 		return nullableEnabled ? parameter.ClrType + "?" : parameter.ClrType;
 	}
 
+	/// <summary>
+	/// Escapes a reserved C# keyword with a verbatim <c>@</c> so it is valid as an identifier.
+	/// <see cref="SyntaxFacts.GetKeywordKind"/> returns None for non-keywords and for contextual keywords
+	/// (which are valid identifiers and need no escaping).
+	/// </summary>
+	private static string EscapeIdentifier(string identifier)
+		=> SyntaxFacts.GetKeywordKind(identifier) != SyntaxKind.None ? "@" + identifier : identifier;
+
 	private static string ToParameterName(string propertyName)
 	{
 		if (string.IsNullOrEmpty(propertyName))
@@ -170,10 +180,7 @@ internal static class CustomApiClassGenerator
 		}
 
 		var camelCase = char.ToLowerInvariant(propertyName[0]) + propertyName.Substring(1);
-
-		// Escape reserved keywords with a verbatim @. SyntaxFacts.GetKeywordKind returns None for
-		// non-keywords and for contextual keywords (which are valid identifiers and need no escaping).
-		return SyntaxFacts.GetKeywordKind(camelCase) != SyntaxKind.None ? "@" + camelCase : camelCase;
+		return EscapeIdentifier(camelCase);
 	}
 
 	private static string GetFileHeader(bool nullableEnabled) =>

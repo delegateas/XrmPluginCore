@@ -111,19 +111,35 @@ public class CustomApiHandlerSignatureMismatchAnalyzer : DiagnosticAnalyzer
 			return false;
 		}
 
-		if (generation.HasRequest && method.Parameters[0].Type.Name != generation.RequestClassName)
+		if (generation.HasRequest && !IsGeneratedType(method.Parameters[0].Type, generation.PluginNamespace, generation.RequestClassName))
 		{
 			return false;
 		}
 
 		// When response properties are declared, the handler must return the generated response so the
 		// wrapper can read its properties. When none are declared the return value is ignored.
-		if (generation.HasResponse && method.ReturnType.Name != generation.ResponseClassName)
+		if (generation.HasResponse && !IsGeneratedType(method.ReturnType, generation.PluginNamespace, generation.ResponseClassName))
 		{
 			return false;
 		}
 
 		return true;
+	}
+
+	/// <summary>
+	/// Matches the generated request/response type by both namespace and name, so a same-named type in a
+	/// different namespace is not mistaken for the generated one.
+	/// </summary>
+	private static bool IsGeneratedType(ITypeSymbol type, string expectedNamespace, string expectedName)
+	{
+		if (type == null || type.Name != expectedName)
+		{
+			return false;
+		}
+
+		var ns = type.ContainingNamespace;
+		var namespaceName = ns == null || ns.IsGlobalNamespace ? string.Empty : ns.ToDisplayString();
+		return namespaceName == expectedNamespace;
 	}
 
 	private static bool DoGeneratedTypesExist(SyntaxNodeAnalysisContext context, CustomApiGenerationContext generation)

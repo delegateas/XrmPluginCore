@@ -447,6 +447,58 @@ public class DiagnosticReportingTests
 	}
 
 	[Fact]
+	public async Task Should_Report_XPC4002_When_Image_Parameter_Is_Same_Named_Type_From_Different_Namespace()
+	{
+		// The handler's PreImage shares the generated wrapper's short name but lives in a different
+		// namespace, so it is NOT the generated wrapper and must be reported as a mismatch (matched by
+		// namespace + name, not name alone).
+		const string source = """
+			using XrmPluginCore;
+			using XrmPluginCore.Enums;
+			using Microsoft.Extensions.DependencyInjection;
+			using XrmPluginCore.Tests.Context.BusinessDomain;
+			using WrongNamespace;
+
+			namespace WrongNamespace
+			{
+			    public sealed class PreImage { }
+			}
+
+			namespace TestNamespace
+			{
+			    public class TestPlugin : Plugin
+			    {
+			        public TestPlugin()
+			        {
+			            RegisterStep<Account, ITestService>(EventOperation.Update, ExecutionStage.PostOperation,
+			                nameof(ITestService.Process))
+			                .WithPreImage(x => x.Name);
+			        }
+
+			        protected override IServiceCollection OnBeforeBuildServiceProvider(IServiceCollection services)
+			        {
+			            return services.AddScoped<ITestService, TestService>();
+			        }
+			    }
+
+			    public interface ITestService
+			    {
+			        void Process(PreImage pre);
+			    }
+
+			    public class TestService : ITestService
+			    {
+			        public void Process(PreImage pre) { }
+			    }
+			}
+			""";
+
+		var diagnostics = await GetAnalyzerDiagnosticsAsync(source, new HandlerSignatureMismatchAnalyzer());
+
+		diagnostics.Should().Contain(d => d.Id == "XPC4002" || d.Id == "XPC4003");
+	}
+
+	[Fact]
 	public async Task Should_Report_XPC3003_When_WithPreImage_Used_With_Invocation_Syntax()
 	{
 		// Arrange - WithPreImage used with s => s.DoSomething() (invocation) instead of s => s.DoSomething (method reference)

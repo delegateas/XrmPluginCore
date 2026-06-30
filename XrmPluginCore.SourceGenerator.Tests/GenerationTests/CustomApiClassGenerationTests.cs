@@ -40,8 +40,8 @@ public class CustomApiClassGenerationTests
 		generated.Should().Contain("public int StatusCode { get; set; }");
 		generated.Should().Contain("public string? ErrorMessage { get; set; }");
 		generated.Should().Contain("public SomeApiResponse(int statusCode, string? errorMessage)");
-		generated.Should().Contain("StatusCode = statusCode;");
-		generated.Should().Contain("ErrorMessage = errorMessage;");
+		generated.Should().Contain("this.StatusCode = statusCode;");
+		generated.Should().Contain("this.ErrorMessage = errorMessage;");
 	}
 
 	[Fact]
@@ -129,7 +129,63 @@ public class CustomApiClassGenerationTests
 
 		// Constructor parameter escaped, assignment uses the same verbatim name
 		generated.Should().Contain("public SomeApiResponse(string? @class)");
-		generated.Should().Contain("Class = @class;");
+		generated.Should().Contain("this.Class = @class;");
+	}
+
+	[Fact]
+	public void Should_Escape_Keyword_Property_Names_At_Every_Emission_Site()
+	{
+		// A unique name that sanitizes to a reserved keyword (e.g. "namespace"/"event") must be escaped
+		// everywhere it is emitted as an identifier: property declarations, the request object
+		// initializer, the response constructor assignment, and the response member access in the wrapper.
+		const string source = """
+			using XrmPluginCore;
+			using XrmPluginCore.Enums;
+			using Microsoft.Extensions.DependencyInjection;
+
+			namespace TestNamespace
+			{
+			    public class SomeApi : Plugin
+			    {
+			        public SomeApi()
+			        {
+			            RegisterAPI<CallbackService>(nameof(SomeApi), nameof(CallbackService.Handle))
+			                .AddRequestParameter("namespace", CustomApiParameterType.String)
+			                .AddResponseProperty("event", CustomApiParameterType.String);
+			        }
+
+			        protected override IServiceCollection OnBeforeBuildServiceProvider(IServiceCollection services)
+			            => services.AddScoped<CallbackService>();
+			    }
+
+			    public class CallbackService
+			    {
+			        public SomeApiResponse Handle(SomeApiRequest request) => new SomeApiResponse(null);
+			    }
+			}
+			""";
+
+		var result = GeneratorTestHelper.RunCustomApiGenerator(CompilationHelper.CreateCompilation(source));
+		var generated = result.GeneratedTrees[0].GetText().ToString();
+
+		// Property declarations
+		generated.Should().Contain("public string? @namespace { get; set; }");
+		generated.Should().Contain("public string? @event { get; set; }");
+		// Request object initializer (dictionary key stays the raw unique name)
+		generated.Should().Contain("@namespace = context.InputParameters.Contains(\"namespace\")");
+		// Response constructor assignment is this-qualified so it sets the property, not the parameter
+		generated.Should().Contain("this.@event = @event;");
+		// Response member access in the wrapper
+		generated.Should().Contain("context.OutputParameters[\"event\"] = response.@event;");
+
+		// The generated source compiles (no keyword-as-identifier errors)
+		using var ms = new System.IO.MemoryStream();
+		var emit = result.OutputCompilation.Emit(ms);
+		var errors = emit.Diagnostics
+			.Where(d => d.Severity == Microsoft.CodeAnalysis.DiagnosticSeverity.Error)
+			.Select(d => $"{d.Id}: {d.GetMessage()}")
+			.ToArray();
+		errors.Should().BeEmpty();
 	}
 
 	[Fact]

@@ -69,6 +69,49 @@ public class CustomApiHandlerDiagnosticsTests : CodeFixTestBase
 	}
 
 	[Fact]
+	public async Task Should_Report_Mismatch_When_Handler_Uses_Same_Named_Type_From_Different_Namespace()
+	{
+		// The handler's request/response types share the generated types' short names but live in a
+		// different namespace, so they are NOT the generated types and must be reported as a mismatch.
+		const string source = """
+			using XrmPluginCore;
+			using XrmPluginCore.Enums;
+			using Microsoft.Extensions.DependencyInjection;
+
+			namespace Other
+			{
+			    public sealed class SomeApiRequest { }
+			    public sealed class SomeApiResponse { }
+			}
+
+			namespace TestNamespace
+			{
+			    public class SomeApi : Plugin
+			    {
+			        public SomeApi()
+			        {
+			            RegisterAPI<CallbackService>(nameof(SomeApi), nameof(CallbackService.Handle))
+			                .AddRequestParameter("EntityId", CustomApiParameterType.Guid)
+			                .AddResponseProperty("StatusCode", CustomApiParameterType.Integer);
+			        }
+
+			        protected override IServiceCollection OnBeforeBuildServiceProvider(IServiceCollection services)
+			            => services.AddScoped<CallbackService>();
+			    }
+
+			    public class CallbackService
+			    {
+			        public Other.SomeApiResponse Handle(Other.SomeApiRequest request) => new Other.SomeApiResponse();
+			    }
+			}
+			""";
+
+		var diagnostics = await GetDiagnosticsAsync(source, new CustomApiHandlerSignatureMismatchAnalyzer());
+
+		diagnostics.Should().Contain(d => d.Id == "XPC4005" || d.Id == "XPC4006");
+	}
+
+	[Fact]
 	public async Task Should_Report_XPC3001_For_String_Literal_Handler()
 	{
 		const string registration = """

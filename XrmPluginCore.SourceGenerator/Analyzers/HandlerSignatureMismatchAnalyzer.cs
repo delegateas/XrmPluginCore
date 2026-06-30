@@ -89,8 +89,12 @@ public class HandlerSignatureMismatchAnalyzer : DiagnosticAnalyzer
 		var entityTypeSyntax = genericName.TypeArgumentList.Arguments[0];
 		var entityType = context.SemanticModel.GetTypeInfo(entityTypeSyntax).Type;
 
+		// Compute expected namespace for generated types (used both for matching the concrete wrapper by
+		// namespace and for the severity/code-fix below).
+		var expectedNamespace = RegisterStepHelper.GetExpectedImageNamespace(invocation, genericName, context.SemanticModel);
+
 		// Check if any overload matches the expected signature
-		var hasMatchingOverload = methods.Any(method => SignatureMatches(method, hasPreImage, hasPostImage, entityType));
+		var hasMatchingOverload = methods.Any(method => SignatureMatches(method, hasPreImage, hasPostImage, entityType, expectedNamespace));
 		if (hasMatchingOverload)
 		{
 			return;
@@ -98,9 +102,6 @@ public class HandlerSignatureMismatchAnalyzer : DiagnosticAnalyzer
 
 		// Build expected signature description
 		var expectedSignature = SyntaxFactoryHelper.BuildSignatureDescription(hasPreImage, hasPostImage);
-
-		// Compute expected namespace for generated types
-		var expectedNamespace = RegisterStepHelper.GetExpectedImageNamespace(invocation, genericName, context.SemanticModel);
 
 		// Determine if generated types exist to choose appropriate diagnostic severity
 		var generatedTypesExist = DoGeneratedTypesExist(
@@ -169,7 +170,7 @@ public class HandlerSignatureMismatchAnalyzer : DiagnosticAnalyzer
 		return true;
 	}
 
-	private static bool SignatureMatches(IMethodSymbol method, bool hasPreImage, bool hasPostImage, ITypeSymbol entityType)
+	private static bool SignatureMatches(IMethodSymbol method, bool hasPreImage, bool hasPostImage, ITypeSymbol entityType, string expectedNamespace)
 	{
 		var parameters = method.Parameters;
 		var expectedParamCount = (hasPreImage ? 1 : 0) + (hasPostImage ? 1 : 0);
@@ -188,7 +189,7 @@ public class HandlerSignatureMismatchAnalyzer : DiagnosticAnalyzer
 				return false;
 			}
 
-			if (!IsImageParameter(parameters[paramIndex], Constants.PreImageTypeName, Constants.PreImageInterfaceName, entityType))
+			if (!IsImageParameter(parameters[paramIndex], Constants.PreImageTypeName, Constants.PreImageInterfaceName, entityType, expectedNamespace))
 			{
 				return false;
 			}
@@ -203,7 +204,7 @@ public class HandlerSignatureMismatchAnalyzer : DiagnosticAnalyzer
 				return false;
 			}
 
-			if (!IsImageParameter(parameters[paramIndex], Constants.PostImageTypeName, Constants.PostImageInterfaceName, entityType))
+			if (!IsImageParameter(parameters[paramIndex], Constants.PostImageTypeName, Constants.PostImageInterfaceName, entityType, expectedNamespace))
 			{
 				return false;
 			}
@@ -222,14 +223,17 @@ public class HandlerSignatureMismatchAnalyzer : DiagnosticAnalyzer
 	/// For the generic interfaces, the type argument must match the registered entity type, otherwise the
 	/// generated ActionWrapper would fail to compile when passing the concrete image.
 	/// </summary>
-	private static bool IsImageParameter(IParameterSymbol parameter, string expectedWrapperType, string expectedInterfaceName, ITypeSymbol entityType)
+	private static bool IsImageParameter(IParameterSymbol parameter, string expectedWrapperType, string expectedInterfaceName, ITypeSymbol entityType, string expectedNamespace)
 	{
 		var type = parameter.Type;
 
-		// Concrete generated wrapper (PreImage / PostImage) - entity correctness is guaranteed by its namespace.
+		// Concrete generated wrapper (PreImage / PostImage). Match by namespace + name so a same-named
+		// type in a different namespace is not mistaken for the generated wrapper. Fall back to name-only
+		// when the expected namespace can't be resolved.
 		if (type.Name == expectedWrapperType)
 		{
-			return true;
+			return expectedNamespace == null
+				|| type.ContainingNamespace?.ToDisplayString() == expectedNamespace;
 		}
 
 		// Shared image interfaces - must be declared in XrmPluginCore.
