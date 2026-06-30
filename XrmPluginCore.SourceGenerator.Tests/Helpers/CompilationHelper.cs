@@ -16,7 +16,10 @@ public static class CompilationHelper
 	/// <param name="source">The C# source code to compile</param>
 	/// <param name="assemblyName">Optional assembly name (defaults to random GUID)</param>
 	/// <returns>A configured CSharpCompilation</returns>
-	public static CSharpCompilation CreateCompilation(string source, string? assemblyName = null)
+	public static CSharpCompilation CreateCompilation(
+		string source,
+		string? assemblyName = null,
+		NullableContextOptions nullableContextOptions = NullableContextOptions.Enable)
 	{
 		var syntaxTree = CSharpSyntaxTree.ParseText(source, new CSharpParseOptions(LanguageVersion.CSharp11));
 
@@ -28,7 +31,7 @@ public static class CompilationHelper
 			references,
 			new CSharpCompilationOptions(
 				OutputKind.DynamicallyLinkedLibrary,
-				nullableContextOptions: NullableContextOptions.Enable));
+				nullableContextOptions: nullableContextOptions));
 	}
 
 	/// <summary>

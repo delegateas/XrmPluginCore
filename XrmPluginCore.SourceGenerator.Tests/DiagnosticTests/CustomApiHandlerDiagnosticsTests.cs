@@ -1,0 +1,168 @@
+using FluentAssertions;
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.Diagnostics;
+using System.Collections.Immutable;
+using XrmPluginCore.SourceGenerator.Analyzers;
+using XrmPluginCore.SourceGenerator.CodeFixes;
+using XrmPluginCore.SourceGenerator.Tests.Helpers;
+using Xunit;
+
+namespace XrmPluginCore.SourceGenerator.Tests.DiagnosticTests;
+
+/// <summary>
+/// Tests for the type-safe Custom API analyzers (XPC4004/XPC4005/XPC4006, XPC3001) and their code fixers.
+/// </summary>
+public class CustomApiHandlerDiagnosticsTests : CodeFixTestBase
+{
+	private const string RegistrationWithParams = """
+		            RegisterAPI<CallbackService>(nameof(SomeApi), nameof(CallbackService.Handle))
+		                .AddRequestParameter("EntityId", CustomApiParameterType.Guid)
+		                .AddResponseProperty("StatusCode", CustomApiParameterType.Integer);
+		""";
+
+	[Fact]
+	public async Task Should_Report_XPC4004_When_Handler_Method_Missing()
+	{
+		var source = WrapPlugin(RegistrationWithParams, serviceBody: "// no methods");
+
+		var diagnostics = await GetDiagnosticsAsync(source, new CustomApiHandlerMethodNotFoundAnalyzer());
+
+		diagnostics.Should().ContainSingle(d => d.Id == "XPC4004");
+		diagnostics.Single(d => d.Id == "XPC4004").Severity.Should().Be(DiagnosticSeverity.Error);
+	}
+
+	[Fact]
+	public async Task Should_Report_XPC4005_When_Signature_Wrong_And_Types_Missing()
+	{
+		// Handler exists but has the wrong signature; the generated request/response types do not exist.
+		var source = WrapPlugin(RegistrationWithParams, serviceBody: "public void Handle() { }");
+
+		var diagnostics = await GetDiagnosticsAsync(source, new CustomApiHandlerSignatureMismatchAnalyzer());
+
+		var diagnostic = diagnostics.Should().ContainSingle(d => d.Id == "XPC4005").Subject;
+		diagnostic.Severity.Should().Be(DiagnosticSeverity.Warning);
+		diagnostic.GetMessage().Should().Contain("SomeApiResponse Handle(SomeApiRequest request)");
+	}
+
+	[Fact]
+	public async Task Should_Report_XPC4006_When_Signature_Wrong_And_Types_Exist()
+	{
+		// The generated types exist in the compilation, so the mismatch escalates to an error.
+		var source = WrapPlugin(RegistrationWithParams, serviceBody: "public void Handle() { }")
+			+ GeneratedTypes;
+
+		var diagnostics = await GetDiagnosticsAsync(source, new CustomApiHandlerSignatureMismatchAnalyzer());
+
+		diagnostics.Should().ContainSingle(d => d.Id == "XPC4006")
+			.Which.Severity.Should().Be(DiagnosticSeverity.Error);
+	}
+
+	[Fact]
+	public async Task Should_Not_Report_When_Signature_Matches()
+	{
+		var source = WrapPlugin(RegistrationWithParams, serviceBody: "public SomeApiResponse Handle(SomeApiRequest request) => new SomeApiResponse(0);")
+			+ GeneratedTypes;
+
+		var diagnostics = await GetDiagnosticsAsync(source, new CustomApiHandlerSignatureMismatchAnalyzer());
+
+		diagnostics.Should().NotContain(d => d.Id == "XPC4005" || d.Id == "XPC4006");
+	}
+
+	[Fact]
+	public async Task Should_Report_XPC3001_For_String_Literal_Handler()
+	{
+		const string registration = """
+			            RegisterAPI<CallbackService>(nameof(SomeApi), "Handle")
+			                .AddResponseProperty("StatusCode", CustomApiParameterType.Integer);
+			""";
+		var source = WrapPlugin(registration, serviceBody: "public SomeApiResponse Handle() => new SomeApiResponse(0);")
+			+ GeneratedTypes;
+
+		var diagnostics = await GetDiagnosticsAsync(source, new PreferNameofAnalyzer());
+
+		var diagnostic = diagnostics.Should().ContainSingle(d => d.Id == "XPC3001").Subject;
+		diagnostic.Properties["ServiceType"].Should().Be("CallbackService");
+		diagnostic.Properties["MethodName"].Should().Be("Handle");
+	}
+
+	[Fact]
+	public async Task Should_Fix_Missing_Handler_Method()
+	{
+		var source = WrapPlugin(RegistrationWithParams, serviceBody: "// no methods");
+
+		var fixedSource = await ApplyCodeFixAsync(
+			source,
+			new CustomApiHandlerMethodNotFoundAnalyzer(),
+			new CreateCustomApiHandlerMethodCodeFixProvider(),
+			DiagnosticDescriptors.CustomApiHandlerMethodNotFound.Id);
+
+		fixedSource.Should().Contain("TestNamespace.SomeApiResponse Handle(TestNamespace.SomeApiRequest request)");
+	}
+
+	[Fact]
+	public async Task Should_Fix_Wrong_Handler_Signature()
+	{
+		var source = WrapPlugin(RegistrationWithParams, serviceBody: "public void Handle() { }")
+			+ GeneratedTypes;
+
+		var fixedSource = await ApplyCodeFixAsync(
+			source,
+			new CustomApiHandlerSignatureMismatchAnalyzer(),
+			new FixCustomApiHandlerSignatureCodeFixProvider(),
+			DiagnosticDescriptors.CustomApiHandlerSignatureMismatch.Id,
+			DiagnosticDescriptors.CustomApiHandlerSignatureMismatchError.Id);
+
+		fixedSource.Should().Contain("Handle(TestNamespace.SomeApiRequest request)");
+		fixedSource.Should().Contain("TestNamespace.SomeApiResponse Handle");
+	}
+
+	private const string GeneratedTypes = """
+
+
+		namespace TestNamespace
+		{
+		    public sealed class SomeApiRequest { public System.Guid EntityId { get; set; } }
+		    public sealed class SomeApiResponse
+		    {
+		        public int StatusCode { get; set; }
+		        public SomeApiResponse(int statusCode) { StatusCode = statusCode; }
+		    }
+		}
+		""";
+
+	private static string WrapPlugin(string registration, string serviceBody) =>
+		$$"""
+			using System;
+			using XrmPluginCore;
+			using XrmPluginCore.Enums;
+			using Microsoft.Extensions.DependencyInjection;
+
+			namespace TestNamespace
+			{
+			    public class SomeApi : Plugin
+			    {
+			        public SomeApi()
+			        {
+			{{registration}}
+			        }
+
+			        protected override IServiceCollection OnBeforeBuildServiceProvider(IServiceCollection services)
+			        {
+			            return services.AddScoped<CallbackService>();
+			        }
+			    }
+
+			    public class CallbackService
+			    {
+			        {{serviceBody}}
+			    }
+			}
+			""";
+
+	private static async Task<ImmutableArray<Diagnostic>> GetDiagnosticsAsync(string source, DiagnosticAnalyzer analyzer)
+	{
+		var compilation = CompilationHelper.CreateCompilation(source);
+		var compilationWithAnalyzers = compilation.WithAnalyzers([analyzer]);
+		return await compilationWithAnalyzers.GetAnalyzerDiagnosticsAsync();
+	}
+}

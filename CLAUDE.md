@@ -289,6 +289,56 @@ All three methods are valid and supported. `WithPreImage` and `WithPostImage` ar
 - **Namespace isolation**: Each step gets its own namespace, preventing naming conflicts
 - **Shared interfaces**: `IPluginImage`/`IPluginPreImage`/`IPluginPostImage` (and generic variants) let handler methods share logic across the per-registration concrete image types
 
+### Type-Safe Custom API Request/Response
+
+The source generator provides the same compile-time safety for Custom APIs that it provides for plugin images. The typed overload `RegisterAPI<TService>(string name, string handlerMethodName)` opts in: from the `AddRequestParameter`/`AddResponseProperty` declarations, the generator emits a `Request` and `Response` class **named after the API and placed in the plugin's own namespace**, plus an internal `ActionWrapper` discovered at runtime by naming convention.
+
+#### API Design
+
+```csharp
+public class SomeCustomApi : Plugin
+{
+    public SomeCustomApi()
+    {
+        RegisterAPI<CallbackService>(nameof(SomeCustomApi), nameof(CallbackService.SomeCustomApiMethod))
+            .AddRequestParameter("EntityLogicalName", CustomApiParameterType.String)
+            .AddRequestParameter("EntityId", CustomApiParameterType.Guid)
+            .AddResponseProperty("StatusCode", CustomApiParameterType.Integer)
+            .AddResponseProperty("ErrorMessage", CustomApiParameterType.String);
+    }
+
+    protected override IServiceCollection OnBeforeBuildServiceProvider(IServiceCollection services)
+        => services.AddScoped<CallbackService>();
+}
+
+public class CallbackService
+{
+    // Signature is enforced by the source generator (XPC4004/XPC4005/XPC4006)
+    public SomeCustomApiResponse SomeCustomApiMethod(SomeCustomApiRequest request)
+    {
+        var id = request.EntityId;           // strongly-typed, from InputParameters["EntityId"]
+        return new SomeCustomApiResponse(200, string.Empty);
+    }
+}
+```
+
+#### How It Works
+
+1. **Property names**: each request/response property is named after the *constant value* of the unique-name argument (so `AddRequestParameter("EntityId", ...)` and `AddRequestParameter(CallbackService.EntityId, ...)` both yield an `EntityId` property). The InputParameters/OutputParameters dictionary keys use that same unique name.
+2. **Types**: `CustomApiParameterType` is mapped to a CLR type (e.g. `String` → `string`, `Guid` → `System.Guid`, `Integer` → `int`, `Money` → `Microsoft.Xrm.Sdk.Money`). Optional value-type request parameters become nullable (`int?`).
+3. **Response shape**: the generated `Response` has settable properties **and** an all-args constructor, so it can be built with `new XResponse(200, "")` or an object initializer.
+4. **Signature adaptation**: when no request parameters are declared the handler takes no argument; when no response properties are declared it returns `void`.
+5. **Runtime execution**: the generated `ActionWrapper` reads `IPluginExecutionContext.InputParameters` into the request, invokes the handler, and writes the returned response's properties into `OutputParameters`.
+
+#### Diagnostics
+
+| Rule | Severity | Meaning |
+| --- | --- | --- |
+| XPC4004 | Error | Custom API handler method not found on the service type (code fix creates it) |
+| XPC4005 | Warning | Handler signature doesn't match the declared parameters, generated types don't exist yet |
+| XPC4006 | Error | Handler signature doesn't match, generated types exist (code fix corrects it) |
+| XPC3001 | Warning | Prefer `nameof(TService.Method)` over a string literal for the handler argument |
+
 ### Dependency Injection
 
 XrmPluginCore supports three patterns for registering custom services:

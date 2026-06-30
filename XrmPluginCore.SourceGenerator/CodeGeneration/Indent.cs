@@ -18,4 +18,7 @@ internal static class Indent
 
 	/// <summary>Deep body level indentation (4 tabs)</summary>
 	public static readonly string L4 = Tab + Tab + Tab + Tab;
+
+	/// <summary>Nested body level indentation (5 tabs)</summary>
+	public static readonly string L5 = Tab + Tab + Tab + Tab + Tab;
 }

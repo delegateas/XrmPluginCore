@@ -8,6 +8,7 @@ using System.ServiceModel;
 using XrmPluginCore.CustomApis;
 using XrmPluginCore.Enums;
 using XrmPluginCore.Extensions;
+using XrmPluginCore.Helpers;
 using XrmPluginCore.Interfaces.CustomApi;
 using XrmPluginCore.Interfaces.Plugin;
 using XrmPluginCore.Plugins;
@@ -271,11 +272,7 @@ public abstract class Plugin : IPlugin, IPluginDefinition, ICustomApiDefinition
 		var builder = new PluginStepConfigBuilder<T>(eventOperation, executionStage);
 		var registration = new PluginStepRegistration(
 			pluginStepConfig: builder,
-			action: action,
-			pluginClassName: ChildClassShortName,
-			entityTypeName: typeof(T).Name,
-			eventOperation: eventOperation,
-			executionStage: executionStage.ToString());
+			action: action);
 		RegisteredPluginSteps.Add(registration);
 		return builder;
 	}
@@ -328,16 +325,17 @@ public abstract class Plugin : IPlugin, IPluginDefinition, ICustomApiDefinition
 	{
 		var builder = new PluginStepConfigBuilder<TEntity>(eventOperation, executionStage);
 
+		// Compute the generated ActionWrapper type name up front. Must match the namespace the source
+		// generator emits: {Namespace}.PluginRegistrations.{PluginClassName}.{Entity}{Operation}{Stage}.
+		var wrapperTypeName =
+			$"{GetType().Namespace}.PluginRegistrations.{ChildClassShortName}." +
+			$"{typeof(TEntity).Name}{eventOperation}{executionStage}.ActionWrapper";
+
 		var registration = new PluginStepRegistration(
 			pluginStepConfig: builder,
 			action: null,
-			pluginClassName: ChildClassShortName,
-			entityTypeName: typeof(TEntity).Name,
-			eventOperation: eventOperation,
-			executionStage: executionStage.ToString(),
-			serviceTypeName: typeof(TService).Name,
-			serviceTypeFullName: typeof(TService).FullName,
-			handlerMethodName: handlerMethodName);
+			handlerMethodName: handlerMethodName,
+			wrapperTypeName: wrapperTypeName);
 
 		RegisteredPluginSteps.Add(registration);
 		return builder;
@@ -345,10 +343,11 @@ public abstract class Plugin : IPlugin, IPluginDefinition, ICustomApiDefinition
 
 	private Action<IExtendedServiceProvider> DiscoverGeneratedAction(PluginStepRegistration registration)
 	{
-		// Build the wrapper type name using naming convention
-		// Format: {Namespace}.PluginRegistrations.{PluginClassName}.{Entity}{Operation}{Stage}.ActionWrapper
-		var wrapperTypeName = $"{GetType().Namespace}.PluginRegistrations.{registration.PluginClassName}." +
-							  $"{registration.EntityTypeName}{registration.EventOperation}{registration.ExecutionStage}.ActionWrapper";
+		// The wrapper type name is computed at registration time (the single source of truth), so plugin
+		// steps and Custom APIs share this discovery path regardless of their naming convention.
+		var wrapperTypeName = registration.WrapperTypeName;
+		if (string.IsNullOrEmpty(wrapperTypeName))
+			return null;
 
 		var wrapperType = GetType().Assembly.GetType(wrapperTypeName);
 		if (wrapperType == null)
@@ -387,6 +386,36 @@ public abstract class Plugin : IPlugin, IPluginDefinition, ICustomApiDefinition
 
 	/// <summary>
 	/// <para>
+	/// Register a CustomAPI with a handler method name.<br/>
+	/// The source generator emits type-safe <c>Request</c>/<c>Response</c> classes (named after the API)
+	/// from the <c>AddRequestParameter</c>/<c>AddResponseProperty</c> calls, and an ActionWrapper that
+	/// marshals the execution context's InputParameters into the request and the returned response into
+	/// the OutputParameters. The handler method must accept the generated request (when request parameters
+	/// are declared) and return the generated response (when response properties are declared).
+	/// </para>
+	/// <para>
+	/// Use <c>nameof(TService.MethodName)</c> for compile-time safety.
+	/// </para>
+	/// </summary>
+	/// <typeparam name="TService">The service type that contains the handler method</typeparam>
+	/// <param name="name">The unique name of the Custom API</param>
+	/// <param name="handlerMethodName">The name of the handler method (use nameof(TService.MethodName))</param>
+	/// <exception cref="InvalidOperationException">If called multiple times in the same class</exception>
+	protected CustomApiConfigBuilder RegisterAPI<TService>(string name, string handlerMethodName)
+	{
+		if (RegisteredCustomApi != null)
+		{
+			throw new InvalidOperationException("You cannot register multiple CustomAPIs in the same class");
+		}
+
+		var configBuilder = new CustomApiConfigBuilder(name);
+		RegisteredCustomApi = new CustomApiRegistration(configBuilder, handlerMethodName);
+
+		return configBuilder;
+	}
+
+	/// <summary>
+	/// <para>
 	/// Register a CustomAPI with the given name and action.<br/>
 	/// Returns the config builder for specifying additional settings
 	/// </para>
@@ -415,13 +444,21 @@ public abstract class Plugin : IPlugin, IPluginDefinition, ICustomApiDefinition
 		// If no plugin step found and we have a CustomAPI, return a registration with that action
 		if (pluginStepRegistration == null && RegisteredCustomApi != null)
 		{
+			// Type-safe Custom APIs have no action; they defer to a source-generated ActionWrapper
+			// discovered by naming convention from the (sanitized) API name in the plugin's namespace.
+			string handlerMethodName = null;
+			string wrapperTypeName = null;
+			if (RegisteredCustomApi.Action == null && RegisteredCustomApi.HandlerMethodName != null)
+			{
+				handlerMethodName = RegisteredCustomApi.HandlerMethodName;
+				wrapperTypeName = $"{GetType().Namespace}.{IdentifierSanitizer.Sanitize(RegisteredCustomApi.ConfigBuilder.Name)}ActionWrapper";
+			}
+
 			return new PluginStepRegistration(
 				pluginStepConfig: null,
 				action: RegisteredCustomApi.Action,
-				pluginClassName: ChildClassShortName,
-				entityTypeName: null,
-				eventOperation: null,
-				executionStage: null);
+				handlerMethodName: handlerMethodName,
+				wrapperTypeName: wrapperTypeName);
 		}
 
 		return pluginStepRegistration;

@@ -14,6 +14,11 @@ namespace XrmPluginCore.CustomApis
 
 		private CustomApiConfig Config { get; }
 
+		/// <summary>
+		/// The unique name of the Custom API being configured.
+		/// </summary>
+		public string Name => Config.Name;
+
 		public CustomApiConfigBuilder(string name)
 		{
 			Config = new CustomApiConfig()

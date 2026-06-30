@@ -98,6 +98,33 @@ public static class DiagnosticDescriptors
 		isEnabledByDefault: true,
 		helpLinkUri: $"{HelpLinkBaseUri}/XPC4003.md");
 
+	public static readonly DiagnosticDescriptor CustomApiHandlerMethodNotFound = new(
+		id: "XPC4004",
+		title: "Custom API handler method not found",
+		messageFormat: "Custom API handler method '{0}' not found on service type '{1}'",
+		category: Category,
+		defaultSeverity: DiagnosticSeverity.Error,
+		isEnabledByDefault: true,
+		helpLinkUri: $"{HelpLinkBaseUri}/XPC4004.md");
+
+	public static readonly DiagnosticDescriptor CustomApiHandlerSignatureMismatch = new(
+		id: "XPC4005",
+		title: "Custom API handler signature does not match registered parameters",
+		messageFormat: "Custom API handler method '{0}' does not have the expected signature. Expected: {1}.",
+		category: Category,
+		defaultSeverity: DiagnosticSeverity.Warning,
+		isEnabledByDefault: true,
+		helpLinkUri: $"{HelpLinkBaseUri}/XPC4005.md");
+
+	public static readonly DiagnosticDescriptor CustomApiHandlerSignatureMismatchError = new(
+		id: "XPC4006",
+		title: "Custom API handler signature does not match registered parameters",
+		messageFormat: "Custom API handler method '{0}' does not have the expected signature. Expected: {1}.",
+		category: Category,
+		defaultSeverity: DiagnosticSeverity.Error,
+		isEnabledByDefault: true,
+		helpLinkUri: $"{HelpLinkBaseUri}/XPC4006.md");
+
 	public static readonly DiagnosticDescriptor SymbolResolutionFailed = new(
 		id: "XPC5001",
 		title: "Failed to resolve symbol",
