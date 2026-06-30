@@ -93,6 +93,46 @@ public class CustomApiClassGenerationTests
 	}
 
 	[Fact]
+	public void Should_Escape_Response_Constructor_Parameter_That_Is_A_Keyword()
+	{
+		// A response property whose camelCased name is a reserved keyword must be emitted as a verbatim
+		// identifier in the constructor (e.g. "Class" -> "@class"), otherwise the generated code won't compile.
+		const string source = """
+			using XrmPluginCore;
+			using XrmPluginCore.Enums;
+			using Microsoft.Extensions.DependencyInjection;
+
+			namespace TestNamespace
+			{
+			    public class SomeApi : Plugin
+			    {
+			        public SomeApi()
+			        {
+			            RegisterAPI<CallbackService>(nameof(SomeApi), nameof(CallbackService.Handle))
+			                .AddResponseProperty("Class", CustomApiParameterType.String);
+			        }
+
+			        protected override IServiceCollection OnBeforeBuildServiceProvider(IServiceCollection services)
+			            => services.AddScoped<CallbackService>();
+			    }
+
+			    public class CallbackService
+			    {
+			        public SomeApiResponse Handle() => new SomeApiResponse(null);
+			    }
+			}
+			""";
+
+		var result = GeneratorTestHelper.RunCustomApiGenerator(CompilationHelper.CreateCompilation(source));
+
+		var generated = result.GeneratedTrees[0].GetText().ToString();
+
+		// Constructor parameter escaped, assignment uses the same verbatim name
+		generated.Should().Contain("public SomeApiResponse(string? @class)");
+		generated.Should().Contain("Class = @class;");
+	}
+
+	[Fact]
 	public void Should_Not_Annotate_Reference_Types_When_Nullable_Disabled()
 	{
 		// Backwards compatibility: with NRT disabled (e.g. .NET Framework / C# 7.3 defaults), the

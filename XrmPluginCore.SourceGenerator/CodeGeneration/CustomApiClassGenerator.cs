@@ -1,6 +1,6 @@
-using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Microsoft.CodeAnalysis.CSharp;
 using XrmPluginCore.SourceGenerator.Helpers;
 using XrmPluginCore.SourceGenerator.Models;
 using static XrmPluginCore.SourceGenerator.CodeGeneration.Indent;
@@ -12,19 +12,6 @@ namespace XrmPluginCore.SourceGenerator.CodeGeneration;
 /// </summary>
 internal static class CustomApiClassGenerator
 {
-	private static readonly HashSet<string> CSharpKeywords =
-	[
-		"abstract", "as", "base", "bool", "break", "byte", "case", "catch", "char", "checked",
-		"class", "const", "continue", "decimal", "default", "delegate", "do", "double", "else",
-		"enum", "event", "explicit", "extern", "false", "finally", "fixed", "float", "for",
-		"foreach", "goto", "if", "implicit", "in", "int", "interface", "internal", "is", "lock",
-		"long", "namespace", "new", "null", "object", "operator", "out", "override", "params",
-		"private", "protected", "public", "readonly", "ref", "return", "sbyte", "sealed", "short",
-		"sizeof", "stackalloc", "static", "string", "struct", "switch", "this", "throw", "true",
-		"try", "typeof", "uint", "ulong", "unchecked", "unsafe", "ushort", "using", "virtual",
-		"void", "volatile", "while",
-	];
-
 	/// <summary>
 	/// Generates a complete source file containing the Request, Response and ActionWrapper classes
 	/// for a Custom API registration. Returns null when there is no handler method to wire up.
@@ -184,8 +171,9 @@ internal static class CustomApiClassGenerator
 
 		var camelCase = char.ToLowerInvariant(propertyName[0]) + propertyName.Substring(1);
 
-		// Escape keywords (and the rare case where lowercasing collided with a keyword) with a verbatim @.
-		return CSharpKeywords.Contains(camelCase) ? "@" + camelCase : camelCase;
+		// Escape reserved keywords with a verbatim @. SyntaxFacts.GetKeywordKind returns None for
+		// non-keywords and for contextual keywords (which are valid identifiers and need no escaping).
+		return SyntaxFacts.GetKeywordKind(camelCase) != SyntaxKind.None ? "@" + camelCase : camelCase;
 	}
 
 	private static string GetFileHeader(bool nullableEnabled) =>
