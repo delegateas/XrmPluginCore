@@ -1,3 +1,6 @@
+### v1.2.0 - 30 June 2026
+* Add: `Privilege` enum of standard Dataverse table privileges (Create, Read, Write, Delete, Append, AppendTo, Assign, Share) for type-safe execute-privilege configuration on Custom APIs.
+
 ### v1.1.0 - 08 October 2025
 * Change Plugin Step Configs to not use the EventOperation enum but instead use a string to allow for custom messages.
 
