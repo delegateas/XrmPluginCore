@@ -22,14 +22,21 @@ public abstract class Plugin : IPlugin, IPluginDefinition, ICustomApiDefinition
 {
 	private string ChildClassName { get; }
 	private string ChildClassShortName { get; }
+	private string ChildClassNamespace { get; }
 	private List<PluginStepRegistration> RegisteredPluginSteps { get; } = [];
 	private CustomApiRegistration RegisteredCustomApi { get; set; }
+
+	// The source generator places generated types under "GlobalNamespace" when the plugin class has no
+	// namespace (see SyntaxExtensions.GetNamespace in the generator). Type.Namespace is null in that case,
+	// so mirror the same fallback here for wrapper-type discovery to match. Keep the literal in sync.
+	private const string GlobalNamespaceFallback = "GlobalNamespace";
 
 	protected Plugin()
 	{
 		var type = GetType();
 		ChildClassName = type.ToString();
 		ChildClassShortName = type.Name;
+		ChildClassNamespace = string.IsNullOrEmpty(type.Namespace) ? GlobalNamespaceFallback : type.Namespace;
 	}
 
 	/// <summary>
@@ -328,7 +335,7 @@ public abstract class Plugin : IPlugin, IPluginDefinition, ICustomApiDefinition
 		// Compute the generated ActionWrapper type name up front. Must match the namespace the source
 		// generator emits: {Namespace}.PluginRegistrations.{PluginClassName}.{Entity}{Operation}{Stage}.
 		var wrapperTypeName =
-			$"{GetType().Namespace}.PluginRegistrations.{ChildClassShortName}." +
+			$"{ChildClassNamespace}.PluginRegistrations.{ChildClassShortName}." +
 			$"{typeof(TEntity).Name}{eventOperation}{executionStage}.ActionWrapper";
 
 		var registration = new PluginStepRegistration(
@@ -464,7 +471,7 @@ public abstract class Plugin : IPlugin, IPluginDefinition, ICustomApiDefinition
 			if (RegisteredCustomApi.Action == null && RegisteredCustomApi.HandlerMethodName != null)
 			{
 				handlerMethodName = RegisteredCustomApi.HandlerMethodName;
-				wrapperTypeName = $"{GetType().Namespace}.{IdentifierSanitizer.Sanitize(RegisteredCustomApi.ConfigBuilder.Name)}ActionWrapper";
+				wrapperTypeName = $"{ChildClassNamespace}.{IdentifierSanitizer.Sanitize(RegisteredCustomApi.ConfigBuilder.Name)}ActionWrapper";
 			}
 
 			return new PluginStepRegistration(

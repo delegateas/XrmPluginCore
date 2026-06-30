@@ -432,6 +432,8 @@ internal static class SyntaxExtensions
 			node = node.Parent;
 		}
 
+		// No namespace declaration: emit generated types under a literal "GlobalNamespace". The runtime
+		// mirrors this fallback for wrapper discovery (Plugin.GlobalNamespaceFallback) - keep them in sync.
 		if (namespaces.Count == 0)
 			return "GlobalNamespace";
 
