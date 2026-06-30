@@ -88,6 +88,17 @@ namespace XrmPluginCore.Tests.TestCustomApis
 		}
 	}
 
+	// Helper custom API for testing input validation of the typed RegisterAPI overload.
+	public class TestTypedCustomApiValidation : Plugin
+	{
+		// Exposes the protected typed overload so tests can pass invalid inputs. The arguments are not
+		// compile-time constants here, which is irrelevant to the validation under test.
+#pragma warning disable XPC3006 // Custom API name must be a compile-time constant
+		public void Register(string name, string handlerMethodName)
+			=> RegisterAPI<TestTypedCustomApiValidation>(name, handlerMethodName);
+#pragma warning restore XPC3006
+	}
+
 	// Helper custom API for testing service provider modification
 	public class TestServiceProviderModificationCustomAPI : Plugin
 	{

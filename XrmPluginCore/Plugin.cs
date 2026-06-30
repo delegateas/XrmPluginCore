@@ -400,9 +400,22 @@ public abstract class Plugin : IPlugin, IPluginDefinition, ICustomApiDefinition
 	/// <typeparam name="TService">The service type that contains the handler method</typeparam>
 	/// <param name="name">The unique name of the Custom API</param>
 	/// <param name="handlerMethodName">The name of the handler method (use nameof(TService.MethodName))</param>
+	/// <exception cref="ArgumentException">If <paramref name="name"/> or <paramref name="handlerMethodName"/> is null or whitespace</exception>
 	/// <exception cref="InvalidOperationException">If called multiple times in the same class</exception>
 	protected CustomApiConfigBuilder RegisterAPI<TService>(string name, string handlerMethodName)
 	{
+		if (string.IsNullOrWhiteSpace(name))
+		{
+			throw new ArgumentException("A Custom API name must be provided.", nameof(name));
+		}
+
+		if (string.IsNullOrWhiteSpace(handlerMethodName))
+		{
+			throw new ArgumentException(
+				"A handler method name must be provided. Use nameof(TService.MethodName) for compile-time safety.",
+				nameof(handlerMethodName));
+		}
+
 		if (RegisteredCustomApi != null)
 		{
 			throw new InvalidOperationException("You cannot register multiple CustomAPIs in the same class");

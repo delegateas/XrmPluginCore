@@ -95,6 +95,22 @@ namespace XrmPluginCore.Tests
 			Assert.Throws<InvalidOperationException>(() => customApi.TryRegisterSecond());
 		}
 
+		[Theory]
+		[InlineData(null, "Handle")]
+		[InlineData("", "Handle")]
+		[InlineData("   ", "Handle")]
+		[InlineData("my_api", null)]
+		[InlineData("my_api", "")]
+		[InlineData("my_api", "   ")]
+		public void RegisterTypedCustomAPIWithMissingNameOrHandlerShouldThrowArgumentException(string name, string handlerMethodName)
+		{
+			// Arrange
+			var customApi = new TestTypedCustomApiValidation();
+
+			// Act & Assert - misconfiguration is caught deterministically at registration time
+			Assert.Throws<ArgumentException>(() => customApi.Register(name, handlerMethodName));
+		}
+
 		[Fact]
 		public void GetRegistrationValidRegistrationShouldReturnConfiguration()
 		{
