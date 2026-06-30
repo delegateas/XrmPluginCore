@@ -10,5 +10,6 @@ public enum contact_educationcode
 {
     [EnumMember]
     [OptionSetMetadata("Default Value", 1033)]
+    [OptionSetMetadata("Standardværdi", 1030)]
     DefaultValue = 1,
 }

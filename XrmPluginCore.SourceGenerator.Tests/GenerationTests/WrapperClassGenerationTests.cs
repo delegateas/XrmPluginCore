@@ -411,6 +411,30 @@ public partial class WrapperClassGenerationTests
 		generatedSource.Should().NotContain("PostEntityImages");
 	}
 
+	[Fact]
+	public void Should_Mirror_Obsolete_Attribute_On_Deprecated_Image_Properties()
+	{
+		// Arrange - PreImage that registers a deprecated ([Obsolete]) attribute
+		var source = TestFixtures.GetCompleteSource(
+			TestFixtures.PluginWithObsoleteImageAttributes);
+
+		// Act
+		var result = GeneratorTestHelper.RunGenerator(
+			CompilationHelper.CreateCompilation(source));
+
+		// Assert
+		result.GeneratedTrees.Should().NotBeEmpty();
+		var generatedSource = result.GeneratedTrees[0].GetText().ToString();
+
+		// The underlying property's [Obsolete] (CS0612) is mirrored onto the generated property,
+		// which both suppresses the warning in the generated accessor and pushes it to calling code.
+		generatedSource.Should().Contain("[System.Obsolete]\n\t\tpublic string? ctx_DeprecatedField => Entity.ctx_DeprecatedField;");
+
+		// Non-deprecated members are NOT decorated with [Obsolete]
+		generatedSource.Should().Contain("public string? Name => Entity.Name;");
+		generatedSource.Should().NotContain("[System.Obsolete]\n\t\tpublic string? Name");
+	}
+
 	[System.Text.RegularExpressions.GeneratedRegex(@"namespace\s+TestNamespace\.PluginRegistrations\.TestPlugin\.AccountUpdatePostOperation")]
 	private static partial System.Text.RegularExpressions.Regex IsAccountUpdatePostOperationNamespace();
 

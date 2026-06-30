@@ -2864,6 +2864,14 @@ public partial class Contact : ExtendedEntity
         set => SetRelatedEntity("contact_master_contact", null, value);
     }
 
+    [RelationshipSchemaName("ctx_account_contact")]
+    [RelationshipMetadata("ManyToMany", "contactid", "account", "accountid", "Entity2")]
+    public IEnumerable<Account> ctx_account_contact
+    {
+        get => GetRelatedEntities<Account>("ctx_account_contact", null);
+        set => SetRelatedEntities("ctx_account_contact", null, value);
+    }
+
     [AttributeLogicalName("msa_managingpartnerid")]
     [RelationshipSchemaName("msa_contact_managingpartner")]
     [RelationshipMetadata("ManyToOne", "msa_managingpartnerid", "account", "accountid", "Referencing")]

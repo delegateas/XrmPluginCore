@@ -112,6 +112,25 @@ internal sealed class AttributeMetadata
 	/// </summary>
 	public string XmlDocumentation { get; set; }
 
+	/// <summary>
+	/// Gets or sets a value indicating whether the underlying entity property is marked
+	/// with <see cref="System.ObsoleteAttribute"/>. When true, the generated wrapper property
+	/// is also marked obsolete so the deprecation warning surfaces in the calling code rather
+	/// than inside the auto-generated image class.
+	/// </summary>
+	public bool IsObsolete { get; set; }
+
+	/// <summary>
+	/// Gets or sets the message supplied to the underlying property's <see cref="System.ObsoleteAttribute"/>, if any.
+	/// </summary>
+	public string ObsoleteMessage { get; set; }
+
+	/// <summary>
+	/// Gets or sets a value indicating whether the underlying property's <see cref="System.ObsoleteAttribute"/>
+	/// treats usage as an error (the second constructor argument).
+	/// </summary>
+	public bool ObsoleteIsError { get; set; }
+
 	public override bool Equals(object obj)
 	{
 		if (obj is AttributeMetadata other)
@@ -119,7 +138,10 @@ internal sealed class AttributeMetadata
 			return PropertyName == other.PropertyName
 				&& LogicalName == other.LogicalName
 				&& TypeName == other.TypeName
-				&& XmlDocumentation == other.XmlDocumentation;
+				&& XmlDocumentation == other.XmlDocumentation
+				&& IsObsolete == other.IsObsolete
+				&& ObsoleteMessage == other.ObsoleteMessage
+				&& ObsoleteIsError == other.ObsoleteIsError;
 		}
 		return false;
 	}
@@ -133,6 +155,9 @@ internal sealed class AttributeMetadata
 			hash = (hash * 31) + (LogicalName?.GetHashCode() ?? 0);
 			hash = (hash * 31) + (TypeName?.GetHashCode() ?? 0);
 			hash = (hash * 31) + (XmlDocumentation?.GetHashCode() ?? 0);
+			hash = (hash * 31) + IsObsolete.GetHashCode();
+			hash = (hash * 31) + (ObsoleteMessage?.GetHashCode() ?? 0);
+			hash = (hash * 31) + ObsoleteIsError.GetHashCode();
 			return hash;
 		}
 	}

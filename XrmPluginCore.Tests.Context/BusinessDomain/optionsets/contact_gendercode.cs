@@ -10,9 +10,11 @@ public enum contact_gendercode
 {
     [EnumMember]
     [OptionSetMetadata("Male", 1033)]
+    [OptionSetMetadata("Mand", 1030)]
     Male = 1,
 
     [EnumMember]
     [OptionSetMetadata("Female", 1033)]
+    [OptionSetMetadata("Kvinde", 1030)]
     Female = 2,
 }

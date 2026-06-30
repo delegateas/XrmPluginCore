@@ -10,6 +10,7 @@ public enum contact_paymenttermscode
 {
     [EnumMember]
     [OptionSetMetadata("Net 30", 1033)]
+    [OptionSetMetadata("Netto 30 dage", 1030)]
     Net30 = 1,
 
     [EnumMember]
