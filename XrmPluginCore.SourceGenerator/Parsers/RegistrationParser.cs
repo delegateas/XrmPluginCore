@@ -293,7 +293,7 @@ internal static class RegistrationParser
 		// Get XML documentation from the property
 		var xmlDoc = GetFormattedXmlDocumentation(property);
 
-		return new AttributeMetadata
+		var attrMetadata = new AttributeMetadata
 		{
 			PropertyName = propertyName,
 			LogicalName = logicalName,
@@ -302,6 +302,38 @@ internal static class RegistrationParser
 			TypeName = NullableHelper.DisplayType(property.Type, nullableEnabled),
 			XmlDocumentation = xmlDoc
 		};
+
+		PopulateObsoleteInfo(attrMetadata, property);
+
+		return attrMetadata;
+	}
+
+	/// <summary>
+	/// Detects whether the property is decorated with <see cref="System.ObsoleteAttribute"/> and, if so,
+	/// captures its message and error flag so the generated wrapper property can mirror it. This pushes
+	/// the deprecation warning (CS0612/CS0618) to the calling code instead of emitting it from the
+	/// auto-generated image class.
+	/// </summary>
+	private static void PopulateObsoleteInfo(AttributeMetadata attrMetadata, IPropertySymbol property)
+	{
+		var obsoleteAttribute = property.GetAttributes()
+			.FirstOrDefault(a => a.AttributeClass?.Name == "ObsoleteAttribute"
+				&& a.AttributeClass.ContainingNamespace?.ToDisplayString() == "System");
+
+		if (obsoleteAttribute == null)
+			return;
+
+		attrMetadata.IsObsolete = true;
+
+		var ctorArgs = obsoleteAttribute.ConstructorArguments;
+		if (ctorArgs.Length > 0 && ctorArgs[0].Value is string message)
+		{
+			attrMetadata.ObsoleteMessage = message;
+		}
+		if (ctorArgs.Length > 1 && ctorArgs[1].Value is bool isError)
+		{
+			attrMetadata.ObsoleteIsError = isError;
+		}
 	}
 
 	/// <summary>

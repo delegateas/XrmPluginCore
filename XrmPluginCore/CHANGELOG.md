@@ -3,6 +3,7 @@
 * Add: Error XPC4004: Custom API handler method not found (with code fix to create the method).
 * Add: Warning XPC4005 / Error XPC4006: Custom API handler signature does not match the declared request parameters and response properties (with code fix to correct the signature).
 * Add: XPC3001 (Prefer `nameof` over string literal) now also covers the Custom API handler argument.
+* Fix: Generated image properties now mirror the `[Obsolete]` attribute of the underlying entity property, so deprecation warnings (CS0612/CS0618) surface in the calling code instead of inside the auto-generated image class.
 * Fix: Generated code (images and Custom API request/response) now only emits nullable reference-type annotations (`string?`) and a `#nullable enable` directive when the consuming project has nullable reference types enabled. On projects without NRT (including .NET Framework / C# 7.3 defaults) the generated code is emitted without those annotations, keeping it compilable and warning-free. Nullable value types (`int?`) are always emitted.
 
 ### v1.3.0 - 22 June 2026

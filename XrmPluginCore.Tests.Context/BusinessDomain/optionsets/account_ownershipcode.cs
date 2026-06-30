@@ -10,17 +10,21 @@ public enum account_ownershipcode
 {
     [EnumMember]
     [OptionSetMetadata("Public", 1033)]
+    [OptionSetMetadata("Offentligt", 1030)]
     @Public = 1,
 
     [EnumMember]
     [OptionSetMetadata("Private", 1033)]
+    [OptionSetMetadata("Privat", 1030)]
     @Private = 2,
 
     [EnumMember]
     [OptionSetMetadata("Subsidiary", 1033)]
+    [OptionSetMetadata("Datterselskab", 1030)]
     Subsidiary = 3,
 
     [EnumMember]
     [OptionSetMetadata("Other", 1033)]
+    [OptionSetMetadata("Andet", 1030)]
     Other = 4,
 }

@@ -10,9 +10,11 @@ public enum account_accountcategorycode
 {
     [EnumMember]
     [OptionSetMetadata("Preferred Customer", 1033)]
+    [OptionSetMetadata("Foretrukken kunde", 1030)]
     PreferredCustomer = 1,
 
     [EnumMember]
     [OptionSetMetadata("Standard", 1033)]
+    [OptionSetMetadata("Standard", 1030)]
     Standard = 2,
 }

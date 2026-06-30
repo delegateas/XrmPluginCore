@@ -72,7 +72,7 @@ internal static class WrapperClassGenerator
 				continue;
 			}
 
-			sb.Append(GetPropertyTemplate(attr.TypeName, attr.PropertyName, attr.XmlDocumentation));
+			sb.Append(GetPropertyTemplate(attr));
 		}
 
 		// Close class
@@ -181,14 +181,44 @@ using XrmPluginCore;
 			$"{L2}public string LogicalName => Entity.LogicalName;\n\n";
 	}
 
-	private static string GetPropertyTemplate(string propertyType, string propertyName, string xmlDoc)
+	private static string GetPropertyTemplate(Models.AttributeMetadata attr)
 	{
-		if (string.IsNullOrWhiteSpace(xmlDoc))
+		var sb = new StringBuilder();
+
+		if (!string.IsNullOrWhiteSpace(attr.XmlDocumentation))
 		{
-			return $"{L2}public {propertyType} {propertyName} => Entity.{propertyName};\n\n";
+			sb.Append(attr.XmlDocumentation).Append('\n');
 		}
 
-		return $"{xmlDoc}\n{L2}public {propertyType} {propertyName} => Entity.{propertyName};\n\n";
+		// Mirror the underlying property's [Obsolete] so the deprecation warning surfaces in the
+		// calling code rather than inside this auto-generated accessor. Marking the wrapper member
+		// obsolete also suppresses CS0612/CS0618 for the Entity.{Property} access in its body, since
+		// references to obsolete members from within an obsolete member are not reported.
+		if (attr.IsObsolete)
+		{
+			sb.Append(GetObsoleteAttribute(attr));
+		}
+
+		sb.Append($"{L2}public {attr.TypeName} {attr.PropertyName} => Entity.{attr.PropertyName};\n\n");
+
+		return sb.ToString();
+	}
+
+	/// <summary>
+	/// Builds an [Obsolete] attribute line mirroring the underlying property's obsolete metadata.
+	/// </summary>
+	private static string GetObsoleteAttribute(Models.AttributeMetadata attr)
+	{
+		if (attr.ObsoleteMessage == null)
+		{
+			return $"{L2}[System.Obsolete]\n";
+		}
+
+		var messageLiteral = Microsoft.CodeAnalysis.CSharp.SymbolDisplay.FormatLiteral(attr.ObsoleteMessage, quote: true);
+
+		return attr.ObsoleteIsError
+			? $"{L2}[System.Obsolete({messageLiteral}, true)]\n"
+			: $"{L2}[System.Obsolete({messageLiteral})]\n";
 	}
 
 	private static string GetActionWrapperHeader(string serviceTypeName, string methodName, string serviceFullName) =>

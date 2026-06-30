@@ -10,13 +10,16 @@ public enum account_preferredappointmenttimecode
 {
     [EnumMember]
     [OptionSetMetadata("Morning", 1033)]
+    [OptionSetMetadata("Morgen", 1030)]
     Morning = 1,
 
     [EnumMember]
     [OptionSetMetadata("Afternoon", 1033)]
+    [OptionSetMetadata("Eftermiddag", 1030)]
     Afternoon = 2,
 
     [EnumMember]
     [OptionSetMetadata("Evening", 1033)]
+    [OptionSetMetadata("Aften", 1030)]
     Evening = 3,
 }
