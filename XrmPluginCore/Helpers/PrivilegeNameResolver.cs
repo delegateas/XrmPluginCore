@@ -7,16 +7,17 @@ internal static class PrivilegeNameResolver
 {
 	/// <summary>
 	/// Builds the Dataverse execute-privilege name for the given <paramref name="privilege"/> on the
-	/// supplied entity, following the <c>prv{Privilege}{EntityLogicalName}</c> convention.
-	/// For example, <see cref="Privilege.Read"/> on <c>account</c> resolves to <c>prvReadaccount</c>.
+	/// supplied entity, following the <c>prv{Privilege}{EntitySchemaName}</c> convention.
+	/// For example, <see cref="Privilege.Read"/> on <c>Account</c> resolves to <c>prvReadAccount</c>.
 	/// </summary>
 	/// <remarks>
-	/// Privilege names predate the schema name concept and are based on the entity logical name
-	/// (e.g. <c>account</c>), so the logical name is used verbatim.
+	/// Privilege names use the entity <em>schema</em> name (e.g. <c>Account</c>), not the logical name
+	/// (<c>account</c>): the platform stores the logical name as the lowercased schema name, so the
+	/// original casing must come from the schema name. Callers pass it via the early-bound type name.
 	/// </remarks>
-	public static string GetExecutePrivilegeName(Privilege privilege, string entityLogicalName)
+	public static string GetExecutePrivilegeName(Privilege privilege, string entitySchemaName)
 	{
-		return $"prv{GetPrivilegeVerb(privilege)}{entityLogicalName}";
+		return $"prv{GetPrivilegeVerb(privilege)}{entitySchemaName}";
 	}
 
 	private static string GetPrivilegeVerb(Privilege privilege)

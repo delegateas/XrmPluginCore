@@ -121,26 +121,29 @@ namespace XrmPluginCore.CustomApis
 
 		/// <summary>
 		/// Sets the execute privilege to a standard table privilege of <typeparamref name="T"/>,
-		/// e.g. <c>WithExecutePrivilege&lt;Account&gt;(Privilege.Read)</c> resolves to <c>prvReadaccount</c>.
+		/// e.g. <c>WithExecutePrivilege&lt;Account&gt;(Privilege.Read)</c> resolves to <c>prvReadAccount</c>.
+		/// The entity schema name is taken from the early-bound type name (<c>typeof(T).Name</c>), which
+		/// early-bound generators produce from the entity schema name.
 		/// </summary>
 		/// <typeparam name="T">The early-bound entity type the privilege applies to.</typeparam>
 		/// <param name="privilege">The table privilege required to execute the custom API.</param>
-		public CustomApiConfigBuilder WithExecutePrivilege<T>(Privilege privilege) where T : Entity, new()
+		public CustomApiConfigBuilder WithExecutePrivilege<T>(Privilege privilege) where T : Entity
 		{
-			return WithExecutePrivilege(EntityLogicalNameCache.GetLogicalName<T>(), privilege);
+			return WithExecutePrivilege(typeof(T).Name, privilege);
 		}
 
 		/// <summary>
 		/// Sets the execute privilege to a standard table privilege of the entity identified by
-		/// <paramref name="entityLogicalName"/>, following the <c>prv{Privilege}{EntityLogicalName}</c>
-		/// convention. Use the generic <see cref="WithExecutePrivilege{T}(Privilege)"/> overload when an
-		/// early-bound type is available.
+		/// <paramref name="entitySchemaName"/>, following the <c>prv{Privilege}{EntitySchemaName}</c>
+		/// convention. Privilege names use the schema name (e.g. <c>Account</c>), not the logical name
+		/// (<c>account</c>). Prefer the generic <see cref="WithExecutePrivilege{T}(Privilege)"/> overload
+		/// when an early-bound type is available.
 		/// </summary>
-		/// <param name="entityLogicalName">The logical name of the table the privilege applies to.</param>
+		/// <param name="entitySchemaName">The schema name of the table the privilege applies to.</param>
 		/// <param name="privilege">The table privilege required to execute the custom API.</param>
-		public CustomApiConfigBuilder WithExecutePrivilege(string entityLogicalName, Privilege privilege)
+		public CustomApiConfigBuilder WithExecutePrivilege(string entitySchemaName, Privilege privilege)
 		{
-			Config.ExecutePrivilegeName = PrivilegeNameResolver.GetExecutePrivilegeName(privilege, entityLogicalName);
+			Config.ExecutePrivilegeName = PrivilegeNameResolver.GetExecutePrivilegeName(privilege, entitySchemaName);
 			return this;
 		}
 

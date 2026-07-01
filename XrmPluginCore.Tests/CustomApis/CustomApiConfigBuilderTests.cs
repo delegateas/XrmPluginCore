@@ -103,20 +103,21 @@ public class CustomApiConfigBuilderTests
 	}
 
 	[Theory]
-	[InlineData(Privilege.Create, "prvCreateaccount")]
-	[InlineData(Privilege.Read, "prvReadaccount")]
-	[InlineData(Privilege.Write, "prvWriteaccount")]
-	[InlineData(Privilege.Delete, "prvDeleteaccount")]
-	[InlineData(Privilege.Append, "prvAppendaccount")]
-	[InlineData(Privilege.AppendTo, "prvAppendToaccount")]
-	[InlineData(Privilege.Assign, "prvAssignaccount")]
-	[InlineData(Privilege.Share, "prvShareaccount")]
-	public void WithExecutePrivilege_Generic_ResolvesPrivilegeNameFromEntity(Privilege privilege, string expected)
+	[InlineData(Privilege.Create, "prvCreateAccount")]
+	[InlineData(Privilege.Read, "prvReadAccount")]
+	[InlineData(Privilege.Write, "prvWriteAccount")]
+	[InlineData(Privilege.Delete, "prvDeleteAccount")]
+	[InlineData(Privilege.Append, "prvAppendAccount")]
+	[InlineData(Privilege.AppendTo, "prvAppendToAccount")]
+	[InlineData(Privilege.Assign, "prvAssignAccount")]
+	[InlineData(Privilege.Share, "prvShareAccount")]
+	public void WithExecutePrivilege_Generic_ResolvesPrivilegeNameFromSchemaName(Privilege privilege, string expected)
 	{
 		// Arrange
 		var builder = new CustomApiConfigBuilder("test_api");
 
 		// Act
+		// Privilege names use the schema name, which the early-bound type name (typeof(Account).Name = "Account") provides.
 		var config = builder.WithExecutePrivilege<Account>(privilege).Build();
 
 		// Assert
@@ -137,16 +138,16 @@ public class CustomApiConfigBuilderTests
 	}
 
 	[Fact]
-	public void WithExecutePrivilege_WithLogicalName_ResolvesPrivilegeName()
+	public void WithExecutePrivilege_WithSchemaName_ResolvesPrivilegeName()
 	{
 		// Arrange
 		var builder = new CustomApiConfigBuilder("test_api");
 
 		// Act
-		var config = builder.WithExecutePrivilege("new_widget", Privilege.Write).Build();
+		var config = builder.WithExecutePrivilege("new_Widget", Privilege.Write).Build();
 
 		// Assert
-		config.ExecutePrivilegeName.Should().Be("prvWritenew_widget");
+		config.ExecutePrivilegeName.Should().Be("prvWritenew_Widget");
 	}
 
 	[Fact]
