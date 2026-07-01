@@ -1,4 +1,4 @@
-### v1.4.0 - 30 June 2026
+### v1.4.0 - 01 July 2026
 * Add: `WithExecutePrivilege<T>(Privilege)` on the Custom API builder for type-safe execute-privilege configuration, e.g. `.WithExecutePrivilege<Account>(Privilege.Read)` resolves to `prvReadaccount`. A `WithExecutePrivilege(string entityLogicalName, Privilege)` overload is available for late-bound scenarios. The existing `WithExecutePrivilegeName(string)` remains for non-standard privilege names.
 * Add: Type-safe Custom API request/response wrappers. `RegisterAPI<TService>(name, handlerMethodName)` now generates `{ApiName}Request`/`{ApiName}Response` classes (named after the API, in the plugin's namespace) from the `AddRequestParameter`/`AddResponseProperty` declarations. The handler accepts the request and returns the response; a generated `ActionWrapper` marshals `InputParameters` into the request and the returned response into `OutputParameters`. When no request parameters are declared the handler takes no argument, and when no response properties are declared it returns `void`.
 * Add: Error XPC4004: Custom API handler method not found (with code fix to create the method).
