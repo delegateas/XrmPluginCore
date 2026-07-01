@@ -102,6 +102,53 @@ public class CustomApiConfigBuilderTests
 		config.ExecutePrivilegeName.Should().Be("prvFinal");
 	}
 
+	[Theory]
+	[InlineData(Privilege.Create, "prvCreateaccount")]
+	[InlineData(Privilege.Read, "prvReadaccount")]
+	[InlineData(Privilege.Write, "prvWriteaccount")]
+	[InlineData(Privilege.Delete, "prvDeleteaccount")]
+	[InlineData(Privilege.Append, "prvAppendaccount")]
+	[InlineData(Privilege.AppendTo, "prvAppendToaccount")]
+	[InlineData(Privilege.Assign, "prvAssignaccount")]
+	[InlineData(Privilege.Share, "prvShareaccount")]
+	public void WithExecutePrivilege_Generic_ResolvesPrivilegeNameFromEntity(Privilege privilege, string expected)
+	{
+		// Arrange
+		var builder = new CustomApiConfigBuilder("test_api");
+
+		// Act
+		var config = builder.WithExecutePrivilege<Account>(privilege).Build();
+
+		// Assert
+		config.ExecutePrivilegeName.Should().Be(expected);
+	}
+
+	[Fact]
+	public void WithExecutePrivilege_Generic_ReturnsBuilderForChaining()
+	{
+		// Arrange
+		var builder = new CustomApiConfigBuilder("test_api");
+
+		// Act
+		var result = builder.WithExecutePrivilege<Account>(Privilege.Read);
+
+		// Assert
+		result.Should().BeSameAs(builder);
+	}
+
+	[Fact]
+	public void WithExecutePrivilege_WithLogicalName_ResolvesPrivilegeName()
+	{
+		// Arrange
+		var builder = new CustomApiConfigBuilder("test_api");
+
+		// Act
+		var config = builder.WithExecutePrivilege("new_widget", Privilege.Write).Build();
+
+		// Assert
+		config.ExecutePrivilegeName.Should().Be("prvWritenew_widget");
+	}
+
 	[Fact]
 	public void Build_PreservesAllConfigurationIncludingExecutePrivilege()
 	{

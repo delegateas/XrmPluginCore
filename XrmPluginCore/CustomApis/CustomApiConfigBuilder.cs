@@ -119,6 +119,31 @@ namespace XrmPluginCore.CustomApis
 			return this;
 		}
 
+		/// <summary>
+		/// Sets the execute privilege to a standard table privilege of <typeparamref name="T"/>,
+		/// e.g. <c>WithExecutePrivilege&lt;Account&gt;(Privilege.Read)</c> resolves to <c>prvReadaccount</c>.
+		/// </summary>
+		/// <typeparam name="T">The early-bound entity type the privilege applies to.</typeparam>
+		/// <param name="privilege">The table privilege required to execute the custom API.</param>
+		public CustomApiConfigBuilder WithExecutePrivilege<T>(Privilege privilege) where T : Entity, new()
+		{
+			return WithExecutePrivilege(EntityLogicalNameCache.GetLogicalName<T>(), privilege);
+		}
+
+		/// <summary>
+		/// Sets the execute privilege to a standard table privilege of the entity identified by
+		/// <paramref name="entityLogicalName"/>, following the <c>prv{Privilege}{EntityLogicalName}</c>
+		/// convention. Use the generic <see cref="WithExecutePrivilege{T}(Privilege)"/> overload when an
+		/// early-bound type is available.
+		/// </summary>
+		/// <param name="entityLogicalName">The logical name of the table the privilege applies to.</param>
+		/// <param name="privilege">The table privilege required to execute the custom API.</param>
+		public CustomApiConfigBuilder WithExecutePrivilege(string entityLogicalName, Privilege privilege)
+		{
+			Config.ExecutePrivilegeName = PrivilegeNameResolver.GetExecutePrivilegeName(privilege, entityLogicalName);
+			return this;
+		}
+
 		public CustomApiConfigBuilder AddRequestParameter(string uniqueName, CustomApiParameterType type,
 			string displayName = null,
 			string description = null,
