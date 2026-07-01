@@ -21,18 +21,6 @@ jobs:
         with:
           dotnet-version: 10.x
 
-      - name: ✏️ Set abstractions version from CHANGELOG.md
-        shell: pwsh
-        run: ./scripts/Set-VersionFromChangelog.ps1 -ChangelogPath XrmPluginCore.Abstractions/CHANGELOG.md -CsprojPath XrmPluginCore.Abstractions/XrmPluginCore.Abstractions.csproj
-
-      - name: ✏️ Set source generator version from CHANGELOG.md
-        shell: pwsh
-        run: ./scripts/Set-VersionFromChangelog.ps1 -ChangelogPath XrmPluginCore/CHANGELOG.md -CsprojPath XrmPluginCore.SourceGenerator/XrmPluginCore.SourceGenerator.csproj
-
-      - name: ✏️ Set implementations version from CHANGELOG.md
-        shell: pwsh
-        run: ./scripts/Set-VersionFromChangelog.ps1 -ChangelogPath XrmPluginCore/CHANGELOG.md -CsprojPath XrmPluginCore/XrmPluginCore.csproj
-
       - name: 📦 Install dependencies
         run: dotnet restore
 

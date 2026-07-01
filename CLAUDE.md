@@ -489,7 +489,7 @@ Version numbers are managed through CHANGELOG.md files:
 - `XrmPluginCore/CHANGELOG.md` for the main library and source generator (both use the same version)
 - `XrmPluginCore.Abstractions/CHANGELOG.md` for abstractions
 
-The `Set-VersionFromChangelog.ps1` script updates .csproj files from CHANGELOG during CI/CD.
+`Directory.Build.targets` derives each project's `<Version>` from the latest `### v...` entry in the relevant CHANGELOG.md at build time — no script or CI step required. Core and the source generator share `XrmPluginCore/CHANGELOG.md`; Abstractions overrides `ChangelogPath` in its .csproj to use its own changelog. An explicit `-p:Version=...` still overrides the derived value.
 
 ## Source Generator Development
 
