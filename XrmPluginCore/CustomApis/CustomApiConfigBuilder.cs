@@ -124,7 +124,7 @@ namespace XrmPluginCore.CustomApis
 		/// e.g. <c>WithExecutePrivilege&lt;Account&gt;(Privilege.Read)</c> resolves to <c>prvReadaccount</c>.
 		/// </summary>
 		/// <typeparam name="T">The early-bound entity type the privilege applies to.</typeparam>
-		/// <param name="privilege">The CRUD privilege required to execute the custom API.</param>
+		/// <param name="privilege">The table privilege required to execute the custom API.</param>
 		public CustomApiConfigBuilder WithExecutePrivilege<T>(Privilege privilege) where T : Entity, new()
 		{
 			return WithExecutePrivilege(EntityLogicalNameCache.GetLogicalName<T>(), privilege);
@@ -137,7 +137,7 @@ namespace XrmPluginCore.CustomApis
 		/// early-bound type is available.
 		/// </summary>
 		/// <param name="entityLogicalName">The logical name of the table the privilege applies to.</param>
-		/// <param name="privilege">The CRUD privilege required to execute the custom API.</param>
+		/// <param name="privilege">The table privilege required to execute the custom API.</param>
 		public CustomApiConfigBuilder WithExecutePrivilege(string entityLogicalName, Privilege privilege)
 		{
 			Config.ExecutePrivilegeName = PrivilegeNameResolver.GetExecutePrivilegeName(privilege, entityLogicalName);
