@@ -3,8 +3,8 @@ namespace XrmPluginCore.Enums
 	/// <summary>
 	/// Standard Dataverse table (entity) privileges.<br/>
 	/// Each value maps to a privilege whose name follows the convention
-	/// <c>prv{Privilege}{EntityLogicalName}</c>, e.g. <see cref="Read"/> on the
-	/// <c>account</c> table resolves to <c>prvReadaccount</c>.
+	/// <c>prv{Privilege}{EntitySchemaName}</c>, e.g. <see cref="Read"/> on the
+	/// <c>Account</c> table resolves to <c>prvReadAccount</c>.
 	/// </summary>
 	public enum Privilege
 	{
