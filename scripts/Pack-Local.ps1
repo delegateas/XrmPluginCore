@@ -1,6 +1,4 @@
-./scripts/Set-VersionFromChangelog.ps1 -ChangelogPath .\XrmPluginCore\CHANGELOG.md -CsprojPath .\XrmPluginCore\XrmPluginCore.csproj
-./scripts/Set-VersionFromChangelog.ps1 -ChangelogPath .\XrmPluginCore.SourceGenerator\CHANGELOG.md -CsprojPath .\XrmPluginCore.SourceGenerator\XrmPluginCore.SourceGenerator.csproj
-./scripts/Set-VersionFromChangelog.ps1 -ChangelogPath .\XrmPluginCore.Abstractions\CHANGELOG.md -CsprojPath .\XrmPluginCore.Abstractions\XrmPluginCore.Abstractions.csproj
-
+# Versions are derived automatically from each project's CHANGELOG.md by
+# Directory.Build.targets, so no version-setting step is needed here.
 dotnet build --configuration Release
 dotnet pack

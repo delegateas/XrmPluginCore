@@ -1,29 +1,13 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
-    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <PackageId>XrmPluginCore.Abstractions</PackageId>
     <Title>XrmPluginCore.Abstractions</Title>
-    <PackageProjectUrl>https://github.com/delegateas/XrmPluginCore</PackageProjectUrl>
     <Description>Abstractions and shared Enums for the XrmPluginCore package</Description>
     <PackageTags>xrm,crm,dataverse,daxif,delegate,context&amp;,contextand,xrmmockup</PackageTags>
-    <IncludeSymbols>True</IncludeSymbols>
-    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
     <RootNamespace>XrmPluginCore</RootNamespace>
 		<IsPackable>true</IsPackable>
+    <!-- Abstractions versions independently of the main library -->
+    <ChangelogPath>$(MSBuildProjectDirectory)\CHANGELOG.md</ChangelogPath>
   </PropertyGroup>
-  <ItemGroup>
-    <None Include="..\LICENSE">
-      <Pack>True</Pack>
-      <PackagePath>\</PackagePath>
-    </None>
-    <None Include="..\README.md">
-      <Pack>True</Pack>
-      <PackagePath>\</PackagePath>
-    </None>
-    <None Include="..\resources\contextand.png">
-      <Pack>True</Pack>
-      <PackagePath>\</PackagePath>
-    </None>
-  </ItemGroup>
 </Project>

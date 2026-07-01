@@ -1,32 +1,14 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFrameworks>net462;net8</TargetFrameworks>
-    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <UseDataverseSdk>true</UseDataverseSdk>
     <PackageId>XrmPluginCore</PackageId>
     <Title>XrmPluginCore</Title>
     <Description>XrmPluginCore provides base functionality for developing plugins and custom APIs in Dynamics 365. It includes context wrappers and registration utilities to streamline the development process.</Description>
-    <PackageProjectUrl>https://github.com/delegateas/XrmPluginCore</PackageProjectUrl>
     <PackageTags>xrm,crm,dataverse,daxif,delegate,context&amp;,contextand,xrmmockup,xrmsync</PackageTags>
-    <IncludeSymbols>True</IncludeSymbols>
-    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
 		<TreatWarningsAsErrors>true</TreatWarningsAsErrors>
 		<IsPackable>true</IsPackable>
   </PropertyGroup>
-  <ItemGroup>
-    <None Include="..\LICENSE">
-      <Pack>True</Pack>
-      <PackagePath>\</PackagePath>
-    </None>
-    <None Include="..\README.md">
-      <Pack>True</Pack>
-      <PackagePath>\</PackagePath>
-    </None>
-    <None Include="..\resources\contextand.png">
-      <Pack>True</Pack>
-      <PackagePath>\</PackagePath>
-    </None>
-  </ItemGroup>
   <ItemGroup>
     <Folder Include="Properties\" />
   </ItemGroup>
